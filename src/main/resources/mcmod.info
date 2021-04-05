@@ -1,0 +1,10 @@
+[
+{
+  "modid": "netmusic",
+  "name": "Net Music Mod",
+  "description": "A music player mod",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "authorList": ["TartaricAcid"]
+}
+]

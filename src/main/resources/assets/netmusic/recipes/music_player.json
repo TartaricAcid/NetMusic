@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "result": {
+    "item": "netmusic:music_player"
+  },
+  "pattern": [
+    "OBO",
+    "ODO",
+    "OOO"
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:book"
+    },
+    "O": {
+      "type": "forge:ore_dict",
+      "ore": "plankWood"
+    },
+    "D": {
+      "type": "forge:ore_dict",
+      "ore": "gemDiamond"
+    }
+  }
+}
