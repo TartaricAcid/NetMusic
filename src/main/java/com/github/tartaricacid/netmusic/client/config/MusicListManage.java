@@ -73,6 +73,6 @@ public class MusicListManage {
         }
 
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-        FileUtils.write(CONFIG_FILE.toFile(), gson.toJson(SONGS));
+        FileUtils.write(CONFIG_FILE.toFile(), gson.toJson(SONGS), StandardCharsets.UTF_8);
     }
 }
