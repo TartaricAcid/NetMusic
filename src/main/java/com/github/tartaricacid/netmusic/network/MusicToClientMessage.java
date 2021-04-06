@@ -48,6 +48,18 @@ public class MusicToClientMessage implements IMessage {
     }
 
     public static class Handler implements IMessageHandler<MusicToClientMessage, IMessage> {
+        @SideOnly(Side.CLIENT)
+        private static void playerMusic(MusicToClientMessage message, String url) {
+            FMLClientHandler.instance().getClient().addScheduledTask(() -> {
+                try {
+                    NetMusicSound sound = new NetMusicSound(message.pos, new URL(url), message.timeSecond);
+                    Minecraft.getMinecraft().getSoundHandler().playSound(sound);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(MusicToClientMessage message, MessageContext ctx) {
@@ -65,18 +77,6 @@ public class MusicToClientMessage implements IMessage {
                 }
             }
             return null;
-        }
-
-        @SideOnly(Side.CLIENT)
-        private static void playerMusic(MusicToClientMessage message, String url) {
-            FMLClientHandler.instance().getClient().addScheduledTask(() -> {
-                try {
-                    NetMusicSound sound = new NetMusicSound(message.pos, new URL(url), message.timeSecond);
-                    Minecraft.getMinecraft().getSoundHandler().playSound(sound);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
         }
     }
 }

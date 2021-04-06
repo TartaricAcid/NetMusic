@@ -5,6 +5,6 @@
   "description": "A music player mod",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "authorList": ["TartaricAcid"]
+  "authorList": ["TartaricAcid", "郝南村", "琥珀酸", "帕金伊"]
 }
 ]

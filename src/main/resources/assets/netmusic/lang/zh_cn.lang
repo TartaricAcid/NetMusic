@@ -1,5 +1,6 @@
 itemGroup.netmusic=网络音乐机
 
+item.netmusic.music_cd.name=音乐唱片
 tooltips.netmusic.cd.time=时长：%s
 tile.netmusic.music_player.name=唱片机
 subtitle.netmusic.block.music_player=唱片机声

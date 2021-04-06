@@ -1,5 +1,6 @@
 itemGroup.netmusic=Net Music
 
+item.netmusic.music_cd.name=Music CD
 tooltips.netmusic.cd.time=Time: %s
 tile.netmusic.music_player.name=Music Player
 subtitle.netmusic.block.music_player=Music Player Sound

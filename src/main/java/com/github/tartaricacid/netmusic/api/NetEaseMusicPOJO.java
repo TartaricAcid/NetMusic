@@ -1,7 +1,6 @@
 package com.github.tartaricacid.netmusic.api;
 
 import com.google.common.collect.Lists;
-import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;

@@ -19,8 +19,8 @@ import java.net.URL;
 public class NetMusicSound extends MovingSound {
     private final URL songUrl;
     private final int tickTimes;
-    private int tick;
     private final BlockPos pos;
+    private int tick;
 
     public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond) {
         super(InitSounds.NET_MUSIC, SoundCategory.RECORDS);

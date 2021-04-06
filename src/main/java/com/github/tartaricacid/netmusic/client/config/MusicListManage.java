@@ -19,11 +19,11 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class MusicListManage {
-    public static List<ItemMusicCD.SongInfo> SONGS = Lists.newArrayList();
     private static final int MAX_NUM = 100;
     private static final Gson GSON = new Gson();
     private static final Path CONFIG_DIR = Minecraft.getMinecraft().gameDir.toPath().resolve("config").resolve("net_music");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("music.json");
+    public static List<ItemMusicCD.SongInfo> SONGS = Lists.newArrayList();
 
     public static void loadConfigSongs() throws IOException {
         if (!Files.isDirectory(CONFIG_DIR)) {
