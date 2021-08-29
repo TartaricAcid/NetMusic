@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 public class NetMusic {
     public static final String MOD_ID = "netmusic";
     public static final String NAME = "Net Music Mod";
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.0.1";
 
     public static Logger LOGGER;
     @SidedProxy(serverSide = "com.github.tartaricacid.netmusic.proxy.CommonProxy",
