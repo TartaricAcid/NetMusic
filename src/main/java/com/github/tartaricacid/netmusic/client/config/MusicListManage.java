@@ -16,12 +16,13 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public class MusicListManage {
     private static final int MAX_NUM = 100;
     private static final Gson GSON = new Gson();
-    private static final Path CONFIG_DIR = Minecraft.getMinecraft().gameDir.toPath().resolve("config").resolve("net_music");
+    private static final Path CONFIG_DIR = Paths.get("config").resolve("net_music");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("music.json");
     public static List<ItemMusicCD.SongInfo> SONGS = Lists.newArrayList();
 
@@ -33,7 +34,7 @@ public class MusicListManage {
         File file = CONFIG_FILE.toFile();
         InputStream stream = null;
         if (Files.exists(CONFIG_FILE)) {
-            stream = new FileInputStream(file);
+            stream = Files.newInputStream(file.toPath());
         } else {
             ResourceLocation res = new ResourceLocation(NetMusic.MOD_ID, "music.json");
             stream = Minecraft.getMinecraft().getResourceManager().getResource(res).getInputStream();
