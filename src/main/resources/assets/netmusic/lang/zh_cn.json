@@ -1,0 +1,10 @@
+{
+  "itemGroup.netmusic": "网络音乐机",
+  "item.netmusic.music_cd": "音乐唱片",
+  "tooltips.netmusic.cd.time": "时长：%s",
+  "block.netmusic.music_player": "唱片机",
+  "subtitle.netmusic.block.music_player": "唱片机声",
+  "command.netmusic.music_cd.reload.success": "所有的唱片重载了！",
+  "command.netmusic.music_cd.add163.success": "添加网易云歌单成功！",
+  "command.netmusic.music_cd.add163.fail": "添加网易云歌单失败！"
+}
