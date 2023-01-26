@@ -1,0 +1,10 @@
+{
+  "itemGroup.netmusic": "Net Music",
+  "item.netmusic.music_cd": "Music CD",
+  "tooltips.netmusic.cd.time": "Time: %s",
+  "block.netmusic.music_player": "Music Player",
+  "subtitle.netmusic.block.music_player": "Music Player Sound",
+  "command.netmusic.music_cd.reload.success": "All CD is reloaded!",
+  "command.netmusic.music_cd.add163.success": "Add NetEase music list success!",
+  "command.netmusic.music_cd.add163.fail": "Add NetEase music list fail!"
+}
