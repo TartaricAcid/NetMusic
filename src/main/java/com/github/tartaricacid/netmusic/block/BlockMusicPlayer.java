@@ -76,6 +76,7 @@ public class BlockMusicPlayer extends BlockHorizontal {
             stack.shrink(1);
         }
         musicPlayer.setPlay(true);
+        musicPlayer.markDirty();
         if (!worldIn.isRemote) {
             MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime);
             NetworkRegistry.TargetPoint point = new NetworkRegistry.TargetPoint(
