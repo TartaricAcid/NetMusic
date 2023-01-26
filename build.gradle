@@ -68,7 +68,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.16.5-36.2.34'
-    implementation group: 'com.googlecode.soundlibs', name: 'mp3spi', version: '1.9.5-1'
+    implementation group: 'com.googlecode.soundlibs', name: 'mp3spi', version: '1.9.5.4'
 }
 
 tasks.withType(JavaCompile) {
@@ -77,9 +77,9 @@ tasks.withType(JavaCompile) {
 
 shadowJar {
     dependencies {
-        include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5-1"))
-        include(dependency("com.googlecode.soundlibs:jlayer:1.0.1-1"))
-        include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7-1"))
+        include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
+        include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
+        include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
     }
 }
 
