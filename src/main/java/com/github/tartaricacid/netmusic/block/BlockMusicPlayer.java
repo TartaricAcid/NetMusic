@@ -98,6 +98,7 @@ public class BlockMusicPlayer extends HorizontalBlock {
             stack.shrink(1);
         }
         musicPlayer.setPlay(true);
+        musicPlayer.markDirty();
         if (!worldIn.isClientSide) {
             MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName);
             NetworkHandler.sendToNearby(worldIn, pos, msg);
