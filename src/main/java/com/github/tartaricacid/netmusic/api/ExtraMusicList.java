@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.api;
 
+import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicList;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
 
@@ -10,13 +11,13 @@ public class ExtraMusicList {
     private int code;
 
     @SerializedName("songs")
-    private List<NetEaseMusicPOJO.Track> tracks = Lists.newArrayList();
+    private List<NetEaseMusicList.Track> tracks = Lists.newArrayList();
 
     public int getCode() {
         return code;
     }
 
-    public List<NetEaseMusicPOJO.Track> getTracks() {
+    public List<NetEaseMusicList.Track> getTracks() {
         return tracks;
     }
 }

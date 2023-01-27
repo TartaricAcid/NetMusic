@@ -36,13 +36,13 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         if (!cd.isEmpty() && te.isPlay()) {
             disc.yRot = (float) ((2 * Math.PI / 40) * ((System.currentTimeMillis() / 50) % 40));
         }
-
         renderMusicPlayer(matrixStack, buffer, combinedLight, facing);
     }
 
     public void renderMusicPlayer(PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, Direction facing) {
         matrixStack.pushPose();
-        matrixStack.translate(0.5, 1.5, 0.5);
+        matrixStack.scale(0.75f, 0.75f, 0.75f);
+        matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
         switch (facing) {
             case NORTH:
             default:

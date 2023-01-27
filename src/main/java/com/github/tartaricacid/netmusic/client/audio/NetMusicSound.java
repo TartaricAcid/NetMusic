@@ -37,7 +37,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             return;
         }
         tick++;
-        if (tick > tickTimes + 20) {
+        if (tick > tickTimes + 50) {
             this.stop();
         } else {
             if (world.getGameTime() % 8 == 0) {
