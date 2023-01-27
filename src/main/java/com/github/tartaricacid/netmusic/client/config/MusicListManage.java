@@ -2,7 +2,8 @@ package com.github.tartaricacid.netmusic.client.config;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.ExtraMusicList;
-import com.github.tartaricacid.netmusic.api.NetEaseMusicPOJO;
+import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicList;
+import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicSong;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -48,12 +49,17 @@ public class MusicListManage {
                 }.getType());
     }
 
+    public static ItemMusicCD.SongInfo get163Song(long id) throws Exception {
+        NetEaseMusicSong pojo = GSON.fromJson(NetMusic.NET_EASE_WEB_API.song(id), NetEaseMusicSong.class);
+        return new ItemMusicCD.SongInfo(pojo);
+    }
+
     public static void add163List(long id) throws Exception {
         if (!Files.isDirectory(CONFIG_DIR)) {
             Files.createDirectories(CONFIG_DIR);
         }
 
-        NetEaseMusicPOJO pojo = GSON.fromJson(NetMusic.NET_EASE_WEB_API.list(id), NetEaseMusicPOJO.class);
+        NetEaseMusicList pojo = GSON.fromJson(NetMusic.NET_EASE_WEB_API.list(id), NetEaseMusicList.class);
 
         int count = pojo.getPlayList().getTracks().size();
         int size = Math.min(pojo.getPlayList().getTrackIds().size(), MAX_NUM);
@@ -69,11 +75,8 @@ public class MusicListManage {
         }
 
         SONGS.clear();
-        for (NetEaseMusicPOJO.Track track : pojo.getPlayList().getTracks()) {
-            String url = String.format("https://music.163.com/song/media/outer/url?id=%d.mp3", track.getId());
-            String name = track.getName();
-            int timeSecond = track.getDuration() / 1000;
-            SONGS.add(new ItemMusicCD.SongInfo(url, name, timeSecond));
+        for (NetEaseMusicList.Track track : pojo.getPlayList().getTracks()) {
+            SONGS.add(new ItemMusicCD.SongInfo(track));
         }
 
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();

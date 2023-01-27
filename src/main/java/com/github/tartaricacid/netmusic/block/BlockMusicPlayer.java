@@ -36,7 +36,7 @@ import net.minecraftforge.items.IItemHandler;
 import javax.annotation.Nullable;
 
 public class BlockMusicPlayer extends HorizontalBlock {
-    protected static final VoxelShape AABB = Block.box(0, 0, 0, 16, 9, 16);
+    protected static final VoxelShape AABB = Block.box(2, 0, 2, 14, 6, 14);
 
     public BlockMusicPlayer() {
         super(AbstractBlock.Properties.of(Material.WOOD).sound(SoundType.WOOD).strength(0.5f).noOcclusion());

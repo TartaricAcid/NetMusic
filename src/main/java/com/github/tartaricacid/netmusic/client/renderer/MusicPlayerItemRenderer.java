@@ -13,6 +13,8 @@ public class MusicPlayerItemRenderer extends ItemStackTileEntityRenderer {
 
     @Override
     public void renderByItem(ItemStack stack, ItemCameraTransforms.TransformType transformType, MatrixStack matrixStack, IRenderTypeBuffer bufferIn, int combinedLightIn, int combinedOverlayIn) {
+        matrixStack.scale(4 / 3.0f, 4 / 3.0f, 4 / 3.0f);
+        matrixStack.translate(0.5 - 0.5 / 0.75, 0, 0.5 - 0.5 / 0.75);
         MusicPlayerRenderer.instance.renderMusicPlayer(matrixStack, bufferIn, combinedLightIn, Direction.WEST, MODEL);
     }
 }

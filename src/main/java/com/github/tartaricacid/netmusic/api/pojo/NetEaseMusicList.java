@@ -1,11 +1,13 @@
-package com.github.tartaricacid.netmusic.api;
+package com.github.tartaricacid.netmusic.api.pojo;
 
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 
-public class NetEaseMusicPOJO {
+public class NetEaseMusicList {
     @SerializedName(value = "result", alternate = "playlist")
     private PlayList playList;
 
@@ -36,6 +38,12 @@ public class NetEaseMusicPOJO {
         @SerializedName(value = "duration", alternate = "dt")
         private int duration;
 
+        @SerializedName(value = "transNames", alternate = "tns")
+        private List<String> transNames;
+
+        @SerializedName("fee")
+        private int fee;
+
         public long getId() {
             return id;
         }
@@ -44,8 +52,13 @@ public class NetEaseMusicPOJO {
             return name;
         }
 
-        public List<Artist> getArtists() {
-            return artists;
+        public List<String> getArtists() {
+            if (artists == null || artists.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<String> artistNames = Lists.newArrayList();
+            artists.forEach(artist -> artistNames.add(artist.name));
+            return artistNames;
         }
 
         public Album getAlbum() {
@@ -54,6 +67,17 @@ public class NetEaseMusicPOJO {
 
         public int getDuration() {
             return duration;
+        }
+
+        public String getTransName() {
+            if (transNames == null || transNames.isEmpty()) {
+                return StringUtils.EMPTY;
+            }
+            return transNames.get(0);
+        }
+
+        public boolean needVip() {
+            return fee == 1;
         }
     }
 
