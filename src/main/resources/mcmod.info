@@ -4,7 +4,7 @@
   "name": "Net Music Mod",
   "description": "A music player mod",
   "version": "${version}",
-  "mcversion": "${mcversion}",
-  "authorList": ["TartaricAcid", "郝南村", "琥珀酸", "帕金伊"]
+  "mcversion": "1.12.2",
+  "authorList": ["TartaricAcid", "郝南村", "琥珀酸", "帕金伊", "SQwatermark"]
 }
 ]

@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
@@ -31,11 +32,10 @@ public class MusicPlayerRenderer extends TileEntitySpecialRenderer<TileEntityMus
         if (!cd.isEmpty() && te.isPlay()) {
             disc.rotateAngleY = (float) ((2 * Math.PI / 40) * ((Minecraft.getSystemTime() / 50) % 40));
         }
-
         renderMusicPlayer(x, y, z, alpha, facing, MODEL);
     }
 
-    public void renderMusicPlayer(double x, double y, double z, float alpha, EnumFacing facing, ModelMusicPlayer modelMusicPlayer) {
+    private void renderMusicPlayer(double x, double y, double z, float alpha, EnumFacing facing, ModelMusicPlayer modelMusicPlayer) {
         this.bindTexture(TEXTURE);
         GlStateManager.pushMatrix();
         GlStateManager.disableCull();
@@ -74,5 +74,12 @@ public class MusicPlayerRenderer extends TileEntitySpecialRenderer<TileEntityMus
             GlStateManager.disableTexture2D();
         }
         GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+    }
+
+    public void bindTexture(ResourceLocation location) {
+        TextureManager texturemanager = this.rendererDispatcher.renderEngine;
+        if (texturemanager != null) {
+            texturemanager.bindTexture(location);
+        }
     }
 }

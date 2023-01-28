@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.proxy;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.network.GiveDiscMessage;
 import com.github.tartaricacid.netmusic.network.MusicToClientMessage;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -15,6 +16,7 @@ public class CommonProxy {
         INSTANCE = NetworkRegistry.INSTANCE.newSimpleChannel(NetMusic.MOD_ID);
 
         INSTANCE.registerMessage(MusicToClientMessage.Handler.class, MusicToClientMessage.class, 0, Side.CLIENT);
+        INSTANCE.registerMessage(GiveDiscMessage.Handler.class, GiveDiscMessage.class, 1, Side.SERVER);
     }
 
     public void init(FMLInitializationEvent event) {
