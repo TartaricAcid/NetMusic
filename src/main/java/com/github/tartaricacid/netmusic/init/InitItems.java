@@ -18,7 +18,7 @@ public final class InitItems {
 
     public static CreativeTabs TAB = new CreativeTabs("netmusic") {
         @Override
-        public ItemStack createIcon() {
+        public ItemStack getTabIconItem() {
             return new ItemStack(InitBlocks.MUSIC_PLAYER);
         }
     };

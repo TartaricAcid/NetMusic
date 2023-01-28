@@ -33,11 +33,11 @@ import javax.annotation.Nonnull;
 import java.util.Random;
 
 public class BlockMusicPlayer extends BlockHorizontal {
-    protected static final AxisAlignedBB AABB = new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0D, 0.5625D, 1.0D);
+    protected static final AxisAlignedBB AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 0.375D, 0.875D);
 
     public BlockMusicPlayer() {
         super(Material.WOOD);
-        setTranslationKey(NetMusic.MOD_ID + "." + "music_player");
+        setUnlocalizedName(NetMusic.MOD_ID + "." + "music_player");
         setHardness(0.5f);
         setRegistryName("music_player");
         setCreativeTab(InitItems.TAB);
@@ -132,7 +132,7 @@ public class BlockMusicPlayer extends BlockHorizontal {
 
     @Override
     public IBlockState getStateFromMeta(int meta) {
-        EnumFacing enumfacing = EnumFacing.byHorizontalIndex(meta);
+        EnumFacing enumfacing = EnumFacing.getHorizontal(meta);
         return getDefaultState().withProperty(FACING, enumfacing);
     }
 

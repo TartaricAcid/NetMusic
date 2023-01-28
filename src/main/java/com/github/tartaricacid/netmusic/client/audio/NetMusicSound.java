@@ -38,7 +38,7 @@ public class NetMusicSound extends MovingSound {
     public void update() {
         World world = FMLClientHandler.instance().getWorldClient();
         tick++;
-        if (tick > tickTimes + 20) {
+        if (tick > tickTimes + 50) {
             donePlaying = true;
         } else {
             if (world.getWorldTime() % 8 == 0) {

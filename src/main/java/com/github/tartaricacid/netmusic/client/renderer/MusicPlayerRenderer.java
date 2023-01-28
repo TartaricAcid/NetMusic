@@ -24,7 +24,7 @@ public class MusicPlayerRenderer extends TileEntitySpecialRenderer<TileEntityMus
 
     @Override
     public void render(TileEntityMusicPlayer te, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
-        EnumFacing facing = EnumFacing.byHorizontalIndex(te.getBlockMetadata());
+        EnumFacing facing = EnumFacing.getHorizontal(te.getBlockMetadata());
         ItemStack cd = te.getPlayerInv().getStackInSlot(0);
         ModelRenderer disc = MODEL.getDiscBone();
         disc.isHidden = cd.isEmpty();
@@ -45,7 +45,8 @@ public class MusicPlayerRenderer extends TileEntitySpecialRenderer<TileEntityMus
         GlStateManager.color(1.0F, 1.0F, 1.0F, alpha);
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.translate(x + 0.5, y + 1.5, z + 0.5);
+        GlStateManager.translate(x + 0.5, y + 1.125, z + 0.5);
+        GlStateManager.scale(0.75f, 0.75f, 0.75f);
         switch (facing) {
             case NORTH:
             default:

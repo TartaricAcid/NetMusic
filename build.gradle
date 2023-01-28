@@ -1,44 +1,49 @@
 buildscript {
     repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
     }
 }
-
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'java'
+        
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
 
 version = '1.0.2'
 group = 'com.github.tartaricacid'
 archivesBaseName = 'netmusic-1.12.2'
 
-sourceCompatibility = targetCompatibility = '1.8'
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    version = "1.12.2-14.23.5.2768"
-    runDir = "run"
-    mappings = "stable_39"
+    mappings channel: 'snapshot', version: '20171003-1.12'
+    accessTransformer = file('src/main/resources/META-INF/netmusic_at.cfg')
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
+}
+
+repositories {
+    flatDir {
+        dir 'libs'
+    }
 }
 
 dependencies {
-}
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
+    implementation 'libs:codecjlayermp3-1.0.1'
+    implementation 'libs:jlayer-1.0.1'
 }
 
 jar {
@@ -47,13 +52,10 @@ jar {
         attributes 'FMLAT': 'netmusic_at.cfg'
         // 将 CodecJLayerMP3 库打包进行模组中
         // 将 Nashorn 库打包进行模组中，因为很多玩家更新 Java 版本太困难了
-        attributes 'ContainedDeps': "codecjlayermp3-1.0.0-SNAPSHOT.jar jlayer-1.0.1.jar"
+        attributes 'ContainedDeps': "codecjlayermp3-1.0.1.jar jlayer-1.0.1.jar"
     }
 }
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
-
-// gradlew.bat -Dorg.gradle.java.home="D:\Program Files\Java\jdk1.8.0_221" -DsocksProxyHost=127.0.0.1 -DsocksProxyPort=1080 setupDecompWorkspace
-
