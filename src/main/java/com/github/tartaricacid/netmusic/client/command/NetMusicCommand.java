@@ -1,6 +1,8 @@
 package com.github.tartaricacid.netmusic.client.command;
 
 import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.network.GiveDiscMessage;
+import com.github.tartaricacid.netmusic.proxy.CommonProxy;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
@@ -22,7 +24,7 @@ public class NetMusicCommand extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/netmusic <reload|get163>";
+        return "/netmusic <reload|get163|get163cd>";
     }
 
     @Override
@@ -37,16 +39,30 @@ public class NetMusicCommand extends CommandBase {
             return;
         }
 
-        if (args.length == 2 && args[0].equals("get163")) {
-            try {
-                long listId = parseLong(args[1]);
-                MusicListManage.add163List(listId);
-                sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.success"));
-            } catch (Exception e) {
-                e.printStackTrace();
-                sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.fail"));
+        if (args.length == 2) {
+            if (args[0].equals("get163")) {
+                try {
+                    long listId = parseLong(args[1]);
+                    MusicListManage.add163List(listId);
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.success"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.fail"));
+                }
+                return;
             }
-            return;
+
+            if (args[0].equals("get163cd")) {
+                try {
+                    long songId = parseLong(args[1]);
+                    CommonProxy.INSTANCE.sendToServer(new GiveDiscMessage(MusicListManage.get163Song(songId)));
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163cd.success"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163cd.fail"));
+                }
+                return;
+            }
         }
 
         sender.sendMessage((new TextComponentTranslation("command.netmusic.music_cd.reload"))
@@ -56,7 +72,7 @@ public class NetMusicCommand extends CommandBase {
     @Override
     public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args, @Nullable BlockPos targetPos) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "reload", "get163");
+            return getListOfStringsMatchingLastWord(args, "reload", "get163", "get163cd");
         }
         return Collections.emptyList();
     }

@@ -8,7 +8,7 @@ tooltips.netmusic.cd.time.format=%s分%s秒
 tile.netmusic.music_player.name=唱片机
 subtitle.netmusic.block.music_player=唱片机声
 
-command.netmusic.music_cd.reload=用法：/netmusic <reload|get163>
+command.netmusic.music_cd.reload=用法：/netmusic <reload|get163|get163cd>
 command.netmusic.music_cd.reload.success=所有的唱片重载了！
 command.netmusic.music_cd.add163.success=添加网易云歌单成功！
 command.netmusic.music_cd.add163.fail=添加网易云歌单失败！
