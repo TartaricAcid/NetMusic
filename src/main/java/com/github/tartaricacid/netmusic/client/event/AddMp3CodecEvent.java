@@ -1,7 +1,7 @@
 package com.github.tartaricacid.netmusic.client.event;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import de.cuina.fireandfuel.CodecJLayerMP3;
+import com.github.tartaricacid.netmusic.client.codec.CodecMp3;
 import net.minecraftforge.client.event.sound.SoundSetupEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -16,7 +16,7 @@ public class AddMp3CodecEvent {
     @SubscribeEvent
     public static void onSoundSetup(SoundSetupEvent event) {
         try {
-            SoundSystemConfig.setCodec("mp3", CodecJLayerMP3.class);
+            SoundSystemConfig.setCodec("mp3", CodecMp3.class);
         } catch (SoundSystemException soundsystemexception) {
             NetMusic.LOGGER.error(soundsystemexception.getMessage());
         }
