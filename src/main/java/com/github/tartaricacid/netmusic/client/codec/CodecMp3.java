@@ -2,7 +2,6 @@ package com.github.tartaricacid.netmusic.client.codec;
 
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 import org.apache.commons.io.IOUtils;
-import org.lwjgl.BufferUtils;
 import paulscode.sound.ICodec;
 import paulscode.sound.SoundBuffer;
 import paulscode.sound.SoundSystemConfig;
@@ -10,31 +9,30 @@ import paulscode.sound.SoundSystemConfig;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class CodecMp3 implements ICodec {
-
-    AudioInputStream stream;
-
-    byte[] array;
-
-    int offset;
+    private AudioInputStream stream;
+    private volatile boolean init = false;
+    private volatile boolean end = false;
 
     @Override
     public void reverseByteOrder(boolean b) {
-
     }
 
     @Override
     public boolean initialize(URL url) {
+        this.init = false;
+        this.cleanup();
         try {
-            InputStream inputStream = url.openStream();
+            InputStream inputStream = new BufferedInputStream(url.openStream());
             AudioInputStream originalInputStream = new MpegAudioFileReader().getAudioInputStream(inputStream);
             AudioFormat originalFormat = originalInputStream.getFormat();
-            // 将mp3转换成pcm TODO 预先检测格式
             AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
             AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
@@ -43,8 +41,8 @@ public class CodecMp3 implements ICodec {
                     1, 2, originalFormat.getSampleRate(), false);
             targetInputStream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
             this.stream = targetInputStream;
-            this.array = IOUtils.toByteArray(stream);
-            this.offset = 0;
+            this.end = false;
+            this.init = true;
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -54,54 +52,64 @@ public class CodecMp3 implements ICodec {
 
     @Override
     public boolean initialized() {
-        return array != null;
+        return this.init;
     }
 
     @Override
     public SoundBuffer read() {
-        int size = SoundSystemConfig.getStreamingBufferSize();
-        ByteBuffer byteBuffer = BufferUtils.createByteBuffer(size);
-        if (array.length >= offset + size) {
-            byteBuffer.put(array, offset, size);
-        } else {
-            byteBuffer.put(new byte[size]);
+        AudioFormat audioFormat = stream.getFormat();
+        byte[] buffer = new byte[SoundSystemConfig.getStreamingBufferSize()];
+        int bytesRead = 0;
+        int tmp;
+        try {
+            while (!this.end && bytesRead < buffer.length) {
+                if ((tmp = stream.read(buffer, bytesRead, buffer.length - bytesRead)) <= 0) {
+                    this.end = true;
+                    break;
+                }
+                bytesRead += tmp;
+            }
+        } catch (IOException e) {
+            this.end = true;
+            return null;
         }
-        offset += size;
-        byteBuffer.flip();
-        byte[] bytes = new byte[size];
-        byteBuffer.get(bytes);
-        return new SoundBuffer(bytes, stream.getFormat());
+        if (bytesRead <= 0) {
+            return null;
+        }
+        if (bytesRead < buffer.length) {
+            buffer = Arrays.copyOfRange(buffer, 0, bytesRead);
+        }
+        return new SoundBuffer(buffer, audioFormat);
     }
 
     @Override
     public SoundBuffer readAll() {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(array);
-        byteBuffer.flip();
-        byte[] bytes = new byte[array.length];
-        byteBuffer.get(bytes);
-        return new SoundBuffer(bytes, stream.getFormat());
+        try {
+            ByteBuffer byteBuffer = ByteBuffer.wrap(IOUtils.toByteArray(stream));
+            return new SoundBuffer(byteBuffer.array(), stream.getFormat());
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     @Override
     public boolean endOfStream() {
-        return array.length < offset;
+        return this.end;
     }
 
     @Override
     public void cleanup() {
-        try {
-            stream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (stream != null) {
+            IOUtils.closeQuietly(stream);
         }
+        stream = null;
     }
 
     @Override
     public AudioFormat getAudioFormat() {
-        if (initialized()) {
-            return stream.getFormat();
-        } else {
+        if (stream == null) {
             return null;
         }
+        return stream.getFormat();
     }
 }
