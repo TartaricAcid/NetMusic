@@ -26,7 +26,10 @@ public class Mp3AudioStream implements AudioStream {
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                 originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
-        this.stream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
+        AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
+        targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
+                1, 2, originalFormat.getSampleRate(), false);
+        this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         this.array = IOUtils.toByteArray(stream);
         this.offset = 0;
     }

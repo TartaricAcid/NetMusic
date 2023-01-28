@@ -1,10 +1,15 @@
 {
   "itemGroup.netmusic": "网络音乐机",
   "item.netmusic.music_cd": "音乐唱片",
-  "tooltips.netmusic.cd.time": "时长：%s",
+  "tooltips.netmusic.cd.trans_name": "歌名",
+  "tooltips.netmusic.cd.artists": "歌手",
+  "tooltips.netmusic.cd.time": "时长",
+  "tooltips.netmusic.cd.time.format": "%s分%s秒",
   "block.netmusic.music_player": "唱片机",
   "subtitle.netmusic.block.music_player": "唱片机声",
   "command.netmusic.music_cd.reload.success": "所有的唱片重载了！",
   "command.netmusic.music_cd.add163.success": "添加网易云歌单成功！",
-  "command.netmusic.music_cd.add163.fail": "添加网易云歌单失败！"
+  "command.netmusic.music_cd.add163.fail": "添加网易云歌单失败！",
+  "command.netmusic.music_cd.add163cd.success": "添加网易云单曲成功！",
+  "command.netmusic.music_cd.add163cd.fail": "添加网易云单曲失败！"
 }
