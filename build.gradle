@@ -42,8 +42,7 @@ repositories {
 
 dependencies {
     minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
-    implementation 'libs:codecjlayermp3-1.0.1'
-    implementation 'libs:jlayer-1.0.1'
+    implementation group: 'com.googlecode.soundlibs', name: 'mp3spi', version: '1.9.5.4'
 }
 
 jar {
@@ -59,3 +58,21 @@ jar {
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+apply plugin: 'idea'
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+subprojects {
+    apply plugin: 'idea'
+}
+
+task prepareAssets(type: Copy) {
+    group = 'build'
+    from project.file('src/main/resources')
+    into project.file('build/classes/java/main')
+}
+
+classes.dependsOn(prepareAssets)
