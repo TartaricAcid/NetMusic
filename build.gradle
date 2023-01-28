@@ -7,7 +7,7 @@ buildscript {
         classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
     }
 }
-        
+
 apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 
@@ -59,3 +59,23 @@ jar {
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }
+
+// 修正无法加载资源文件的问题
+// https://stackoverflow.com/questions/70118942/building-mod-does-not-include-mcmod-info-1-12-2
+apply plugin: 'idea'
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+subprojects {
+    apply plugin: 'idea'
+}
+
+task prepareAssets(type: Copy) {
+    group = 'build'
+    from project.file('src/main/resources')
+    into project.file('build/classes/java/main')
+}
+
+classes.dependsOn(prepareAssets)
