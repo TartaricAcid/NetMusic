@@ -4,12 +4,13 @@
   "tooltips.netmusic.cd.trans_name": "Name",
   "tooltips.netmusic.cd.artists": "Artists",
   "tooltips.netmusic.cd.time": "Time",
-  "tooltips.netmusic.cd.time.format": "%smin%ssecond",
+  "tooltips.netmusic.cd.time.format": "%smin%ss",
   "block.netmusic.music_player": "Music Player",
+  "message.netmusic.music_player.need_vip": "This song is a VIP song and cannot be played",
   "subtitle.netmusic.block.music_player": "Music Player Sound",
   "command.netmusic.music_cd.reload.success": "All CD is reloaded!",
   "command.netmusic.music_cd.add163.success": "Add NetEase music list success!",
-  "command.netmusic.music_cd.add163.fail": "Add NetEase music list fail!",
+  "command.netmusic.music_cd.add163.fail": "Add NetEase music list fail! Please check if the playlist ID is mistyped?",
   "command.netmusic.music_cd.add163cd.success": "Add NetEase music success!",
-  "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail!"
+  "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail! Please check if the music ID is mistyped?"
 }

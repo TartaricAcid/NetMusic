@@ -77,10 +77,8 @@ public class NetMusicCommand {
             long listId = LongArgumentType.getLong(context, SONG_LIST_ID);
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             NetworkHandler.sendToClientPlayer(new GetMusicListMessage(listId), serverPlayer);
-            context.getSource().sendSuccess(new TranslatableComponent("command.netmusic.music_cd.add163.success"), false);
         } catch (Exception e) {
             e.printStackTrace();
-            context.getSource().sendFailure(new TranslatableComponent("command.netmusic.music_cd.add163.fail"));
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -89,7 +87,6 @@ public class NetMusicCommand {
         try {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             NetworkHandler.sendToClientPlayer(new GetMusicListMessage(GetMusicListMessage.RELOAD_MESSAGE), serverPlayer);
-            context.getSource().sendSuccess(new TranslatableComponent("command.netmusic.music_cd.reload.success"), false);
         } catch (Exception e) {
             e.printStackTrace();
         }

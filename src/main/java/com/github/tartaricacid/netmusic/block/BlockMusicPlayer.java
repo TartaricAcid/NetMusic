@@ -4,12 +4,15 @@ import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.TerrainParticle;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -88,6 +91,12 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(stack);
         if (info == null) {
             return InteractionResult.PASS;
+        }
+        if (info.vip) {
+            if (worldIn.isClientSide) {
+                playerIn.sendMessage(new TranslatableComponent("message.netmusic.music_player.need_vip").withStyle(ChatFormatting.RED), Util.NIL_UUID);
+            }
+            return InteractionResult.FAIL;
         }
 
         handler.insertItem(0, stack.copy(), false);
