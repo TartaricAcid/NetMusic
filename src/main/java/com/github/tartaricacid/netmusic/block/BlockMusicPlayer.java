@@ -12,16 +12,16 @@ import net.minecraft.block.material.Material;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.particle.ParticleManager;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.text.Style;
+import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
@@ -30,7 +30,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nonnull;
-import java.util.Random;
 
 public class BlockMusicPlayer extends BlockHorizontal {
     protected static final AxisAlignedBB AABB = new AxisAlignedBB(0.125D, 0.0D, 0.125D, 0.875D, 0.375D, 0.875D);
@@ -68,6 +67,12 @@ public class BlockMusicPlayer extends BlockHorizontal {
         ItemStack stack = playerIn.getHeldItemMainhand();
         ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(stack);
         if (info == null) {
+            return false;
+        }
+        if (info.vip) {
+            if (worldIn.isRemote) {
+                playerIn.sendMessage(new TextComponentTranslation("message.netmusic.music_player.need_vip").setStyle((new Style()).setColor(TextFormatting.RED)));
+            }
             return false;
         }
 
@@ -174,8 +179,7 @@ public class BlockMusicPlayer extends BlockHorizontal {
 
     @Override
     @SideOnly(Side.CLIENT)
-    public boolean hasCustomBreakingProgress(IBlockState state)
-    {
+    public boolean hasCustomBreakingProgress(IBlockState state) {
         return true;
     }
 }

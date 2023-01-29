@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.client.command;
 
 import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.GiveDiscMessage;
 import com.github.tartaricacid.netmusic.proxy.CommonProxy;
 import net.minecraft.command.CommandBase;
@@ -47,7 +48,7 @@ public class NetMusicCommand extends CommandBase {
                     sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.success"));
                 } catch (Exception e) {
                     e.printStackTrace();
-                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.fail"));
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163.fail").setStyle((new Style()).setColor(TextFormatting.RED)));
                 }
                 return;
             }
@@ -55,11 +56,15 @@ public class NetMusicCommand extends CommandBase {
             if (args[0].equals("get163cd")) {
                 try {
                     long songId = parseLong(args[1]);
-                    CommonProxy.INSTANCE.sendToServer(new GiveDiscMessage(MusicListManage.get163Song(songId)));
+                    ItemMusicCD.SongInfo song = MusicListManage.get163Song(songId);
+                    if (song.songUrl == null) {
+                        throw new Exception();
+                    }
+                    CommonProxy.INSTANCE.sendToServer(new GiveDiscMessage(song));
                     sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163cd.success"));
                 } catch (Exception e) {
                     e.printStackTrace();
-                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163cd.fail"));
+                    sender.sendMessage(new TextComponentTranslation("command.netmusic.music_cd.add163cd.fail").setStyle((new Style()).setColor(TextFormatting.RED)));
                 }
                 return;
             }
