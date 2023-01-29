@@ -20,12 +20,15 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ActionResultType;
 import net.minecraft.util.Direction;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.shapes.ISelectionContext;
 import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.IBlockReader;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -91,6 +94,12 @@ public class BlockMusicPlayer extends HorizontalBlock {
         ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(stack);
         if (info == null) {
             return ActionResultType.PASS;
+        }
+        if (info.vip) {
+            if (worldIn.isClientSide) {
+                playerIn.sendMessage(new TranslationTextComponent("message.netmusic.music_player.need_vip").withStyle(TextFormatting.RED), Util.NIL_UUID);
+            }
+            return ActionResultType.FAIL;
         }
 
         handler.insertItem(0, stack.copy(), false);
