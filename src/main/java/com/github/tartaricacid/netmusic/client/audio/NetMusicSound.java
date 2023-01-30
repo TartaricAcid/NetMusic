@@ -2,16 +2,23 @@ package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
+import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.AudioStream;
+import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.IOException;
 import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 
 public class NetMusicSound extends AbstractTickableSoundInstance {
     private final URL songUrl;
@@ -63,7 +70,15 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         }
     }
 
-    public URL getSongUrl() {
-        return songUrl;
+    @Override
+    public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return new Mp3AudioStream(this.songUrl);
+            } catch (IOException | UnsupportedAudioFileException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }, Util.backgroundExecutor());
     }
 }
