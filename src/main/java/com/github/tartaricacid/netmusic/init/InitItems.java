@@ -21,6 +21,7 @@ public class InitItems {
     public static RegistryObject<Item> MUSIC_PLAYER = ITEMS.register("music_player", ItemMusicPlayer::new);
     public static RegistryObject<CreativeModeTab> NET_MUSIC_TAB = TABS.register("netmusic", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.netmusic"))
             .icon(() -> new ItemStack(InitBlocks.MUSIC_PLAYER.get())).displayItems((parameters, output) -> {
+                        output.accept(new ItemStack(MUSIC_PLAYER.get()));
                         for (ItemMusicCD.SongInfo info : MusicListManage.SONGS) {
                             ItemStack stack = new ItemStack(MUSIC_CD.get());
                             ItemMusicCD.setSongInfo(info, stack);

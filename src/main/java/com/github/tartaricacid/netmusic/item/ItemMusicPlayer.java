@@ -12,8 +12,7 @@ import java.util.function.Consumer;
 
 public class ItemMusicPlayer extends BlockItem {
     public ItemMusicPlayer() {
-        super(InitBlocks.MUSIC_PLAYER.get(),
-                (new Item.Properties()));
+        super(InitBlocks.MUSIC_PLAYER.get(), (new Item.Properties()));
     }
 
     @Override
