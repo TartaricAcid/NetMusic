@@ -6,6 +6,7 @@
   "tooltips.netmusic.cd.time": "Time",
   "tooltips.netmusic.cd.time.format": "%smin%ss",
   "block.netmusic.music_player": "Music Player",
+  "block.netmusic.cd_burner": "CD Burner",
   "message.netmusic.music_player.need_vip": "This song is a VIP song and cannot be played",
   "subtitle.netmusic.block.music_player": "Music Player Sound",
   "command.netmusic.music_cd.reload.success": "All CD is reloaded!",

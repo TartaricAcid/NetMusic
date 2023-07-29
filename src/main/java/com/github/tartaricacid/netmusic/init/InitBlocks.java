@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.init;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.block.BlockCDBurner;
 import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.world.level.block.Block;
@@ -14,5 +15,6 @@ public class InitBlocks {
     public static final DeferredRegister<BlockEntityType<?>> TILE_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, NetMusic.MOD_ID);
 
     public static RegistryObject<Block> MUSIC_PLAYER = BLOCKS.register("music_player", BlockMusicPlayer::new);
+    public static RegistryObject<Block> CD_BURNER = BLOCKS.register("cd_burner", BlockCDBurner::new);
     public static RegistryObject<BlockEntityType<TileEntityMusicPlayer>> MUSIC_PLAYER_TE = TILE_ENTITIES.register("music_player", () -> TileEntityMusicPlayer.TYPE);
 }

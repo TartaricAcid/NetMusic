@@ -38,13 +38,12 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
-    protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 6, 14);
+    protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 14, 14);
 
     public BlockMusicPlayer() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH));
     }
-
 
     @Nullable
     @Override

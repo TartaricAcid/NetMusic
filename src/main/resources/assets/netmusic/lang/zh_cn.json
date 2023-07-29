@@ -6,6 +6,7 @@
   "tooltips.netmusic.cd.time": "时长",
   "tooltips.netmusic.cd.time.format": "%s分%s秒",
   "block.netmusic.music_player": "唱片机",
+  "block.netmusic.cd_burner": "唱片刻录机",
   "message.netmusic.music_player.need_vip": "这首歌曲是 VIP 歌曲，无法播放",
   "subtitle.netmusic.block.music_player": "唱片机声",
   "command.netmusic.music_cd.reload.success": "所有的唱片重载了！",
