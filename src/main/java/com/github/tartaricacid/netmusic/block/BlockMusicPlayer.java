@@ -22,6 +22,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -39,7 +42,7 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
-    protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 14, 14);
+    protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 6, 14);
 
     public BlockMusicPlayer() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
@@ -74,7 +77,10 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (blockEntity instanceof TileEntityMusicPlayer te) {
             ItemStack stackInSlot = te.getPlayerInv().getStackInSlot(0);
             if (!stackInSlot.isEmpty()) {
-                return 15;
+                if (te.isPlay()) {
+                    return 15;
+                }
+                return 7;
             }
         }
         return 0;
@@ -96,8 +102,6 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!handler.getStackInSlot(0).isEmpty()) {
             ItemStack extract = handler.extractItem(0, 1, false);
             popResource(worldIn, pos, extract);
-            musicPlayer.setPlay(false);
-            musicPlayer.markDirty();
             return InteractionResult.SUCCESS;
         }
 
@@ -117,12 +121,6 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
-        musicPlayer.setPlay(true);
-        musicPlayer.markDirty();
-        if (!worldIn.isClientSide) {
-            MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName);
-            NetworkHandler.sendToNearby(worldIn, pos, msg);
-        }
         return InteractionResult.SUCCESS;
     }
 
@@ -137,6 +135,17 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             }
         }
         super.onRemove(state, worldIn, pos, newState, isMoving);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> entityType) {
+        return !level.isClientSide ? createTickerHelper(entityType, TileEntityMusicPlayer.TYPE, TileEntityMusicPlayer::tick) : null;
+    }
+
+    @Nullable
+    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
+        return type == entityType ? (BlockEntityTicker<A>) ticker : null;
     }
 
     @Override
