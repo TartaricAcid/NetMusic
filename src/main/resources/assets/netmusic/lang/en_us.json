@@ -5,6 +5,7 @@
   "tooltips.netmusic.cd.artists": "Artists",
   "tooltips.netmusic.cd.time": "Time",
   "tooltips.netmusic.cd.time.format": "%smin%ss",
+  "tooltips.netmusic.cd.empty": "Empty",
   "block.netmusic.music_player": "Music Player",
   "block.netmusic.cd_burner": "CD Burner",
   "message.netmusic.music_player.need_vip": "This song is a VIP song and cannot be played",
@@ -13,5 +14,9 @@
   "command.netmusic.music_cd.add163.success": "Add NetEase music list success!",
   "command.netmusic.music_cd.add163.fail": "Add NetEase music list fail! Please check if the playlist ID is mistyped?",
   "command.netmusic.music_cd.add163cd.success": "Add NetEase music success!",
-  "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail! Please check if the music ID is mistyped?"
+  "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail! Please check if the music ID is mistyped?",
+  "gui.netmusic.cd_burner.craft": "Craft CD",
+  "gui.netmusic.cd_burner.no_music_id": "The song ID cannot be empty, please enter the song ID as a number!",
+  "gui.netmusic.cd_burner.music_id_error": "The song ID format is incorrect,  please enter the song ID as a number!",
+  "gui.netmusic.cd_burner.get_info_error": "The song information cannot be obtained, please check the song ID or network"
 }

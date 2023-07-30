@@ -25,6 +25,7 @@ public class InitItems {
             .icon(() -> new ItemStack(InitBlocks.MUSIC_PLAYER.get())).displayItems((parameters, output) -> {
                         output.accept(new ItemStack(MUSIC_PLAYER.get()));
                         output.accept(new ItemStack(InitItems.CD_BURNER.get()));
+                        output.accept(new ItemStack(InitItems.MUSIC_CD.get()));
                         for (ItemMusicCD.SongInfo info : MusicListManage.SONGS) {
                             ItemStack stack = new ItemStack(MUSIC_CD.get());
                             ItemMusicCD.setSongInfo(info, stack);

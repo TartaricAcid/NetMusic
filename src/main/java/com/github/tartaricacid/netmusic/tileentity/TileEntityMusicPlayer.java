@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.ItemStackHandler;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,6 +28,11 @@ public class TileEntityMusicPlayer extends BlockEntity {
         @Override
         public boolean isItemValid(int slot, @Nonnull ItemStack stack) {
             return stack.getItem() == InitItems.MUSIC_CD.get();
+        }
+
+        @Override
+        protected int getStackLimit(int slot, @NotNull ItemStack stack) {
+            return 1;
         }
     };
     private boolean isPlay = false;

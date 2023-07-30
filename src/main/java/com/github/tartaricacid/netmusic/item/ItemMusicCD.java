@@ -5,6 +5,7 @@ import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicSong;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -24,7 +25,7 @@ public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
     public ItemMusicCD() {
-        super((new Properties()).stacksTo(1));
+        super((new Properties()));
     }
 
     public static SongInfo getSongInfo(ItemStack stack) {
@@ -91,6 +92,8 @@ public class ItemMusicCD extends Item {
             }
             String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
             tooltip.add(Component.literal(text));
+        } else {
+            tooltip.add(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
         }
     }
 

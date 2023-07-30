@@ -1,7 +1,12 @@
 package com.github.tartaricacid.netmusic.client.gui;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.config.MusicListManage;
 import com.github.tartaricacid.netmusic.inventory.CDBurnerMenu;
+import com.github.tartaricacid.netmusic.item.ItemMusicCD;
+import com.github.tartaricacid.netmusic.network.NetworkHandler;
+import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -11,9 +16,16 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
     private static final ResourceLocation BG = new ResourceLocation(NetMusic.MOD_ID, "textures/gui/cd_burner.png");
+    private static final Pattern ID_REG = Pattern.compile("^\\d{4,}$");
+    private static final Pattern URL_1_REG = Pattern.compile("^https://music\\.163\\.com/song\\?id=(\\d+).*$");
+    private static final Pattern URL_2_REG = Pattern.compile("^https://music\\.163\\.com/#/song\\?id=(\\d+).*$");
     private EditBox textField;
+    private Component tips = Component.empty();
 
     public CDBurnerMenuScreen(CDBurnerMenu screenContainer, Inventory inv, Component titleIn) {
         super(screenContainer, inv, titleIn);
@@ -29,17 +41,55 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
             perText = textField.getValue();
             focus = textField.isFocused();
         }
-        textField = new EditBox(getMinecraft().font, leftPos + 12, topPos + 18, 132, 16, Component.literal("Music ID Box"));
+        textField = new EditBox(getMinecraft().font, leftPos + 12, topPos + 18, 132, 16, Component.literal("Music ID Box")) {
+            @Override
+            public void insertText(String text) {
+                Matcher matcher1 = URL_1_REG.matcher(text);
+                if (matcher1.find()) {
+                    String group = matcher1.group(1);
+                    super.insertText(group);
+                    return;
+                }
+
+                Matcher matcher2 = URL_2_REG.matcher(text);
+                if (matcher2.find()) {
+                    String group = matcher2.group(1);
+                    super.insertText(group);
+                    return;
+                }
+
+                super.insertText(text);
+            }
+        };
         textField.setValue(perText);
         textField.setBordered(false);
-        textField.setMaxLength(16);
+        textField.setMaxLength(19);
         textField.setTextColor(0xF3EFE0);
         textField.setFocused(focus);
         textField.moveCursorToEnd();
         this.addWidget(this.textField);
 
-        this.addRenderableWidget(Button.builder(Component.literal("Craft"), (b) -> {
-        }).pos(leftPos + 7, topPos + 33).size(135, 18).build());
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.cd_burner.craft"), (b) -> handleCraftButton())
+                .pos(leftPos + 7, topPos + 33).size(135, 18).build());
+    }
+
+    private void handleCraftButton() {
+        if (Util.isBlank(textField.getValue())) {
+            this.tips = Component.translatable("gui.netmusic.cd_burner.no_music_id");
+            return;
+        }
+        if (ID_REG.matcher(textField.getValue()).matches()) {
+            long id = Long.parseLong(textField.getValue());
+            try {
+                ItemMusicCD.SongInfo song = MusicListManage.get163Song(id);
+                NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
+            } catch (Exception e) {
+                this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
+                e.printStackTrace();
+            }
+        } else {
+            this.tips = Component.translatable("gui.netmusic.cd_burner.music_id_error");
+        }
     }
 
     @Override
@@ -52,8 +102,14 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         int posX = this.leftPos;
         int posY = (this.height - this.imageHeight) / 2;
         graphics.blit(BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+    }
 
+    @Override
+    public void render(GuiGraphics graphics, int x, int y, float partialTicks) {
+        super.render(graphics, x, y, partialTicks);
         textField.render(graphics, x, y, partialTicks);
+        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 55, 135, 0xCF0000);
+        renderTooltip(graphics, x, y);
     }
 
     @Override
