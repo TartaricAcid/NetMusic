@@ -38,23 +38,43 @@ public class CDBurnerMenu extends AbstractContainerMenu {
     public CDBurnerMenu(int id, Inventory inventory) {
         super(TYPE, id);
 
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.addSlot(new Slot(inventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
-            }
-        }
+        this.addSlot(new SlotItemHandler(input, 0, 147, 14));
+        this.addSlot(new SlotItemHandler(output, 0, 147, 57));
 
         for (int i = 0; i < 9; ++i) {
             this.addSlot(new Slot(inventory, i, 8 + i * 18, 142));
         }
 
-        this.addSlot(new SlotItemHandler(input, 0, 147, 14));
-        this.addSlot(new SlotItemHandler(output, 0, 147, 57));
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 9; ++j) {
+                this.addSlot(new Slot(inventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+            }
+        }
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int i) {
-        return null;
+    public ItemStack quickMoveStack(Player player, int index) {
+        ItemStack itemStack = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+        if (slot != null && slot.hasItem()) {
+            ItemStack slotItem = slot.getItem();
+            itemStack = slotItem.copy();
+            if (index < 2) {
+                if (!this.moveItemStackTo(slotItem, 2, this.slots.size(), false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (!this.moveItemStackTo(slotItem, 0, 2, true)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (slotItem.isEmpty()) {
+                slot.setByPlayer(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+
+        return itemStack;
     }
 
     @Override

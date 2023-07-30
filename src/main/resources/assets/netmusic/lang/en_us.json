@@ -16,6 +16,7 @@
   "command.netmusic.music_cd.add163cd.success": "Add NetEase music success!",
   "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail! Please check if the music ID is mistyped?",
   "gui.netmusic.cd_burner.craft": "Craft CD",
+  "gui.netmusic.cd_burner.id.tips": "Enter the song ID",
   "gui.netmusic.cd_burner.no_music_id": "The song ID cannot be empty, please enter the song ID as a number!",
   "gui.netmusic.cd_burner.music_id_error": "The song ID format is incorrect,  please enter the song ID as a number!",
   "gui.netmusic.cd_burner.get_info_error": "The song information cannot be obtained, please check the song ID or network"

@@ -1,17 +1,27 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
+import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.TickingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,6 +45,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
             return 1;
         }
     };
+    private LazyOptional<IItemHandler> playerInvHandler;
     private boolean isPlay = false;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
@@ -68,6 +79,25 @@ public class TileEntityMusicPlayer extends BlockEntity {
 
     public ItemStackHandler getPlayerInv() {
         return playerInv;
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (!this.remove && cap == ForgeCapabilities.ITEM_HANDLER) {
+            if (this.playerInvHandler == null) {
+                this.playerInvHandler = LazyOptional.of(this::createHandler);
+            }
+            return this.playerInvHandler.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    private IItemHandler createHandler() {
+        BlockState state = this.getBlockState();
+        if (state.getBlock() instanceof BlockMusicPlayer) {
+            return this.playerInv;
+        }
+        return null;
     }
 
     public boolean isPlay() {
