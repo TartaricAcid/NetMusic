@@ -228,8 +228,8 @@
 			"scale": [0.25, 0.25, 0.25]
 		},
 		"ground": {
-			"translation": [0, 0.5, 0],
-			"scale": [0.5, 0.5, 0.5]
+			"translation": [0, 3, 0],
+			"scale": [0.3, 0.3, 0.3]
 		},
 		"gui": {
 			"rotation": [10, 145, 0],

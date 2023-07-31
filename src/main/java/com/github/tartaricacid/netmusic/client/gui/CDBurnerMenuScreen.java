@@ -109,7 +109,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
     public void render(GuiGraphics graphics, int x, int y, float partialTicks) {
         super.render(graphics, x, y, partialTicks);
         textField.render(graphics, x, y, partialTicks);
-        if (Util.isBlank(textField.getValue())) {
+        if (Util.isBlank(textField.getValue()) && !textField.isFocused()) {
             graphics.drawString(font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, ChatFormatting.GRAY.getColor(), false);
         }
         graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 55, 135, 0xCF0000);
