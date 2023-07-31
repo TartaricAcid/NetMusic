@@ -1,8 +1,6 @@
 package com.github.tartaricacid.netmusic.block;
 
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -15,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -24,7 +21,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -84,6 +80,29 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             }
         }
         return 0;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos blockPos, Block block, BlockPos fromPos, boolean isMoving) {
+        boolean hasSignal = level.hasNeighborSignal(blockPos);
+        if (hasSignal) {
+            playerMusic(level, blockPos);
+        }
+    }
+
+    private static void playerMusic(Level level, BlockPos blockPos) {
+        BlockEntity blockEntity = level.getBlockEntity(blockPos);
+        if (blockEntity instanceof TileEntityMusicPlayer player) {
+            ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
+            if (player.isPlay() || stackInSlot.isEmpty()) {
+                return;
+            }
+            ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+            if (songInfo != null) {
+                player.setPlayToClient(songInfo);
+                player.markDirty();
+            }
+        }
     }
 
     @Override

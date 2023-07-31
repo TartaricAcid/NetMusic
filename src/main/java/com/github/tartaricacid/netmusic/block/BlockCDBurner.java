@@ -29,6 +29,7 @@ public class BlockCDBurner extends HorizontalDirectionalBlock {
 
     public BlockCDBurner() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
