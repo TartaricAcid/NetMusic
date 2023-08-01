@@ -84,22 +84,32 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
 
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos blockPos, Block block, BlockPos fromPos, boolean isMoving) {
-        boolean hasSignal = level.hasNeighborSignal(blockPos);
-        if (hasSignal) {
-            playerMusic(level, blockPos);
-        }
+        playerMusic(level, blockPos, level.hasNeighborSignal(blockPos));
     }
 
-    private static void playerMusic(Level level, BlockPos blockPos) {
+    private static void playerMusic(Level level, BlockPos blockPos, boolean signal) {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         if (blockEntity instanceof TileEntityMusicPlayer player) {
-            ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
-            if (player.isPlay() || stackInSlot.isEmpty()) {
-                return;
-            }
-            ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
-            if (songInfo != null) {
-                player.setPlayToClient(songInfo);
+            if (signal != player.hasSignal()) {
+                if (signal) {
+                    if (player.isPlay()) {
+                        player.setPlay(false);
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
+                    if (stackInSlot.isEmpty()) {
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                    if (songInfo != null) {
+                        player.setPlayToClient(songInfo);
+                    }
+                }
+                player.setSignal(signal);
                 player.markDirty();
             }
         }

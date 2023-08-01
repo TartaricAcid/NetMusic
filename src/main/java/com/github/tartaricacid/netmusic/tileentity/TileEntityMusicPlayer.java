@@ -39,10 +39,12 @@ public class TileEntityMusicPlayer extends BlockEntity {
     private static final String CD_ITEM_TAG = "ItemStackCD";
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
+    private static final String SIGNAL_TAG = "RedStoneSignal";
     private final ItemStackHandler playerInv = new MusicPlayerInv(this);
     private LazyOptional<IItemHandler> playerInvHandler;
     private boolean isPlay = false;
     private int currentTime;
+    private boolean hasSignal = false;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
         super(TYPE, blockPos, blockState);
@@ -53,6 +55,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
         getPersistentData().put(CD_ITEM_TAG, playerInv.serializeNBT());
         getPersistentData().putBoolean(IS_PLAY_TAG, isPlay);
         getPersistentData().putInt(CURRENT_TIME_TAG, currentTime);
+        getPersistentData().putBoolean(SIGNAL_TAG, hasSignal);
         super.saveAdditional(compound);
     }
 
@@ -62,6 +65,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
         playerInv.deserializeNBT(getPersistentData().getCompound(CD_ITEM_TAG));
         isPlay = getPersistentData().getBoolean(IS_PLAY_TAG);
         currentTime = getPersistentData().getInt(CURRENT_TIME_TAG);
+        hasSignal = getPersistentData().getBoolean(SIGNAL_TAG);
     }
 
     @Override
@@ -148,6 +152,14 @@ public class TileEntityMusicPlayer extends BlockEntity {
 
     public int getCurrentTime() {
         return currentTime;
+    }
+
+    public boolean hasSignal() {
+        return hasSignal;
+    }
+
+    public void setSignal(boolean signal) {
+        this.hasSignal = signal;
     }
 
     public void tickTime() {
