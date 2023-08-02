@@ -100,4 +100,11 @@ reobf {
     shadowJar {}
 }
 
+task shadowJarPublish(type: Jar) {
+    dependsOn reobfShadowJar
+    archiveClassifier = "all"
+    from zipTree("${project.projectDir}/build/reobfShadowJar/output.jar")
+}
+
 assemble.dependsOn shadowJar
+tasks.build.dependsOn shadowJarPublish
