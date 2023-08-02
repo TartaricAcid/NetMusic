@@ -33,11 +33,6 @@ public class MusicPlayerInv extends ItemStackHandler {
         if (stackInSlot.isEmpty()) {
             te.setPlay(false);
             te.setCurrentTime(0);
-        } else {
-            ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
-            if (songInfo != null && !songInfo.vip) {
-                te.setPlayToClient(songInfo);
-            }
         }
         te.markDirty();
     }

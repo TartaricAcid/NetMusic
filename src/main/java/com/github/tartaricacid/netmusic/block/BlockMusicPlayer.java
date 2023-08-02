@@ -150,6 +150,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
+        musicPlayer.setPlayToClient(info);
+        musicPlayer.markDirty();
         return InteractionResult.SUCCESS;
     }
 
