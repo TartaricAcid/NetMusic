@@ -6,6 +6,7 @@ import com.github.tartaricacid.netmusic.client.config.MusicListManage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +15,7 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,7 +30,7 @@ public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
     public ItemMusicCD() {
-        super((new Properties()).stacksTo(1).tab(InitItems.TAB));
+        super((new Properties()).tab(InitItems.TAB));
     }
 
     public static SongInfo getSongInfo(ItemStack stack) {
@@ -59,6 +61,7 @@ public class ItemMusicCD extends Item {
     @Override
     public void fillItemCategory(CreativeModeTab tab, NonNullList<ItemStack> items) {
         if (this.allowdedIn(tab)) {
+            items.add(new ItemStack(InitItems.MUSIC_CD.get()));
             for (SongInfo info : MusicListManage.SONGS) {
                 ItemStack stack = new ItemStack(this);
                 items.add(setSongInfo(info, stack));
@@ -104,6 +107,8 @@ public class ItemMusicCD extends Item {
             }
             String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
             tooltip.add(new TextComponent(text));
+        } else {
+            tooltip.add(new TranslatableComponent("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
         }
     }
 
