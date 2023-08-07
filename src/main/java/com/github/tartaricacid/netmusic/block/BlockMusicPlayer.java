@@ -106,7 +106,7 @@ public class BlockMusicPlayer extends HorizontalBlock {
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
-        musicPlayer.setPlay(true);
+        musicPlayer.setPlayToClient(info);
         musicPlayer.markDirty();
         if (!worldIn.isClientSide) {
             MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName);
@@ -126,6 +126,61 @@ public class BlockMusicPlayer extends HorizontalBlock {
             }
         }
         super.onRemove(state, worldIn, pos, newState, isMoving);
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState blockState) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState pBlockState, World pLevel, BlockPos pPos) {
+        TileEntity blockEntity = pLevel.getBlockEntity(pPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer te = (TileEntityMusicPlayer) blockEntity;
+            ItemStack stackInSlot = te.getPlayerInv().getStackInSlot(0);
+            if (!stackInSlot.isEmpty()) {
+                if (te.isPlay()) {
+                    return 15;
+                }
+                return 7;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, World level, BlockPos blockPos, Block block, BlockPos fromPos, boolean isMoving) {
+        playerMusic(level, blockPos, level.hasNeighborSignal(blockPos));
+    }
+
+    private static void playerMusic(World level, BlockPos blockPos, boolean signal) {
+        TileEntity blockEntity = level.getBlockEntity(blockPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer player = (TileEntityMusicPlayer) blockEntity;
+            if (signal != player.hasSignal()) {
+                if (signal) {
+                    if (player.isPlay()) {
+                        player.setPlay(false);
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
+                    if (stackInSlot.isEmpty()) {
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                    if (songInfo != null) {
+                        player.setPlayToClient(songInfo);
+                    }
+                }
+                player.setSignal(signal);
+                player.markDirty();
+            }
+        }
     }
 
     @Override

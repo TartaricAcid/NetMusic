@@ -3,7 +3,10 @@
     "category": "record",
     "subtitle": "subtitle.netmusic.block.music_player",
     "sounds": [
-      "random/orb"
+      {
+        "name": "random/orb",
+        "stream": true
+      }
     ]
   }
 }

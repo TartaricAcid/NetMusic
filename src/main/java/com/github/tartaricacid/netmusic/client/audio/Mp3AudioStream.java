@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
+import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 import net.minecraft.client.audio.IAudioStream;
 import org.apache.commons.compress.utils.IOUtils;
@@ -27,9 +28,13 @@ public class Mp3AudioStream implements IAudioStream {
         AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                 originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
         AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
-        targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
-                1, 2, originalFormat.getSampleRate(), false);
-        this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
+        if (GeneralConfig.ENABLE_STEREO.get()) {
+            targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
+                    1, 2, originalFormat.getSampleRate(), false);
+            this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
+        } else {
+            this.stream = targetInputStream;
+        }
         this.array = IOUtils.toByteArray(stream);
         this.offset = 0;
     }

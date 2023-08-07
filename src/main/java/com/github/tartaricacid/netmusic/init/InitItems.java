@@ -24,4 +24,5 @@ public class InitItems {
 
     public static RegistryObject<Item> MUSIC_PLAYER = ITEMS.register("music_player", () -> new BlockItem(InitBlocks.MUSIC_PLAYER.get(),
             (new Item.Properties()).tab(TAB).setISTER(() -> MusicPlayerItemRenderer::new)));
+    public static RegistryObject<Item> CD_BURNER = ITEMS.register("cd_burner", () -> new BlockItem(InitBlocks.CD_BURNER.get(), new Item.Properties().stacksTo(1).tab(TAB)));
 }

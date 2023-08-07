@@ -3,6 +3,9 @@ package com.github.tartaricacid.netmusic.client.event;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.init.InitBlocks;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -21,5 +24,6 @@ public class ClientEvent {
                 e.printStackTrace();
             }
         });
+        event.enqueueWork(() -> RenderTypeLookup.setRenderLayer(InitBlocks.CD_BURNER.get(), RenderType.cutout()));
     }
 }

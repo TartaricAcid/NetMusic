@@ -17,6 +17,8 @@ import net.minecraft.nbt.StringNBT;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 import org.apache.commons.lang3.StringUtils;
@@ -28,7 +30,7 @@ public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
     public ItemMusicCD() {
-        super((new Properties()).stacksTo(1).tab(InitItems.TAB));
+        super((new Properties()).tab(InitItems.TAB));
     }
 
     public static SongInfo getSongInfo(ItemStack stack) {
@@ -59,6 +61,7 @@ public class ItemMusicCD extends Item {
     @Override
     public void fillItemCategory(ItemGroup tab, NonNullList<ItemStack> items) {
         if (this.allowdedIn(tab)) {
+            items.add(new ItemStack(InitItems.MUSIC_CD.get()));
             for (SongInfo info : MusicListManage.SONGS) {
                 ItemStack stack = new ItemStack(this);
                 items.add(setSongInfo(info, stack));
@@ -96,6 +99,8 @@ public class ItemMusicCD extends Item {
             }
             String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
             tooltip.add(new StringTextComponent(text));
+        } else {
+            tooltip.add(new TranslationTextComponent("tooltips.netmusic.cd.empty").withStyle(TextFormatting.RED));
         }
     }
 
