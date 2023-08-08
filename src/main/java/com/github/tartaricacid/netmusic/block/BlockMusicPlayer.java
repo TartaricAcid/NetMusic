@@ -1,8 +1,6 @@
 package com.github.tartaricacid.netmusic.block;
 
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -21,6 +19,8 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -102,12 +102,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
-        musicPlayer.setPlay(true);
+        musicPlayer.setPlayToClient(info);
         musicPlayer.markDirty();
-        if (!worldIn.isClientSide) {
-            MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName);
-            NetworkHandler.sendToNearby(worldIn, pos, msg);
-        }
         return InteractionResult.SUCCESS;
     }
 
@@ -122,6 +118,72 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             }
         }
         super.onRemove(state, worldIn, pos, newState, isMoving);
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState blockState) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState pBlockState, Level pLevel, BlockPos pPos) {
+        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer te = (TileEntityMusicPlayer) blockEntity;
+            ItemStack stackInSlot = te.getPlayerInv().getStackInSlot(0);
+            if (!stackInSlot.isEmpty()) {
+                if (te.isPlay()) {
+                    return 15;
+                }
+                return 7;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos blockPos, Block block, BlockPos fromPos, boolean isMoving) {
+        playerMusic(level, blockPos, level.hasNeighborSignal(blockPos));
+    }
+
+    private static void playerMusic(Level level, BlockPos blockPos, boolean signal) {
+        BlockEntity blockEntity = level.getBlockEntity(blockPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer player = (TileEntityMusicPlayer) blockEntity;
+            if (signal != player.hasSignal()) {
+                if (signal) {
+                    if (player.isPlay()) {
+                        player.setPlay(false);
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
+                    if (stackInSlot.isEmpty()) {
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                    if (songInfo != null) {
+                        player.setPlayToClient(songInfo);
+                    }
+                }
+                player.setSignal(signal);
+                player.markDirty();
+            }
+        }
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> entityType) {
+        return !level.isClientSide ? createTickerHelper(entityType, TileEntityMusicPlayer.TYPE, TileEntityMusicPlayer::tick) : null;
+    }
+
+    @Nullable
+    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
+        return type == entityType ? (BlockEntityTicker<A>) ticker : null;
     }
 
     @Override
