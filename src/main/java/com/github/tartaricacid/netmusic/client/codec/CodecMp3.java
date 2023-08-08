@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.codec;
 
+import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 import org.apache.commons.io.IOUtils;
 import paulscode.sound.ICodec;
@@ -37,10 +38,14 @@ public class CodecMp3 implements ICodec {
                     originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
             AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
             // 多通道转单通道，如果是背景音乐就无需多此一举，但如果是某个位置如唱片机发出的声音，就需要转成单通道，否则无法生成立体声
-            targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
-                    1, 2, originalFormat.getSampleRate(), false);
-            targetInputStream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
-            this.stream = targetInputStream;
+            if (GeneralConfig.ENABLE_STEREO) {
+                targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
+                        1, 2, originalFormat.getSampleRate(), false);
+                targetInputStream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
+                this.stream = targetInputStream;
+            } else {
+                this.stream = targetInputStream;
+            }
             this.end = false;
             this.init = true;
             return true;

@@ -3,8 +3,6 @@ package com.github.tartaricacid.netmusic.block;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import com.github.tartaricacid.netmusic.network.MusicToClientMessage;
-import com.github.tartaricacid.netmusic.proxy.CommonProxy;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockHorizontal;
@@ -24,7 +22,6 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.IItemHandler;
@@ -80,15 +77,8 @@ public class BlockMusicPlayer extends BlockHorizontal {
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
-        musicPlayer.setPlay(true);
+        musicPlayer.setPlayToClient(info);
         musicPlayer.markDirty();
-        if (!worldIn.isRemote) {
-            MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime);
-            NetworkRegistry.TargetPoint point = new NetworkRegistry.TargetPoint(
-                    worldIn.provider.getDimension(),
-                    pos.getX(), pos.getY(), pos.getZ(), 96);
-            CommonProxy.INSTANCE.sendToAllAround(msg, point);
-        }
         return true;
     }
 
@@ -103,6 +93,61 @@ public class BlockMusicPlayer extends BlockHorizontal {
             }
         }
         super.breakBlock(worldIn, pos, state);
+    }
+
+    @Override
+    public boolean hasComparatorInputOverride(IBlockState blockState) {
+        return true;
+    }
+
+    @Override
+    public int getComparatorInputOverride(IBlockState blockState, World world, BlockPos blockPos) {
+        TileEntity blockEntity = world.getTileEntity(blockPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer te = (TileEntityMusicPlayer) blockEntity;
+            ItemStack stackInSlot = te.getPlayerInv().getStackInSlot(0);
+            if (!stackInSlot.isEmpty()) {
+                if (te.isPlay()) {
+                    return 15;
+                }
+                return 7;
+            }
+        }
+        return 0;
+    }
+
+    @Override
+    public void neighborChanged(IBlockState state, World level, BlockPos blockPos, Block block, BlockPos fromPos) {
+        playerMusic(level, blockPos, level.isBlockPowered(blockPos));
+    }
+
+    private static void playerMusic(World level, BlockPos blockPos, boolean signal) {
+        TileEntity blockEntity = level.getTileEntity(blockPos);
+        if (blockEntity instanceof TileEntityMusicPlayer) {
+            TileEntityMusicPlayer player = (TileEntityMusicPlayer) blockEntity;
+            if (signal != player.hasSignal()) {
+                if (signal) {
+                    if (player.isPlay()) {
+                        player.setPlay(false);
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemStack stackInSlot = player.getPlayerInv().getStackInSlot(0);
+                    if (stackInSlot.isEmpty()) {
+                        player.setSignal(signal);
+                        player.markDirty();
+                        return;
+                    }
+                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                    if (songInfo != null) {
+                        player.setPlayToClient(songInfo);
+                    }
+                }
+                player.setSignal(signal);
+                player.markDirty();
+            }
+        }
     }
 
     @Override

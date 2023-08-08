@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "result": {
+    "item": "netmusic:cd_burner"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:jukebox"
+    },
+    {
+      "type": "forge:ore_dict",
+      "ore": "ingotIron"
+    },
+    {
+      "type": "forge:ore_dict",
+      "ore": "dustRedstone"
+    }
+  ]
+}

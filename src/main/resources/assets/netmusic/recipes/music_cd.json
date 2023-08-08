@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "result": {
+    "item": "netmusic:music_cd"
+  },
+  "ingredients": [
+    {
+      "type": "forge:ore_dict",
+      "ore": "dyeGray"
+    },
+    {
+      "type": "forge:ore_dict",
+      "ore": "dyeBrown"
+    },
+    {
+      "item": "minecraft:clay_ball"
+    },
+    {
+      "item": "minecraft:clay_ball"
+    }
+  ]
+}

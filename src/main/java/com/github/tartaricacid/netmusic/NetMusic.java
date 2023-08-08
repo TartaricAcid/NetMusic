@@ -21,6 +21,8 @@ public class NetMusic {
             clientSide = "com.github.tartaricacid.netmusic.proxy.ClientProxy")
     public static CommonProxy PROXY;
     public static WebApi NET_EASE_WEB_API;
+    @Mod.Instance
+    public static NetMusic INSTANCE;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {

@@ -28,6 +28,8 @@ public final class InitModel {
         Item.getItemFromBlock(InitBlocks.MUSIC_PLAYER).setTileEntityItemStackRenderer(MusicPlayerItemRenderer.INSTANCE);
         registerRender(InitItems.MUSIC_CD);
         registerRender(InitBlocks.MUSIC_PLAYER);
+        registerRender(InitBlocks.CD_BURNER);
+        registerRender(Item.getItemFromBlock(InitBlocks.CD_BURNER));
     }
 
     public static ModelResourceLocation getModelRl(Item item, String variant) {

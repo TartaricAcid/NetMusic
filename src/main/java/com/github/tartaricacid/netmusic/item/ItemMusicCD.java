@@ -28,7 +28,6 @@ public class ItemMusicCD extends Item {
 
     public ItemMusicCD() {
         setUnlocalizedName(NetMusic.MOD_ID + ".music_cd");
-        setMaxStackSize(1);
         setCreativeTab(InitItems.TAB);
         setRegistryName("music_cd");
     }
@@ -62,6 +61,7 @@ public class ItemMusicCD extends Item {
     @Override
     public void getSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
         if (this.isInCreativeTab(tab)) {
+            items.add(new ItemStack(this));
             for (SongInfo info : MusicListManage.SONGS) {
                 ItemStack stack = new ItemStack(this);
                 items.add(setSongInfo(info, stack));
@@ -107,6 +107,8 @@ public class ItemMusicCD extends Item {
             }
             String text = prefix + I18n.format("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
             tooltip.add(text);
+        } else {
+            tooltip.add("§c" + I18n.format("tooltips.netmusic.cd.empty"));
         }
     }
 

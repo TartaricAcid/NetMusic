@@ -44,7 +44,6 @@ jar {
         // 打包 Access Transformers 文件
         attributes 'FMLAT': 'netmusic_at.cfg'
         // 将 CodecJLayerMP3 库打包进行模组中
-        // 将 Nashorn 库打包进行模组中，因为很多玩家更新 Java 版本太困难了
         attributes 'ContainedDeps': "jlayer-1.0.1.4.jar mp3spi-1.9.5.4.jar tritonus-share-0.3.7.4.jar"
     }
 }

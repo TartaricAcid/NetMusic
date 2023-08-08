@@ -5,7 +5,9 @@ tooltips.netmusic.cd.trans_name=歌名
 tooltips.netmusic.cd.artists=歌手
 tooltips.netmusic.cd.time=时长
 tooltips.netmusic.cd.time.format=%s分%s秒
+tooltips.netmusic.cd.empty=空
 tile.netmusic.music_player.name=唱片机
+tile.netmusic.cd_burner.name=唱片刻录机
 message.netmusic.music_player.need_vip=这首歌曲是 VIP 歌曲，无法播放
 subtitle.netmusic.block.music_player=唱片机声
 
@@ -14,4 +16,9 @@ command.netmusic.music_cd.reload.success=所有的唱片重载了！
 command.netmusic.music_cd.add163.success=添加网易云歌单成功！
 command.netmusic.music_cd.add163.fail=添加网易云歌单失败！请检查歌单 ID 是否错误？
 command.netmusic.music_cd.add163cd.success=添加网易云单曲成功！
-command.netmusic.music_cd.add163cd.fail=添加网易云单曲失败！请检查歌曲 ID 是否错误？
+
+gui.netmusic.cd_burner.craft=制作唱片
+gui.netmusic.cd_burner.id.tips=输入歌曲ID
+gui.netmusic.cd_burner.no_music_id=歌曲ID不能为空，请输入数字形式的歌曲ID！
+gui.netmusic.cd_burner.music_id_error=歌曲ID必须为数字，请输入数字形式的歌曲ID！
+gui.netmusic.cd_burner.get_info_error=无法获取歌曲信息，请检查歌曲ID或者网络！

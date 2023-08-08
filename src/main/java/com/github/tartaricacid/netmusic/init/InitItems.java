@@ -27,5 +27,6 @@ public final class InitItems {
     public static void register(RegistryEvent.Register<Item> event) {
         event.getRegistry().register(new ItemMusicCD());
         event.getRegistry().register(new ItemBlock(InitBlocks.MUSIC_PLAYER).setRegistryName("music_player"));
+        event.getRegistry().register(new ItemBlock(InitBlocks.CD_BURNER).setRegistryName("cd_burner"));
     }
 }
