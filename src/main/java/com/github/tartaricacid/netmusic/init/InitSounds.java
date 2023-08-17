@@ -12,5 +12,7 @@ public class InitSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, NetMusic.MOD_ID);
     public static RegistryObject<SoundEvent> NET_MUSIC = SOUND_EVENTS.register("net_music", () ->
             SoundEvent.createVariableRangeEvent(new ResourceLocation(NetMusic.MOD_ID, "net_music"))
+
     );
+
 }
