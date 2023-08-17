@@ -10,12 +10,10 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.function.Consumer;
 
-import static com.github.tartaricacid.netmusic.init.InitItems.TAB;
-
 public class ItemMusicPlayer extends BlockItem {
     public ItemMusicPlayer() {
         super(InitBlocks.MUSIC_PLAYER.get(),
-                (new Item.Properties()).tab(TAB));
+                (new Item.Properties()));
     }
 
     @Override
