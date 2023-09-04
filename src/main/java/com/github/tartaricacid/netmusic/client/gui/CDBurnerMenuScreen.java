@@ -68,11 +68,12 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         textField.setBordered(false);
         textField.setMaxLength(19);
         textField.setTextColor(0xF3EFE0);
-        textField.setFocus(focus);
+        textField.setFocused(focus);
         textField.moveCursorToEnd();
         this.addWidget(this.textField);
-        this.addRenderableWidget(new Button(leftPos + 7, topPos + 33, 135, 20,
-                Component.translatable("gui.netmusic.cd_burner.craft"), (b) -> handleCraftButton()));
+        ;
+        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.netmusic.cd_burner.craft"), (Button.OnPress) p_93751_ -> handleCraftButton())
+                .pos(leftPos + 7, topPos + 33).size(135, 20).build());
     }
 
     private void handleCraftButton() {
@@ -116,7 +117,8 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         if (StringUtils.isBlank(textField.getValue()) && !textField.isFocused()) {
             drawString(pPoseStack, font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, ChatFormatting.GRAY.getColor());
         }
-        font.drawWordWrap(tips, this.leftPos + 8, this.topPos + 55, 135, 0xCF0000);
+
+        font.drawWordWrap(pPoseStack, tips, this.leftPos + 8, this.topPos + 55, 135, 0xCF0000);
         renderTooltip(pPoseStack, pMouseX, pMouseY);
     }
 

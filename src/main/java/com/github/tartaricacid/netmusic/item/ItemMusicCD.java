@@ -14,10 +14,12 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
 
@@ -28,7 +30,7 @@ public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
     public ItemMusicCD() {
-        super((new Properties()).tab(InitItems.TAB));
+        super((new Properties()));
     }
 
     public static SongInfo getSongInfo(ItemStack stack) {
@@ -56,16 +58,7 @@ public class ItemMusicCD extends Item {
         return stack;
     }
 
-    @Override
-    public void fillItemCategory(CreativeModeTab tab, NonNullList<ItemStack> items) {
-        if (this.allowedIn(tab)) {
-            items.add(new ItemStack(InitItems.MUSIC_CD.get()));
-            for (SongInfo info : MusicListManage.SONGS) {
-                ItemStack stack = new ItemStack(this);
-                items.add(setSongInfo(info, stack));
-            }
-        }
-    }
+
 
     @Override
     public Component getName(ItemStack stack) {

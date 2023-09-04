@@ -5,7 +5,7 @@ import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -48,16 +48,16 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
             default:
                 break;
             case SOUTH:
-                matrixStack.mulPose(Vector3f.YP.rotationDegrees(180));
+                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
                 break;
             case EAST:
-                matrixStack.mulPose(Vector3f.YP.rotationDegrees(270));
+                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
                 break;
             case WEST:
-                matrixStack.mulPose(Vector3f.YP.rotationDegrees(90));
+                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
                 break;
         }
-        matrixStack.mulPose(Vector3f.ZP.rotationDegrees(180));
+        matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
         MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         matrixStack.popPose();

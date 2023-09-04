@@ -15,13 +15,7 @@ public class InitItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, NetMusic.MOD_ID);
 
     public static RegistryObject<Item> MUSIC_CD = ITEMS.register("music_cd", ItemMusicCD::new);
-    public static CreativeModeTab TAB = new CreativeModeTab("netmusic") {
-        @Override
-        public ItemStack makeIcon() {
-            return new ItemStack(InitBlocks.MUSIC_PLAYER.get());
-        }
-    };
 
     public static RegistryObject<Item> MUSIC_PLAYER = ITEMS.register("music_player", ItemMusicPlayer::new);
-    public static RegistryObject<Item> CD_BURNER = ITEMS.register("cd_burner", () -> new BlockItem(InitBlocks.CD_BURNER.get(), new Item.Properties().stacksTo(1).tab(TAB)));
+    public static RegistryObject<Item> CD_BURNER = ITEMS.register("cd_burner", () -> new BlockItem(InitBlocks.CD_BURNER.get(), new Item.Properties().stacksTo(1)));
 }
