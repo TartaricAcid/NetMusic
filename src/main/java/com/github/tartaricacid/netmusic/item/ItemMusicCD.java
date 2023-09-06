@@ -58,8 +58,6 @@ public class ItemMusicCD extends Item {
         return stack;
     }
 
-
-
     @Override
     public Component getName(ItemStack stack) {
         SongInfo info = getSongInfo(stack);
@@ -80,7 +78,6 @@ public class ItemMusicCD extends Item {
         String secStr = sec <= 9 ? ("0" + sec) : ("" + sec);
         return I18n.get("tooltips.netmusic.cd.time.format", minStr, secStr);
     }
-
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {

@@ -72,7 +72,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         textField.moveCursorToEnd();
         this.addWidget(this.textField);
         ;
-        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.netmusic.cd_burner.craft"), (Button.OnPress) p_93751_ -> handleCraftButton())
+        this.addRenderableWidget(new Button.Builder(Component.translatable("gui.netmusic.cd_burner.craft"), button -> handleCraftButton())
                 .pos(leftPos + 7, topPos + 33).size(135, 20).build());
     }
 
@@ -96,7 +96,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
     }
 
     @Override
-    protected void renderLabels(PoseStack matrixStack, int x, int y) {
+    protected void renderLabels(PoseStack poseStack, int x, int y) {
     }
 
     @Override
@@ -117,7 +117,6 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         if (StringUtils.isBlank(textField.getValue()) && !textField.isFocused()) {
             drawString(pPoseStack, font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, ChatFormatting.GRAY.getColor());
         }
-
         font.drawWordWrap(pPoseStack, tips, this.leftPos + 8, this.topPos + 55, 135, 0xCF0000);
         renderTooltip(pPoseStack, pMouseX, pMouseY);
     }
