@@ -49,8 +49,9 @@ public class MusicToClientMessage {
         NetworkEvent.Context context = contextSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
             context.enqueueWork(() ->
-                    CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor())
-            );
+                    CompletableFuture.runAsync(() -> {
+                        onHandle(message);
+                    }, Util.backgroundExecutor()));
         }
         context.setPacketHandled(true);
     }
@@ -77,8 +78,11 @@ public class MusicToClientMessage {
         try {
             urlFinal = new URL(url);
             NetMusicSound sound = new NetMusicSound(message.pos, urlFinal, message.timeSecond);
-            Minecraft.getInstance().getSoundManager().play(sound);
-            Minecraft.getInstance().gui.setNowPlaying(Component.literal(message.songName));
+            Minecraft.getInstance().submitAsync(() -> {
+                        Minecraft.getInstance().getSoundManager().play(sound);
+                        Minecraft.getInstance().gui.setNowPlaying(Component.literal(message.songName));
+                    }
+            );
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
