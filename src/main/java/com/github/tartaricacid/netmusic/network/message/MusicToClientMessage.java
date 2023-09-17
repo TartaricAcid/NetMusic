@@ -12,7 +12,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.awt.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -48,10 +47,7 @@ public class MusicToClientMessage {
     public static void handle(MusicToClientMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() ->
-                    CompletableFuture.runAsync(() -> {
-                        onHandle(message);
-                    }, Util.backgroundExecutor()));
+            context.enqueueWork(() -> CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor()));
         }
         context.setPacketHandled(true);
     }
@@ -67,8 +63,7 @@ public class MusicToClientMessage {
             }
         }
         if (url != null && !url.equals(ERROR_404)) {
-            String finalUrl = url;
-            playMusic(message, finalUrl);
+            playMusic(message, url);
         }
     }
 
@@ -79,10 +74,9 @@ public class MusicToClientMessage {
             urlFinal = new URL(url);
             NetMusicSound sound = new NetMusicSound(message.pos, urlFinal, message.timeSecond);
             Minecraft.getInstance().submitAsync(() -> {
-                        Minecraft.getInstance().getSoundManager().play(sound);
-                        Minecraft.getInstance().gui.setNowPlaying(Component.literal(message.songName));
-                    }
-            );
+                Minecraft.getInstance().getSoundManager().play(sound);
+                Minecraft.getInstance().gui.setNowPlaying(Component.literal(message.songName));
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
