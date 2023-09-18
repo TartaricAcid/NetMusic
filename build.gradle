@@ -17,14 +17,13 @@ apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
-version = '1.1.0'
+version = '1.1.1'
 group = 'com.github.tartaricacid'
 archivesBaseName = 'netmusic-1.18.2'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 minecraft {
-    // mappings channel: 'official', version: '1.16.5'
     mappings channel: 'parchment', version: '2022.11.06-1.18.2'
     // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {

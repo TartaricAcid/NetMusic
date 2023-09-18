@@ -3,6 +3,7 @@ package com.github.tartaricacid.netmusic.network.message;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.NetWorker;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,6 +15,7 @@ import net.minecraftforge.network.NetworkEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 public class MusicToClientMessage {
@@ -45,7 +47,7 @@ public class MusicToClientMessage {
     public static void handle(MusicToClientMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> onHandle(message));
+            context.enqueueWork(() -> CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor()));
         }
         context.setPacketHandled(true);
     }
@@ -70,8 +72,8 @@ public class MusicToClientMessage {
         final URL urlFinal;
         try {
             urlFinal = new URL(url);
+            NetMusicSound sound = new NetMusicSound(message.pos, urlFinal, message.timeSecond);
             Minecraft.getInstance().submitAsync(() -> {
-                NetMusicSound sound = new NetMusicSound(message.pos, urlFinal, message.timeSecond);
                 Minecraft.getInstance().getSoundManager().play(sound);
                 Minecraft.getInstance().gui.setNowPlaying(new TextComponent(message.songName));
             });
