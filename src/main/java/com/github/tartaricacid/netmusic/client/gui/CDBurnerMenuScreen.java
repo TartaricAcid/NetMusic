@@ -71,7 +71,6 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         textField.setFocused(focus);
         textField.moveCursorToEnd();
         this.addWidget(this.textField);
-        ;
         this.addRenderableWidget(new Button.Builder(Component.translatable("gui.netmusic.cd_burner.craft"), button -> handleCraftButton())
                 .pos(leftPos + 7, topPos + 33).size(135, 20).build());
     }
