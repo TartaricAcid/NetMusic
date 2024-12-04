@@ -213,13 +213,6 @@ public class ComputerMenuScreen extends HandledScreen<ComputerMenu> {
         this.timeTextField.setText(timeValue);
     }
 
-//    @Override
-//    protected void handledScreenTick() {
-//        this.urlTextField.tick();
-//        this.nameTextField.tick();
-//        this.timeTextField.tick();
-//    }
-
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.urlTextField.mouseClicked(mouseX, mouseY, button)) {
