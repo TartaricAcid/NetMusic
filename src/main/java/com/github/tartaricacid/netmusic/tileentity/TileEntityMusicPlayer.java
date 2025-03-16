@@ -20,6 +20,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISABLE;
+
 /**
  * @author : IMG
  * @create : 2024/10/4
@@ -105,12 +107,23 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         }
     }
 
-    public static void tick(World world, BlockPos blockPos, BlockState blockState, TileEntityMusicPlayer te) {
+    public static void tick(World level, BlockPos blockPos, BlockState blockState, TileEntityMusicPlayer te) {
         te.tickTime();
-        if ((0 < te.getCurrentTime() && te.getCurrentTime() < 16 && te.getCurrentTime() % 5 == 0) || te.getStack(0).isEmpty()) {
-            te.setPlay(false);
+        if (0 < te.getCurrentTime() && te.getCurrentTime() < 16 && te.getCurrentTime() % 5 == 0) {
+            if (blockState.get(CYCLE_DISABLE)) {
+                te.setPlay(false);
+                te.markDirty();
+            } else {
+                ItemStack stackInSlot = te.getItems().get(0);
+                if (stackInSlot.isEmpty()) {
+                    return;
+                }
+                ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                if (songInfo != null) {
+                    te.setPlayToClient(songInfo);
+                }
+            }
         }
-        te.markDirty();
     }
 
     @Override

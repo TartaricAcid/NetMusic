@@ -17,6 +17,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import org.apache.commons.lang3.StringUtils;
 
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
@@ -51,6 +52,10 @@ public class NetMusicCommand {
         try {
             long songId = LongArgumentType.getLong(context, SONG_ID);
             ItemMusicCD.SongInfo songInfo = MusicListManage.get163Song(songId);
+            if (StringUtils.isBlank(songInfo.songUrl) || StringUtils.isBlank(songInfo.songName)) {
+                context.getSource().sendError(Text.translatable("gui.netmusic.cd_burner.get_info_error"));
+                return Command.SINGLE_SUCCESS;
+            }
             ItemStack musicDisc = ItemMusicCD.setSongInfo(songInfo, InitItems.MUSIC_CD.getDefaultStack());
             ServerPlayerEntity serverPlayer = context.getSource().getPlayerOrThrow();
             boolean canPlaceIn = serverPlayer.getInventory().insertStack(musicDisc);

@@ -11,6 +11,7 @@ import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.state.StateManager;
+import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -29,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
  * @create : 2024/10/4
  */
 public class BlockMusicPlayer extends HorizontalFacingBlock implements BlockEntityProvider {
+    public static final BooleanProperty CYCLE_DISABLE = BooleanProperty.of("cycle_disable");
 
     public BlockMusicPlayer(Settings settings) {
         super(Settings.create().sounds(BlockSoundGroup.WOOD).strength(0.5f));
@@ -37,7 +39,7 @@ public class BlockMusicPlayer extends HorizontalFacingBlock implements BlockEnti
 
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(Properties.HORIZONTAL_FACING);
+        builder.add(Properties.HORIZONTAL_FACING, CYCLE_DISABLE);
     }
 
     @Nullable
@@ -70,7 +72,7 @@ public class BlockMusicPlayer extends HorizontalFacingBlock implements BlockEnti
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
         Direction direction = ctx.getHorizontalPlayerFacing().getOpposite();
-        return this.getDefaultState().with(Properties.HORIZONTAL_FACING, direction);
+        return this.getDefaultState().with(FACING, direction).with(CYCLE_DISABLE, true);
     }
 
     @Override
