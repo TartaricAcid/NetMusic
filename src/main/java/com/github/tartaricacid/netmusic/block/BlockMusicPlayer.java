@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -39,6 +40,7 @@ import java.util.function.Consumer;
 
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
     protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 6, 14);
+    public static final BooleanProperty CYCLE_DISABLE = BooleanProperty.create("cycle_disable");
 
     public BlockMusicPlayer() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
@@ -53,14 +55,14 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, CYCLE_DISABLE);
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();
-        return this.defaultBlockState().setValue(FACING, direction);
+        return this.defaultBlockState().setValue(FACING, direction).setValue(CYCLE_DISABLE, true);
     }
 
     @Override
