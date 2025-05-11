@@ -29,7 +29,8 @@ public class NetMusicCommand {
     private static final String SONG_ID = "song_id";
 
     public static LiteralArgumentBuilder<CommandSourceStack> get() {
-        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(ROOT_NAME);
+        LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(ROOT_NAME)
+                .requires((source -> source.hasPermission(2)));
         LiteralArgumentBuilder<CommandSourceStack> get163List = Commands.literal(GET_163_NAME);
         LiteralArgumentBuilder<CommandSourceStack> get163Song = Commands.literal(GET_163_CD_NAME);
         LiteralArgumentBuilder<CommandSourceStack> reload = Commands.literal(RELOAD_NAME);
