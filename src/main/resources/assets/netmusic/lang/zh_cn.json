@@ -3,7 +3,7 @@
   "block.netmusic.cd_burner.desc": "只可以写入网易云音乐链接（仅可在中国大陆可用）",
   "block.netmusic.computer": "电脑",
   "block.netmusic.computer.local_file.desc": "你还可以使用本地文件路径，但这样就只有你自己能听到音乐",
-  "block.netmusic.computer.web_link.desc": "你可以输入任意网络链接，只支持 mp3 格式",
+  "block.netmusic.computer.web_link.desc": "你可以输入任意网络链接，只支持 mp3 和 flac 格式",
   "block.netmusic.music_player": "唱片机",
   "command.netmusic.music_cd.add163.fail": "添加网易云歌单失败！请检查歌单 ID 是否错误？",
   "command.netmusic.music_cd.add163.success": "添加网易云歌单成功！",
