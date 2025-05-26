@@ -103,9 +103,9 @@ dependencies {
     compileOnly(fg.deobf("mezz.jei:jei-1.20.1-forge-api:15.0.0.12"))
     // at runtime, use the full JEI jar for Forge
     runtimeOnly(fg.deobf("mezz.jei:jei-1.20.1-forge:15.0.0.12"))
-
     // Sound Physics Remastered
-    implementation fg.deobf("curse.maven:sound-physics-remastered-535489:5525256")
+    runtimeOnly(fg.deobf("curse.maven:sound-physics-remastered-535489:5525256"))
+    
     implementation fg.deobf("curse.maven:touhou-little-maid-355044:4968578")
     //implementation fg.deobf("curse.maven:touhou-little-maid-355044:5054217")
 
