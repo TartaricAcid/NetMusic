@@ -96,13 +96,16 @@ repositories {
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.1.0'
     minecraftLibrary 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    minecraftLibrary files("libs/jflac-codec-1.5.3-SNAPSHOT.jar")
 
     // compile against the JEI API but do not include it at runtime
     compileOnly(fg.deobf("mezz.jei:jei-1.20.1-common-api:15.0.0.12"))
     compileOnly(fg.deobf("mezz.jei:jei-1.20.1-forge-api:15.0.0.12"))
     // at runtime, use the full JEI jar for Forge
     runtimeOnly(fg.deobf("mezz.jei:jei-1.20.1-forge:15.0.0.12"))
-
+    // Sound Physics Remastered
+    runtimeOnly(fg.deobf("curse.maven:sound-physics-remastered-535489:5525256"))
+    
     implementation fg.deobf("curse.maven:touhou-little-maid-355044:4968578")
     //implementation fg.deobf("curse.maven:touhou-little-maid-355044:5054217")
 
@@ -120,11 +123,13 @@ shadowJar {
         include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
         include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
         include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
+        include(dependency("org.jflac:jflac-codec:1.5.3"))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
     relocate 'javazoom.spi', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.spi'
     relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
+    relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
 
     mergeServiceFiles()
 }
