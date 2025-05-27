@@ -1,7 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
-import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 import net.minecraft.client.sounds.AudioStream;
 import org.lwjgl.BufferUtils;
 
@@ -9,6 +8,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -17,15 +17,17 @@ import java.nio.ByteBuffer;
 /**
  * @author SQwatermark
  */
-public class Mp3AudioStream implements AudioStream {
+public class NetMusicAudioStream implements AudioStream {
     private final AudioInputStream stream;
     private final int frameSize;
     private final byte[] frame;
 
-    public Mp3AudioStream(URL url) throws UnsupportedAudioFileException, IOException {
+    public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
         InputStream inputStream = url.openStream();
-        skipID3(inputStream);
-        AudioInputStream originalInputStream = new MpegAudioFileReader().getAudioInputStream(inputStream);
+        // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        skipID3(bufferedInputStream);
+        AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                 originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);

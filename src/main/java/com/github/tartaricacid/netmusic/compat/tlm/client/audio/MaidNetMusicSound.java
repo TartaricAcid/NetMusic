@@ -1,6 +1,6 @@
 package com.github.tartaricacid.netmusic.compat.tlm.client.audio;
 
-import com.github.tartaricacid.netmusic.client.audio.Mp3AudioStream;
+import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.MusicPlayerBackpack;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -75,7 +75,7 @@ public class MaidNetMusicSound extends AbstractTickableSoundInstance {
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return new Mp3AudioStream(this.songUrl);
+                return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
                 e.printStackTrace();
             }

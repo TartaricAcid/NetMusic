@@ -136,6 +136,8 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
     // mp3 播放库
     implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    // flac 播放库
+    implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
     // 女仆模组兼容
     implementation 'curse.maven:touhou-little-maid-355044:6596075-sources-6596128'
     // IPN
@@ -149,6 +151,7 @@ dependencies {
     jarJar "com.googlecode.soundlibs:mp3spi:1.9.5.4"
     jarJar "com.googlecode.soundlibs:jlayer:1.0.1.4"
     jarJar "com.googlecode.soundlibs:tritonus-share:0.3.7.4"
+    jarJar "libs:jflac-codec:1.5.3-SNAPSHOT"
 }
 
 // 启用 jarJar
