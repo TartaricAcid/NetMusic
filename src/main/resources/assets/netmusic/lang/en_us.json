@@ -15,6 +15,7 @@
   "block.netmusic.computer.web_link.desc": "You can use any network link, Only supports mp3 and flac formats",
   "block.netmusic.computer.local_file.desc": "You can also use the local file path, but then only you can hear the music",
   "message.netmusic.music_player.need_vip": "This song is a VIP song and cannot be played",
+  "message.netmusic.music_player.404": "Unable to find song: %s",
   "subtitle.netmusic.block.music_player": "Music Player Sound",
   "command.netmusic.music_cd.reload.success": "All CD is reloaded!",
   "command.netmusic.music_cd.add163.success": "Add NetEase music list success!",

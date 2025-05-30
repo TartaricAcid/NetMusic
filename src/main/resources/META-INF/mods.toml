@@ -25,6 +25,6 @@ side = "BOTH"
 [[dependencies.netmusic]]
 modId = "touhou_little_maid"
 mandatory = false
-versionRange = "[1.1.5,)"
+versionRange = "[1.3.0,)"
 ordering = "AFTER"
 side = "BOTH"

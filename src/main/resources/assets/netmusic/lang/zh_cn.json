@@ -35,6 +35,7 @@
   "item.netmusic.music_player_backpack": "音响背包",
   "itemGroup.netmusic": "网络音乐机",
   "message.netmusic.music_player.need_vip": "这首歌曲是 VIP 歌曲，无法播放",
+  "message.netmusic.music_player.404": "无法找到链接为 %s 的歌曲",
   "subtitle.netmusic.block.music_player": "唱片机声",
   "tooltips.netmusic.cd.artists": "歌手",
   "tooltips.netmusic.cd.empty": "空",

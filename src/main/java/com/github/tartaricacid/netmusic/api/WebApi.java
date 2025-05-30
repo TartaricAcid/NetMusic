@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.api;
 
+import com.google.common.net.UrlEscapers;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -25,6 +26,15 @@ public final class WebApi {
         this.requestPropertyData = requestPropertyData;
     }
 
+    public static String getSearchUrl(String searchText, int type, int limit) {
+        String escape = UrlEscapers.urlPathSegmentEscaper().escape(searchText);
+        return "https://music.163.com/api/search/get/web?s=%s&type=%d&limit=%d".formatted(escape, type, limit);
+    }
+
+    /**
+     * 这个 URL 目前已经出问题了，无法使用
+     */
+    @Deprecated
     public String search(String key, long size, long page, int type) throws Exception {
         String url = "http://music.163.com/weapi/cloudsearch/get/web?csrf_token=";
         String param = "{\"s\":\"" + key + "\",\"type\":" + type + ",\"offset\":" + (page - 1) * size + ",\"limit\":" + size + ",\"total\":true,\"csrf_token\":\"\"}";

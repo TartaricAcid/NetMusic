@@ -78,11 +78,19 @@ repositories {
         // Patchouli
         name = "Jared's maven"
         url = "https://maven.blamejared.com/"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
     }
     maven {
         // location of a maven mirror for JEI files, as a fallback
         name = "ModMaven"
         url = "https://modmaven.dev"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
     }
     maven {
         name = "Curse Maven"
@@ -105,9 +113,8 @@ dependencies {
     runtimeOnly(fg.deobf("mezz.jei:jei-1.20.1-forge:15.0.0.12"))
     // Sound Physics Remastered
     runtimeOnly(fg.deobf("curse.maven:sound-physics-remastered-535489:5525256"))
-    
-    implementation fg.deobf("curse.maven:touhou-little-maid-355044:4968578")
-    //implementation fg.deobf("curse.maven:touhou-little-maid-355044:5054217")
+
+    implementation fg.deobf('curse.maven:touhou-little-maid-355044:6589004-sources-6589098')
 
     runtimeOnly "curse.maven:kotlin-for-forge-351264:4983659"
     runtimeOnly fg.deobf("curse.maven:libipn-679177:4870127")
