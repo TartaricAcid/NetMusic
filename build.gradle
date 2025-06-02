@@ -98,18 +98,36 @@ repositories {
         dir "libs"
     }
     maven {
+        name = "Curse Maven"
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
     }
     maven {
         // location of the maven that hosts JEI files since January 2023
         name = "Jared's maven"
         url = "https://maven.blamejared.com/"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
     }
     maven {
         // location of a maven mirror for JEI files, as a fallback
         name = "ModMaven"
         url = "https://modmaven.dev"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
     }
 }
 
@@ -119,7 +137,7 @@ dependencies {
     // mp3 播放库
     implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
     // 女仆模组兼容
-    implementation "libs:touhoulittlemaid:1.21-release-1.1.12"
+    implementation 'curse.maven:touhou-little-maid-355044:6596075-sources-6596128'
     // IPN
     runtimeOnly "maven.modrinth:kotlin-for-forge:5.4.0"
     runtimeOnly "maven.modrinth:libipn:neoforge-1.21-6.0.2"
