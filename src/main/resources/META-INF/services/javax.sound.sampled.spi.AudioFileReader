@@ -1,0 +1,3 @@
+# Providers of Speex sound file-reading services
+com.github.tartaricacid.netmusic.audio.MpegAudioFileReader
+com.github.tartaricacid.netmusic.audio.FlacAudioFileReader

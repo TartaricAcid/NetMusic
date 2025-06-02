@@ -13,7 +13,7 @@ public class CommandRegistry {
     public static void registryCommand() {
         CommandRegistrationCallback.EVENT.register((
                 (dispatcher, registryAccess, environment) -> {
-                    dispatcher.register(NetMusicCommand.get());
+                    dispatcher.register(NetMusicCommand.get().requires((source -> source.hasPermissionLevel(2))));
                 }));
     }
 }

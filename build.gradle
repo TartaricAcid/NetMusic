@@ -20,6 +20,9 @@ allprojects {
 }
 
 repositories {
+    flatDir {
+        dir "libs"
+    }
     maven {
         // location of the maven that hosts JEI files since January 2023
         // Patchouli
@@ -66,6 +69,7 @@ dependencies {
     implementation include("com.googlecode.soundlibs:mp3spi:1.9.5.4")
     implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
     implementation include("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
+    implementation include("libs:jflac-codec-1.5.3:SNAPSHOT")
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation include("dev.isxander:yet-another-config-lib:3.5.0+1.21-fabric")
     // Fabric API

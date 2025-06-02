@@ -5,9 +5,11 @@ import com.github.tartaricacid.netmusic.api.NetWorker;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +29,7 @@ public class MusicPlayManager {
     private static final String LOCAL_FILE_PROTOCOL = "file";
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
+        String rawUrl = url;
         if (url.startsWith(MUSIC_163_URL)) {
             try {
                 url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
@@ -34,7 +37,15 @@ public class MusicPlayManager {
                 e.printStackTrace();
             }
         }
-        if (url != null && !url.equals(ERROR_404)) {
+        if (url != null) {
+            if (url.equals(ERROR_404)) {
+                ClientPlayerEntity player = MinecraftClient.getInstance().player;
+                if (player != null) {
+                    player.sendMessage(Text.translatable("message.netmusic.music_player.404", rawUrl).formatted(Formatting.RED));
+                }
+                NetMusic.LOGGER.info("Music not found: {}", rawUrl);
+                return;
+            }
             playMusic(url, songName, sound);
         }
     }

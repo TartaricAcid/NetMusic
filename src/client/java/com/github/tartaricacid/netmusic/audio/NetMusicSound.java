@@ -76,7 +76,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
 
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return new Mp3AudioStream(this.songUrl);
+                return new NetMusicAudioStream(this.songUrl);
             } catch (Exception e) {
                 e.printStackTrace();
             }
