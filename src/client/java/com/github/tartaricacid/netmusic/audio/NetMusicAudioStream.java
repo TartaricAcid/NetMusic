@@ -3,14 +3,15 @@ package com.github.tartaricacid.netmusic.audio;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import javazoom.spi.mpeg.sampled.file.MpegAudioFileReader;
 import net.minecraft.client.sound.AudioStream;
-import org.apache.commons.compress.utils.IOUtils;
 import org.lwjgl.BufferUtils;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 
@@ -18,13 +19,17 @@ import java.nio.ByteBuffer;
  * @author : IMG
  * @create : 2024/10/2
  */
-public class Mp3AudioStream implements AudioStream {
+public class NetMusicAudioStream implements AudioStream {
     private final AudioInputStream stream;
     private final int frameSize;
     private final byte[] frame;
 
-    public Mp3AudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        AudioInputStream originalInputStream = new MpegAudioFileReader().getAudioInputStream(url);
+    public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
+        InputStream inputStream = url.openStream();
+        // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        skipID3(bufferedInputStream);
+        AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                 originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
@@ -77,5 +82,40 @@ public class Mp3AudioStream implements AudioStream {
     @Override
     public void close() throws IOException {
         stream.close();
+    }
+
+    /**
+     * 跳过 ID3 标签
+     *
+     * @param inputStream 输入的音频流
+     * @throws IOException IO 异常
+     */
+    private static void skipID3(InputStream inputStream) throws IOException {
+        // 读取 ID3 标签头部
+        inputStream.mark(10);
+        byte[] header = new byte[10];
+        int read = inputStream.read(header, 0, 10);
+        if (read < 10) {
+            inputStream.reset();
+            return;
+        }
+
+        // 检查是否有 ID3 标签
+        if (header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
+            // 计算元数据大小
+            int size = (header[6] << 21) | (header[7] << 14) | (header[8] << 7) | header[9];
+
+            // 跳过元数据
+            int skipped = 0;
+            int skip = 0;
+            do {
+                skip = (int) inputStream.skip(size - skipped);
+                if (skip != 0) {
+                    skipped += skip;
+                }
+            } while (skipped < size && skip != 0);
+        } else {
+            inputStream.reset();
+        }
     }
 }

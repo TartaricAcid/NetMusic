@@ -14,8 +14,8 @@ import net.minecraft.util.math.random.Random;
 public abstract class AbstractTickableSoundInstance extends AbstractSoundInstance implements TickableSoundInstance {
     private boolean stopped;
 
-    protected AbstractTickableSoundInstance(SoundEvent p_235076_, SoundCategory p_235077_, Random p_235078_) {
-        super(p_235076_, p_235077_, p_235078_);
+    protected AbstractTickableSoundInstance(SoundEvent sound, SoundCategory soundCategory, Random random) {
+        super(sound, soundCategory, random);
     }
 
     @Override
