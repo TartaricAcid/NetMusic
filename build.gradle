@@ -10,7 +10,7 @@ plugins {
     id 'maven-publish'
 
     // NeoForged 开发插件
-    id 'net.neoforged.gradle.userdev' version '7.0.145'
+    id 'net.neoforged.gradle.userdev' version '7.0.184'
 }
 
 // ALL 为下载 gradle 源码，方便查看调试
@@ -54,6 +54,7 @@ runs {
 
         dependencies {
             runtime 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+            runtime 'libs:jflac-codec:1.5.3-SNAPSHOT'
         }
     }
 
