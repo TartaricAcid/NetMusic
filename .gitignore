@@ -38,7 +38,3 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
-/gradlew
-/gradlew.bat
-/LICENSE
-/.github/workflows/build.yml
