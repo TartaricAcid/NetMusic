@@ -19,7 +19,7 @@ apply plugin: 'java'
 
 version = '1.1.6'
 group = 'com.github.tartaricacid'
-archivesBaseName = 'netmusic-1.20.1'
+archivesBaseName = 'netmusic-forge-1.20.1'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
