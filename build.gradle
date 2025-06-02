@@ -73,6 +73,9 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    flatDir {
+        dir "libs"
+    }
     maven {
         // location of the maven that hosts JEI files since January 2023
         // Patchouli
@@ -104,7 +107,7 @@ repositories {
 dependencies {
     minecraft 'net.minecraftforge:forge:1.20.1-47.1.0'
     minecraftLibrary 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
-    minecraftLibrary files("libs/jflac-codec-1.5.3-SNAPSHOT.jar")
+    minecraftLibrary 'libs:jflac-codec-1.5.3:SNAPSHOT'
 
     // compile against the JEI API but do not include it at runtime
     compileOnly(fg.deobf("mezz.jei:jei-1.20.1-common-api:15.0.0.12"))
@@ -130,7 +133,7 @@ shadowJar {
         include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
         include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
         include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
-        include(dependency("org.jflac:jflac-codec:1.5.3"))
+        include(dependency("libs:jflac-codec-1.5.3:SNAPSHOT"))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
