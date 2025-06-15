@@ -104,6 +104,11 @@ public final class WebApi {
         return NetWorker.getRedirectUrl(url, requestPropertyData);
     }
 
+    public String dj(long djId) throws Exception {
+        String url = String.format("http://music.163.com/api/dj/program/detail?id=%d", djId);
+        return NetWorker.get(url, requestPropertyData);
+    }
+
     public HashMap<String, String> getRequestPropertyData() {
         return requestPropertyData;
     }
