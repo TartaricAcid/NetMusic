@@ -141,6 +141,12 @@ shadowJar {
     relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
     relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
 
+    // 排除不需要的依赖项和资源
+    exclude 'META-INF/maven/**/*'
+    exclude 'META-INF/versions/**/*'
+    // 这个版权许可都已经手动添加进 licenses 里了
+    exclude 'META-INF/LICENSE'
+
     mergeServiceFiles()
 }
 
@@ -156,3 +162,12 @@ task shadowJarPublish(type: Jar) {
 
 assemble.dependsOn shadowJar
 tasks.build.dependsOn shadowJarPublish
+
+jar {
+    manifest {
+        attributes([
+                "Implementation-Title"  : project.name,
+                "Implementation-Version": "${version}"
+        ])
+    }
+}
