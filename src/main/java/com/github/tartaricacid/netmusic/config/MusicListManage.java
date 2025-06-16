@@ -8,6 +8,8 @@ import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.resource.Resource;
@@ -63,6 +65,23 @@ public class MusicListManage implements SimpleSynchronousResourceReloadListener 
     public static ItemMusicCD.SongInfo get163Song(long id) throws Exception {
         NetEaseMusicSong pojo = GSON.fromJson(NetMusic.NET_EASE_WEB_API.song(id), NetEaseMusicSong.class);
         return new ItemMusicCD.SongInfo(pojo);
+    }
+
+    public static ItemMusicCD.SongInfo getDjSong(long id) throws Exception {
+        String result = NetMusic.NET_EASE_WEB_API.dj(id);
+        JsonObject jsonObject = JsonParser.parseString(result).getAsJsonObject();
+        JsonObject program = jsonObject.getAsJsonObject("program");
+        if (program == null) {
+            NetMusic.LOGGER.error("Failed to get DJ song info, program is null for id: {}", id);
+            return new ItemMusicCD.SongInfo();
+        }
+        String mainSong = program.getAsJsonObject("mainSong").toString();
+        if (mainSong == null) {
+            NetMusic.LOGGER.error("Failed to get DJ song info, mainSong is null for id: {}", id);
+            return new ItemMusicCD.SongInfo();
+        }
+        NetEaseMusicSong.Song netEaseMusicSong = new Gson().fromJson(mainSong, NetEaseMusicSong.Song.class);
+        return new ItemMusicCD.SongInfo(netEaseMusicSong);
     }
 
     public static void add163List(long id) throws Exception {
