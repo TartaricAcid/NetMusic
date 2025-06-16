@@ -17,7 +17,7 @@ apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
-version = '1.1.6'
+version = '1.1.7'
 group = 'com.github.tartaricacid'
 archivesBaseName = 'netmusic-forge-1.20.1'
 
@@ -122,6 +122,14 @@ dependencies {
     runtimeOnly "curse.maven:kotlin-for-forge-351264:4983659"
     runtimeOnly fg.deobf("curse.maven:libipn-679177:4870127")
     implementation fg.deobf("curse.maven:inventory-profiles-next-495267:4813458")
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [mod_version: version]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties + [project: project]
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {

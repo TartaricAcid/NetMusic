@@ -1,11 +1,12 @@
 modLoader = "javafml"
 loaderVersion = "[46,)"
 license = "MIT"
+
 [[mods]]
 modId = "netmusic"
-version = "${file.jarVersion}"
+version = "${mod_version}"
 displayName = "Net Music Mod"
-authors = "TartaricAcid, 郝南村, 琥珀酸, 帕金伊, SQwatermark"
+authors = "TartaricAcid, IMG, 郝南村, 琥珀酸, 帕金伊, SQwatermark"
 description = "A music player mod"
 
 [[dependencies.netmusic]]
