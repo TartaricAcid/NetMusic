@@ -32,8 +32,11 @@ import java.util.regex.Pattern;
 public class CDBurnerMenuScreen extends HandledScreen<CDBurnerMenu> {
     private static final Identifier BG = Identifier.of(NetMusic.MOD_ID, "textures/gui/cd_burner.png");
     private static final Pattern ID_REG = Pattern.compile("^\\d{4,}$");
+    private static final Pattern DJ_ID_REG = Pattern.compile("^dj/(\\d+)$");
     private static final Pattern URL_1_REG = Pattern.compile("^https://music\\.163\\.com/song\\?id=(\\d+).*$");
     private static final Pattern URL_2_REG = Pattern.compile("^https://music\\.163\\.com/#/song\\?id=(\\d+).*$");
+    private static final Pattern DJ_URL_1_REG = Pattern.compile("^https://music\\.163\\.com/dj\\?id=(\\d+).*$");
+    private static final Pattern DJ_URL_2_REG = Pattern.compile("^https://music\\.163\\.com/#/dj\\?id=(\\d+).*$");
     private TextFieldWidget textField;
     private CheckboxWidget readOnlyButton;
     private Text tips = Text.empty();
@@ -68,6 +71,20 @@ public class CDBurnerMenuScreen extends HandledScreen<CDBurnerMenu> {
                 if (matcher2.find()) {
                     String group = matcher2.group(1);
                     this.setText(group);
+                    return;
+                }
+
+                Matcher matcher3 = DJ_URL_1_REG.matcher(text);
+                if (matcher3.find()) {
+                    String group = matcher3.group(1);
+                    this.setText("dj/" + group);
+                    return;
+                }
+
+                Matcher matcher4 = DJ_URL_2_REG.matcher(text);
+                if (matcher4.find()) {
+                    String group = matcher4.group(1);
+                    this.setText("dj/" + group);
                     return;
                 }
 
@@ -170,6 +187,24 @@ public class CDBurnerMenuScreen extends HandledScreen<CDBurnerMenu> {
         if (Util.isBlank(textField.getText())) {
             this.tips = Text.translatable("gui.netmusic.cd_burner.no_music_id");
             return;
+        }
+        Matcher djMatcher = DJ_ID_REG.matcher(textField.getText());
+        if (djMatcher.find()) {
+            long djId = Long.parseLong(djMatcher.group(1));
+            try {
+                ItemMusicCD.SongInfo djSong = MusicListManage.getDjSong(djId);
+                if (StringUtils.isBlank(djSong.songUrl) || StringUtils.isBlank(djSong.songName)) {
+                    this.tips = Text.translatable("gui.netmusic.cd_burner.get_info_error");
+                    return;
+                }
+                djSong.readOnly = this.readOnlyButton.isChecked();
+                ClientNetWorkHandler.sendToServer(new SetMusicIDMessage(djSong));
+                return;
+            } catch (Exception e) {
+                this.tips = Text.translatable("gui.netmusic.cd_burner.get_info_error");
+                e.printStackTrace();
+                return;
+            }
         }
         if (ID_REG.matcher(textField.getText()).matches()) {
             long id = Long.parseLong(textField.getText());

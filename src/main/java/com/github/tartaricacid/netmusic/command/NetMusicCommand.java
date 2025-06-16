@@ -31,20 +31,25 @@ public class NetMusicCommand {
     private static final String RELOAD_NAME = "reload";
     private static final String GET_163_NAME = "get163";
     private static final String GET_163_CD_NAME = "get163cd";
+    private static final String GET_DJ_CD_NAME = "getDJcd";
     private static final String SONG_LIST_ID = "song_list_id";
     private static final String SONG_ID = "song_id";
+    private static final String DJ_SONG_ID = "dj_id";
 
     public static LiteralArgumentBuilder<ServerCommandSource> get() {
         LiteralArgumentBuilder<ServerCommandSource> root = literal(ROOT_NAME);
         LiteralArgumentBuilder<ServerCommandSource> get163List = literal(GET_163_NAME);
         LiteralArgumentBuilder<ServerCommandSource> get163Song = literal(GET_163_CD_NAME);
         LiteralArgumentBuilder<ServerCommandSource> reload = literal(RELOAD_NAME);
+        LiteralArgumentBuilder<ServerCommandSource> getDJSong = literal(GET_DJ_CD_NAME);
         RequiredArgumentBuilder<ServerCommandSource, Long> songListId = argument(SONG_LIST_ID, LongArgumentType.longArg());
         RequiredArgumentBuilder<ServerCommandSource, Long> songId = argument(SONG_ID, LongArgumentType.longArg());
+        RequiredArgumentBuilder<ServerCommandSource, Long> djId = argument(DJ_SONG_ID, LongArgumentType.longArg());
 
         root.then(get163List.then(songListId.executes(NetMusicCommand::getSongList)));
         root.then(get163Song.then(songId.executes(NetMusicCommand::getSong)));
         root.then(reload.executes(NetMusicCommand::reload));
+        root.then(getDJSong.then(djId.executes(NetMusicCommand::getDJSong)));
         return root;
     }
 
@@ -100,6 +105,37 @@ public class NetMusicCommand {
             NetworkHandler.sendToClientPlayer(new GetMusicListMessage(GetMusicListMessage.RELOAD_MESSAGE), serverPlayer);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int getDJSong(CommandContext<ServerCommandSource> context) {
+        try {
+            long djId = LongArgumentType.getLong(context, DJ_SONG_ID);
+            ItemMusicCD.SongInfo songInfo = MusicListManage.getDjSong(djId);
+            ItemStack musicDisc = ItemMusicCD.setSongInfo(songInfo, InitItems.MUSIC_CD.getDefaultStack());
+            ServerPlayerEntity serverPlayer = context.getSource().getPlayerOrThrow();
+            boolean canPlaceIn = serverPlayer.getInventory().insertStack(musicDisc);
+            if (canPlaceIn && musicDisc.isEmpty()) {
+                musicDisc.setCount(1);
+                ItemEntity dropItem = serverPlayer.dropItem(musicDisc, false);
+                if (dropItem != null) {
+                    dropItem.setDespawnImmediately();
+                }
+                serverPlayer.getEntityWorld().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.PLAYERS, 0.2F,
+                        ((serverPlayer.getRandom().nextFloat() - serverPlayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                serverPlayer.currentScreenHandler.sendContentUpdates();
+            } else {
+                ItemEntity dropItem = serverPlayer.dropItem(musicDisc, false);
+                if (dropItem != null) {
+                    dropItem.resetPickupDelay();
+                    dropItem.setThrower(serverPlayer.getUuid());
+                }
+            }
+            context.getSource().sendFeedback(() -> Text.translatable("command.netmusic.music_cd.addDJcd.success"), false);
+        } catch (Exception e) {
+            e.printStackTrace();
+            context.getSource().sendError(Text.translatable("command.netmusic.music_cd.addDJcd.fail"));
         }
         return Command.SINGLE_SUCCESS;
     }

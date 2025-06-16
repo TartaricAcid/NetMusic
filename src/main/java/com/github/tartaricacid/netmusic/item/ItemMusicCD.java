@@ -127,6 +127,9 @@ public class ItemMusicCD extends Item {
         @SerializedName("artists")
         public List<String> artists = Lists.newArrayList();
 
+        public SongInfo() {
+        }
+
         public SongInfo(String songUrl, String songName, int songTime, boolean readOnly) {
             this.songUrl = songUrl;
             this.songName = songName;
@@ -144,6 +147,15 @@ public class ItemMusicCD extends Item {
                 this.vip = song.needVip();
                 this.artists = song.getArtists();
             }
+        }
+
+        public SongInfo(NetEaseMusicSong.Song song) {
+            this.songUrl = String.format("https://music.163.com/song/media/outer/url?id=%d.mp3", song.getId());
+            this.songName = song.getName();
+            this.songTime = song.getDuration() / 1000;
+            this.transName = song.getTransName();
+            this.vip = song.needVip();
+            this.artists = song.getArtists();
         }
 
         public SongInfo(NetEaseMusicList.Track track) {
