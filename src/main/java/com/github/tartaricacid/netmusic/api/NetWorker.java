@@ -92,7 +92,7 @@ public class NetWorker {
         return result.toString();
     }
 
-    private static Proxy getProxyFromConfig() {
+    public static Proxy getProxyFromConfig() {
         Proxy.Type proxyType = GeneralConfig.PROXY_TYPE;
         String proxyAddress = GeneralConfig.PROXY_ADDRESS;
         if (proxyType == Proxy.Type.DIRECT || StringUtils.isBlank(proxyAddress)) {
