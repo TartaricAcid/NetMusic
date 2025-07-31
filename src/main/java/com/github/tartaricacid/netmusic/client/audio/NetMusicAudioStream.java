@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
+import com.github.tartaricacid.netmusic.api.NetWorker;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import net.minecraft.client.sounds.AudioStream;
 import org.lwjgl.BufferUtils;
@@ -11,6 +12,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Proxy;
 import java.net.URL;
 import java.nio.ByteBuffer;
 
@@ -23,9 +25,9 @@ public class NetMusicAudioStream implements AudioStream {
     private final byte[] frame;
 
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        InputStream inputStream = url.openStream();
+        Proxy proxy = NetWorker.getProxyFromConfig();
         // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
         skipID3(bufferedInputStream);
         AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
         AudioFormat originalFormat = originalInputStream.getFormat();
