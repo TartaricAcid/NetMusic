@@ -9,7 +9,6 @@ import java.io.InputStream;
  * @create : 2025/7/2
  */
 public class MusicBufferedInputStream extends BufferedInputStream {
-
     public MusicBufferedInputStream(InputStream in) {
         super(in);
     }
