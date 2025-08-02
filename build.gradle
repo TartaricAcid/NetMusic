@@ -29,7 +29,7 @@ repositories {
 }
 
 // 打包成 jar 时的名称
-archivesBaseName = 'netmusic-forge-1.21.1'
+archivesBaseName = 'netmusic'
 
 // 需要 Java 21 版本
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -189,6 +189,11 @@ publishing {
             url "file://${project.projectDir}/repo"
         }
     }
+}
+
+java {
+    // 编译源码文件，方便发布 maven
+    withSourcesJar()
 }
 
 // 必须，编码需要显式指定为 UTF
