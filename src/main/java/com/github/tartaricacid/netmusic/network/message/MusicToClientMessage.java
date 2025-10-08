@@ -17,16 +17,18 @@ public class MusicToClientMessage {
     private final String url;
     private final int timeSecond;
     private final String songName;
+    private final String lyricInfo;
 
-    public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName) {
+    public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName, String lyricInfo) {
         this.pos = pos;
         this.url = url;
         this.timeSecond = timeSecond;
         this.songName = songName;
+        this.lyricInfo = lyricInfo;
     }
 
     public static MusicToClientMessage decode(FriendlyByteBuf buf) {
-        return new MusicToClientMessage(BlockPos.of(buf.readLong()), buf.readUtf(), buf.readInt(), buf.readUtf());
+        return new MusicToClientMessage(BlockPos.of(buf.readLong()), buf.readUtf(), buf.readInt(), buf.readUtf(), buf.readUtf());
     }
 
     public static void encode(MusicToClientMessage message, FriendlyByteBuf buf) {
@@ -34,6 +36,7 @@ public class MusicToClientMessage {
         buf.writeUtf(message.url);
         buf.writeInt(message.timeSecond);
         buf.writeUtf(message.songName);
+        buf.writeUtf(message.lyricInfo);
     }
 
     public static void handle(MusicToClientMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
@@ -46,6 +49,6 @@ public class MusicToClientMessage {
 
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(MusicToClientMessage message) {
-        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond));
+        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, message.lyricInfo));
     }
 }

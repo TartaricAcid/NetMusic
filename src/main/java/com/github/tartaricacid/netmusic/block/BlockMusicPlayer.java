@@ -133,6 +133,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!handler.getStackInSlot(0).isEmpty()) {
             ItemStack extract = handler.extractItem(0, 1, false);
             popResource(worldIn, pos, extract);
+            ((TileEntityMusicPlayer) te).setMusicURL("");
             return InteractionResult.SUCCESS;
         }
 
@@ -152,6 +153,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
+        ((TileEntityMusicPlayer) te).setMusicURL(info.songUrl);
         musicPlayer.setPlayToClient(info);
         musicPlayer.markDirty();
         return InteractionResult.SUCCESS;

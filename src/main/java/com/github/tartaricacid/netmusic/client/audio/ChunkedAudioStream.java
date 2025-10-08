@@ -2,11 +2,10 @@ package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Proxy;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 
 /**
  * @author : IMG
@@ -45,11 +44,11 @@ public class ChunkedAudioStream extends InputStream {
     }
 
     private InputStream openChunk(long start) {
+        URLConnection conn = null;
         try {
             if (contentLength != -1 && start >= contentLength) {
                 return null;
             }
-            URLConnection conn;
             conn = url.openConnection(proxy);
             conn.setConnectTimeout(3_000);
             conn.setReadTimeout(3_000);

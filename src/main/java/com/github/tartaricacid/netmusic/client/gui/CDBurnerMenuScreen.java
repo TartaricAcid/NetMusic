@@ -137,7 +137,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         if (ID_REG.matcher(textField.getValue()).matches()) {
             long id = Long.parseLong(textField.getValue());
             try {
-                ItemMusicCD.SongInfo song = MusicListManage.get163Song(id);
+                ItemMusicCD.SongInfo song = MusicListManage.get163Song(id).addLyricInfo("neteaseid="+id);
                 if (StringUtils.isBlank(song.songUrl) || StringUtils.isBlank(song.songName)) {
                     this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
                     return;

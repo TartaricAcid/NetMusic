@@ -1,10 +1,12 @@
 package com.github.tartaricacid.netmusic.network;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.servermusic.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -31,6 +33,22 @@ public class NetworkHandler {
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(2, SetMusicIDMessage.class, SetMusicIDMessage::encode, SetMusicIDMessage::decode, SetMusicIDMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
+        CHANNEL.registerMessage(3, CommonMessage.class, CommonMessage::encode, CommonMessage::decode, CommonMessage::handle);
+
+        CHANNEL.registerMessage(4, RequestMusicFromServerMessage.class, RequestMusicFromServerMessage::encode, RequestMusicFromServerMessage::decode, RequestMusicFromServerMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(5, SendMusicDataMessage.class, SendMusicDataMessage::encode, SendMusicDataMessage::decode, SendMusicDataMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(6, UploadMusicRequestTool.class, UploadMusicRequestTool::encode, UploadMusicRequestTool::decode, UploadMusicRequestTool::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(7, UploadMusicResponseTool.class, UploadMusicResponseTool::encode, UploadMusicResponseTool::decode, UploadMusicResponseTool::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+
+        CHANNEL.registerMessage(8, NetMusicSound.MusicPlayerResetTimeMessage.class, NetMusicSound.MusicPlayerResetTimeMessage::encode, NetMusicSound.MusicPlayerResetTimeMessage::decode, NetMusicSound.MusicPlayerResetTimeMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+
         CompatRegistry.initNetwork(CHANNEL);
     }
 

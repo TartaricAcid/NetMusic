@@ -27,7 +27,13 @@ public class NetMusicAudioStream implements AudioStream {
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
         Proxy proxy = NetWorker.getProxyFromConfig();
         // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-        BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
+        BufferedInputStream bufferedInputStream;
+        if (url.toString().startsWith(MusicPlayManager.MC_SERVER_PROTOCOL)) {
+            // 尝试直接从服务器获取流
+            bufferedInputStream = new MusicBufferedInputStream(new MusicCacheStream(url));
+        } else {
+            bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
+        }
         skipID3(bufferedInputStream);
         AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
         AudioFormat originalFormat = originalInputStream.getFormat();

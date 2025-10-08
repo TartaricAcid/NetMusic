@@ -2,6 +2,7 @@ package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.NetWorker;
+import com.github.tartaricacid.netmusic.tools.MusicDataCache;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -22,6 +23,9 @@ public final class MusicPlayManager {
     private static final String ERROR_404 = "http://music.163.com/404";
     private static final String MUSIC_163_URL = "https://music.163.com/";
     private static final String LOCAL_FILE_PROTOCOL = "file";
+    public static final String MC_SERVER_PROTOCOL = "file://mcserver://";
+
+    public static final MusicDataCache musicDataCache = new MusicDataCache();
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
         String rawUrl = url;
@@ -50,17 +54,38 @@ public final class MusicPlayManager {
         try {
             urlFinal = new URL(url);
             // 如果是本地文件
-            if (urlFinal.getProtocol().equals(LOCAL_FILE_PROTOCOL)) {
+            if (urlFinal.getProtocol().equals(LOCAL_FILE_PROTOCOL) && !url.startsWith(MC_SERVER_PROTOCOL)) {
                 File file = new File(urlFinal.toURI());
                 if (!file.exists()) {
                     NetMusic.LOGGER.info("File not found: {}", url);
                     return;
                 }
             }
-            Minecraft.getInstance().submitAsync(() -> {
-                Minecraft.getInstance().getSoundManager().play(sound.apply(urlFinal));
-                Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
-            });
+            if (url.startsWith(MC_SERVER_PROTOCOL)) {
+                // 缓存音乐到客户端，避免网络卡顿造成的流阻塞直接阻塞游戏造成卡顿。
+                new Thread(() -> {
+                    MCServerAudioStream stream = null;
+                    try {
+                        if (!musicDataCache.hasKey(url)) {
+                            stream = new MCServerAudioStream(urlFinal);
+                            stream.cacheData(url);
+                        }
+                    } catch (IOException | InterruptedException e) {
+                        return;
+                    } finally {
+                        if (stream != null) {
+                            stream.close();
+                        }
+                    }
+                    Minecraft.getInstance().getSoundManager().play(sound.apply(urlFinal));
+                    Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
+                }).start();
+            } else {
+                Minecraft.getInstance().submitAsync(() -> {
+                    Minecraft.getInstance().getSoundManager().play(sound.apply(urlFinal));
+                    Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
+                });
+            }
         } catch (MalformedURLException | URISyntaxException e) {
             e.printStackTrace();
         }

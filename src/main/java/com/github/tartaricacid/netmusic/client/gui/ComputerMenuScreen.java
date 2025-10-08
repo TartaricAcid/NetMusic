@@ -1,10 +1,13 @@
 package com.github.tartaricacid.netmusic.client.gui;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.inventory.ComputerMenu;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.servermusic.UploadMusicCallBack;
+import com.github.tartaricacid.netmusic.network.message.servermusic.UploadMusicResponseTool;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -32,10 +35,12 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
     private static final Pattern URL_HTTP_REG = Pattern.compile("(http|ftp|https)://[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-.,@?^=%&:/~+#]*[\\w\\-@?^=%&/~+#])?");
     private static final Pattern URL_FILE_REG = Pattern.compile("^[a-zA-Z]:\\\\(?:[^\\\\/:*?\"<>|\\r\\n]+\\\\)*[^\\\\/:*?\"<>|\\r\\n]*$");
     private static final Pattern TIME_REG = Pattern.compile("^\\d+$");
+    private static final Pattern TIME_MM_SS_REG = Pattern.compile("^\\d{2}:\\d{2}$");
     private EditBox urlTextField;
     private EditBox nameTextField;
     private EditBox timeTextField;
     private Checkbox readOnlyButton;
+    private Checkbox uploadMusicButton;
     private Component tips = Component.empty();
 
     public ComputerMenuScreen(ComputerMenu screenContainer, Inventory inv, Component titleIn) {
@@ -51,9 +56,12 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         this.initTimeEditBox();
         this.readOnlyButton = new Checkbox(leftPos + 58, topPos + 55, 80, 20,
                 Component.translatable("gui.netmusic.cd_burner.read_only"), false);
+        this.uploadMusicButton = new Checkbox(leftPos + 10, topPos + 78, 80, 20,
+                Component.translatable("gui.netmusic.cd_burner.upload_music"), false);
         this.addRenderableWidget(this.readOnlyButton);
+        this.addRenderableWidget(this.uploadMusicButton);
         this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.cd_burner.craft"), (b) -> handleCraftButton())
-                .pos(leftPos + 7, topPos + 78).size(135, 18).build());
+                .pos(leftPos + 7, topPos + 101).size(135, 18).build());
     }
 
     private void initUrlEditBox() {
@@ -133,11 +141,19 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
             this.tips = Component.translatable("gui.netmusic.computer.time.empty");
             return;
         }
-        if (!TIME_REG.matcher(timeText).matches()) {
+        int time;
+        if (TIME_REG.matcher(timeText).matches()) {
+            time = Integer.parseInt(timeText);
+        } else if (TIME_MM_SS_REG.matcher(timeText).matches()) {
+            String[] parts = timeText.split(":");
+            int minutes = Integer.parseInt(parts[0]);
+            int seconds = Integer.parseInt(parts[1]);
+            time = minutes * 60 + seconds;
+        } else {
             this.tips = Component.translatable("gui.netmusic.computer.time.not_number");
             return;
         }
-        int time = Integer.parseInt(timeText);
+
         if (URL_HTTP_REG.matcher(urlText).matches()) {
             ItemMusicCD.SongInfo song = new ItemMusicCD.SongInfo(urlText, nameText, time, this.readOnlyButton.selected());
             NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
@@ -151,8 +167,30 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
             }
             try {
                 URL url = file.toURI().toURL();
-                ItemMusicCD.SongInfo song = new ItemMusicCD.SongInfo(url.toString(), nameText, time, this.readOnlyButton.selected());
-                NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
+                //上传音乐到服务器
+                if (this.uploadMusicButton.selected()) {
+                    UploadMusicResponseTool.uploadNewMusic(url, (state, msg) -> {
+                        switch (state) {
+                            case PROGRESS -> tips = Component.translatable("gui.netmusic.computer.upload.progress", msg).withStyle(ChatFormatting.WHITE);
+                            case END -> {
+                                try {
+                                    URL newUrl = new URL(MusicPlayManager.MC_SERVER_PROTOCOL + file.getName());
+                                    ItemMusicCD.SongInfo song = new ItemMusicCD.SongInfo(newUrl.toString(), nameText, time, this.readOnlyButton.selected());
+                                    NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
+                                    tips = Component.translatable("gui.netmusic.computer.upload.done").withStyle(ChatFormatting.WHITE);
+                                } catch (MalformedURLException e) {
+                                    tips = Component.translatable("gui.netmusic.computer.upload.failed");
+                                }
+                            }
+                            case NO_PERMISSION -> tips = Component.translatable("gui.netmusic.computer.upload.no_permission");
+                            case ERR -> tips = Component.translatable("gui.netmusic.computer.upload.failed", Component.translatable(msg));
+                        }
+                    });
+                } else {
+                    ItemMusicCD.SongInfo song = new ItemMusicCD.SongInfo(url.toString(), nameText, time, this.readOnlyButton.selected());
+                    NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
+                }
+
                 return;
             } catch (MalformedURLException e) {
                 e.fillInStackTrace();
@@ -188,7 +226,7 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         if (Util.isBlank(timeTextField.getValue()) && !timeTextField.isFocused()) {
             graphics.drawString(font, Component.translatable("gui.netmusic.computer.time.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 11, this.topPos + 61, ChatFormatting.GRAY.getColor(), false);
         }
-        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 100, 162, 0xCF0000);
+        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 123, 162, 0xCF0000);
         renderTooltip(graphics, x, y);
     }
 

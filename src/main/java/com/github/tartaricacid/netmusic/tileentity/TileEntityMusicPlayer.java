@@ -35,11 +35,15 @@ public class TileEntityMusicPlayer extends BlockEntity {
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
+    private static final String MUSIC_URL = "MusicUrl";
     private final ItemStackHandler playerInv = new MusicPlayerInv(this);
     private LazyOptional<IItemHandler> playerInvHandler;
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
+    private String musicURL = ""; // 储存当前播放歌曲的url，避免串歌
+
+    private int songTime = 0;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
         super(TYPE, blockPos, blockState);
@@ -51,6 +55,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
         getPersistentData().putBoolean(IS_PLAY_TAG, isPlay);
         getPersistentData().putInt(CURRENT_TIME_TAG, currentTime);
         getPersistentData().putBoolean(SIGNAL_TAG, hasSignal);
+        getPersistentData().putString(MUSIC_URL, musicURL);
         super.saveAdditional(compound);
     }
 
@@ -61,6 +66,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
         isPlay = getPersistentData().getBoolean(IS_PLAY_TAG);
         currentTime = getPersistentData().getInt(CURRENT_TIME_TAG);
         hasSignal = getPersistentData().getBoolean(SIGNAL_TAG);
+        musicURL = getPersistentData().getString(MUSIC_URL);
     }
 
     @Override
@@ -117,11 +123,16 @@ public class TileEntityMusicPlayer extends BlockEntity {
 
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
         this.setCurrentTime(info.songTime * 20 + 64);
+        songTime = info.songTime;
         this.isPlay = true;
         if (level != null && !level.isClientSide) {
-            MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName);
+            MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName, info.lyricInfo);
             NetworkHandler.sendToNearby(level, worldPosition, msg);
         }
+    }
+
+    public void resetCurrentTime() {
+        this.setCurrentTime(songTime * 20 + 64);
     }
 
     public void markDirty() {
@@ -161,6 +172,14 @@ public class TileEntityMusicPlayer extends BlockEntity {
         if (currentTime > 0) {
             currentTime--;
         }
+    }
+
+    public String getMusicURL() {
+        return musicURL;
+    }
+
+    public void setMusicURL(String musicURL) {
+        this.musicURL = musicURL;
     }
 
     public static void tick(Level level, BlockPos blockPos, BlockState blockState, TileEntityMusicPlayer te) {

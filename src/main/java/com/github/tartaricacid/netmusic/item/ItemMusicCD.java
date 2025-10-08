@@ -118,6 +118,9 @@ public class ItemMusicCD extends Item {
         public boolean readOnly = false;
         @SerializedName("artists")
         public List<String> artists = Lists.newArrayList();
+        // 歌词元数据信息
+        @SerializedName("lyric")
+        public String lyricInfo = StringUtils.EMPTY;
 
         public SongInfo() {
         }
@@ -177,6 +180,19 @@ public class ItemMusicCD extends Item {
                 this.artists = Lists.newArrayList();
                 tagList.forEach(nbt -> this.artists.add(nbt.getAsString()));
             }
+            if (tag.contains("lyric", Tag.TAG_STRING)) {
+                this.lyricInfo = tag.getString("lyric");
+            }
+        }
+
+        // 歌词元数据信息
+        public SongInfo addLyricInfo(String info) {
+            lyricInfo = info;
+            return this;
+        }
+
+        public boolean hasLyric() {
+            return StringUtils.isNoneBlank(lyricInfo);
         }
 
         public static SongInfo deserializeNBT(CompoundTag tag) {
@@ -196,6 +212,9 @@ public class ItemMusicCD extends Item {
                 ListTag nbt = new ListTag();
                 info.artists.forEach(name -> nbt.add(StringTag.valueOf(name)));
                 tag.put("artists", nbt);
+            }
+            if (StringUtils.isNoneBlank(info.lyricInfo)) {
+                tag.putString("lyric", info.lyricInfo);
             }
         }
     }
