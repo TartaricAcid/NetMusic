@@ -81,7 +81,9 @@ runs {
     }
 
     data {
-        programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        programArguments.addAll '--mod', project.mod_id, '--all',
+                '--output', file('src/generated/resources/').getAbsolutePath(),
+                '--existing', file('src/main/resources/').getAbsolutePath()
     }
 }
 
@@ -138,7 +140,7 @@ dependencies {
     // flac 播放库
     implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
     // 女仆模组兼容
-    implementation 'curse.maven:touhou-little-maid-355044:6596075-sources-6596128'
+    implementation 'curse.maven:touhou-little-maid-355044:7192654-sources-7192655'
     // IPN
     runtimeOnly "maven.modrinth:kotlin-for-forge:5.4.0"
     runtimeOnly "maven.modrinth:libipn:neoforge-1.21-6.0.2"
