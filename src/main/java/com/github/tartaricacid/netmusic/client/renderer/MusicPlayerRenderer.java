@@ -21,10 +21,12 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import org.apache.commons.lang3.StringUtils;
 
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
     public static ModelMusicPlayer<?> MODEL;
@@ -99,12 +101,21 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         ChatFormatting transLyricColor = ChatFormatting.WHITE;
         float y = 0.5f;
 
-        MutableComponent currentLine = Component.literal(lyrics.get(lyrics.firstIntKey()));
+        String lyric = lyrics.get(lyrics.firstIntKey());
+        MutableComponent currentLine;
+        if (StringUtils.isNotBlank(lyric)) {
+            currentLine = Component.literal(lyric);
+        } else {
+            currentLine = Component.empty();
+        }
         MutableComponent translatedLine = null;
 
         Int2ObjectSortedMap<String> transLyrics = lyricRecord.getTransLyrics();
         if (transLyrics != null && !transLyrics.isEmpty()) {
-            translatedLine = Component.literal(transLyrics.get(transLyrics.firstIntKey()));
+            String transLyric = transLyrics.get(transLyrics.firstIntKey());
+            if (StringUtils.isNotBlank(transLyric)) {
+                translatedLine = Component.literal(transLyric);
+            }
             y += 0.5f;
         } else {
             currentLyricColor = ChatFormatting.WHITE;
@@ -119,10 +130,12 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         float opacity = Minecraft.getInstance().options.getBackgroundOpacity(0.25F);
         int bgColor = (int) (opacity * 255.0F) << 24;
 
-        float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
-        this.font.drawInBatch(currentLine, currentLineWidth, -y, 0xffffffff, false,
-                poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
-                bgColor, combinedLightIn);
+        if (!currentLine.getContents().equals(ComponentContents.EMPTY)) {
+            float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
+            this.font.drawInBatch(currentLine, currentLineWidth, -y, 0xffffffff, false,
+                    poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
+                    bgColor, combinedLightIn);
+        }
 
         if (translatedLine != null) {
             float translatedLineWidth = (float) (-this.font.width(translatedLine) / 2);

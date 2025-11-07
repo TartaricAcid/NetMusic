@@ -71,11 +71,8 @@ public class LyricParser {
                 int seconds = Integer.parseInt(matcher.group(2));
                 int milliseconds = Integer.parseInt(matcher.group(3));
                 String text = matcher.group(4).trim();
-
-                if (!text.isEmpty()) {
-                    int totalTick = ((minutes * 60 + seconds) * 1000 + milliseconds) / 50;
-                    lyrics.put(totalTick, text);
-                }
+                int totalTick = ((minutes * 60 + seconds) * 1000 + milliseconds) / 50;
+                lyrics.put(totalTick, text);
             }
         }
         return lyrics;
