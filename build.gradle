@@ -6,7 +6,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '[6.0.16,6.2)', changing: true
         classpath 'org.parchmentmc:librarian:1.+'
         classpath 'gradle.plugin.com.github.johnrengelman:shadow:7.1.2'
     }
@@ -17,7 +17,7 @@ apply plugin: 'eclipse'
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 
-version = '1.1.8-forge+mc1.20.1'
+version = '1.1.9-forge+mc1.20.1'
 group = 'com.github.tartaricacid'
 archivesBaseName = 'netmusic'
 
@@ -117,7 +117,7 @@ dependencies {
     // Sound Physics Remastered
     runtimeOnly(fg.deobf("curse.maven:sound-physics-remastered-535489:5525256"))
 
-    implementation fg.deobf('curse.maven:touhou-little-maid-355044:6589004-sources-6589098')
+    implementation fg.deobf('curse.maven:touhou-little-maid-355044:7192649-sources-7192650')
 
     runtimeOnly "curse.maven:kotlin-for-forge-351264:4983659"
     runtimeOnly fg.deobf("curse.maven:libipn-679177:4870127")

@@ -4,6 +4,7 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.inventory.MusicPlayerBackpackContainer;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.AbstractMaidContainerGui;
 import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.backpack.IBackpackContainerScreen;
+import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.BaubleButton;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,6 +33,12 @@ public class MusicPlayerBackpackContainerScreen extends AbstractMaidContainerGui
         this.imageHeight = 256;
         this.imageWidth = 256;
         this.maid = menu.getMaid();
+    }
+
+    @Override
+    protected void initAdditionWidgets() {
+        BaubleButton button = this.getBaubleButton(maid, leftPos, topPos);
+        this.addRenderableWidget(button);
     }
 
     @Override
