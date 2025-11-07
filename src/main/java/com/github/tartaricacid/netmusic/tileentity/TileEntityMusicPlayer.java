@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
@@ -18,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -40,6 +42,11 @@ public class TileEntityMusicPlayer extends BlockEntity {
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
+
+    /**
+     * 仅客户端使用，记录当前音乐的歌词信息，用于渲染歌词
+     */
+    public @Nullable LyricRecord lyricRecord = null;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
         super(TYPE, blockPos, blockState);
@@ -161,6 +168,11 @@ public class TileEntityMusicPlayer extends BlockEntity {
         if (currentTime > 0) {
             currentTime--;
         }
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(1, 2, 1));
     }
 
     public static void tick(Level level, BlockPos blockPos, BlockState blockState, TileEntityMusicPlayer te) {

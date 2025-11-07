@@ -101,6 +101,7 @@ public class MusicPlayerBackpackData implements IBackpackData {
             this.selectSlotId = slotId - 6;
             this.playTick = info.songTime * 20 + 64;
             MaidMusicToClientMessage msg = new MaidMusicToClientMessage(entityMaid.getId(), info.songUrl, info.songTime, info.songName);
+            MaidMusicToClientMessage.showLyric(entityMaid, info.songUrl, info.songTime);
             NetworkHandler.sendToNearby(entityMaid.level(), entityMaid.blockPosition(), msg);
             return true;
         }

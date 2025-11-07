@@ -1,5 +1,8 @@
 package com.github.tartaricacid.netmusic.network.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.api.lyric.LyricParser;
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
 import net.minecraft.Util;
@@ -9,10 +12,17 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.github.tartaricacid.netmusic.client.audio.MusicPlayManager.MUSIC_163_URL;
 
 public class MusicToClientMessage {
+    private static final Pattern PATTERN = Pattern.compile("^.*?\\?id=(\\d+)\\.mp3$");
+
     private final BlockPos pos;
     private final String url;
     private final int timeSecond;
@@ -46,6 +56,22 @@ public class MusicToClientMessage {
 
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(MusicToClientMessage message) {
-        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond));
+        MusicPlayManager.play(message.url, message.songName, url -> {
+            LyricRecord record = null;
+            // 如果是网易云的音乐，那么尝试添加歌词
+            if (message.url.startsWith(MUSIC_163_URL)) {
+                Matcher matcher = PATTERN.matcher(message.url);
+                if (matcher.find()) {
+                    long musicId = Long.parseLong(matcher.group(1));
+                    try {
+                        String lyric = NetMusic.NET_EASE_WEB_API.lyric(musicId);
+                        record = LyricParser.parseLyric(lyric);
+                    } catch (IOException e) {
+                        NetMusic.LOGGER.error(e);
+                    }
+                }
+            }
+            return new NetMusicSound(message.pos, url, message.timeSecond, record);
+        });
     }
 }
