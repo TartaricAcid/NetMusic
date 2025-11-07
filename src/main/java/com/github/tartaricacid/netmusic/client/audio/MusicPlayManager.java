@@ -29,7 +29,8 @@ public final class MusicPlayManager {
             try {
                 url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
+                return;
             }
         }
         if (url != null) {
@@ -63,7 +64,7 @@ public final class MusicPlayManager {
                 Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
             });
         } catch (MalformedURLException | URISyntaxException e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Malformed URL: {}", url, e);
         }
     }
 }

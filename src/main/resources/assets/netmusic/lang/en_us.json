@@ -24,6 +24,8 @@
   "command.netmusic.music_cd.add163cd.fail": "Add NetEase music fail! Please check if the music ID is mistyped?",
   "command.netmusic.music_cd.addDJcd.success": "Add NetEase DJ music success!",
   "command.netmusic.music_cd.addDJcd.fail": "Add NetEase DJ music fail! Please check if the DJ music ID is mistyped?",
+  "gui.netmusic.lyric.waiting": "Waiting for lyrics...",
+  "gui.netmusic.lyric.no_lyric": "No Lyrics",
   "gui.netmusic.cd_burner.craft": "Craft CD",
   "gui.netmusic.cd_burner.read_only": "Read Only",
   "gui.netmusic.cd_burner.id.tips": "Enter the song ID",

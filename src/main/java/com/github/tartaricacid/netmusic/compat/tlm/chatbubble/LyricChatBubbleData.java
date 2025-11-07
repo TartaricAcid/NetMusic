@@ -14,14 +14,16 @@ public class LyricChatBubbleData implements IChatBubbleData {
     private static final int PRIORITY = 10;
 
     private final long songId;
+    private final String songName;
     private final int existTick;
     private final long startTick;
 
     @OnlyIn(Dist.CLIENT)
     private IChatBubbleRenderer renderer;
 
-    public LyricChatBubbleData(long songId, int existTick, long startTick) {
+    public LyricChatBubbleData(long songId, String songName, int existTick, long startTick) {
         this.songId = songId;
+        this.songName = songName;
         this.existTick = existTick;
         this.startTick = startTick;
     }
@@ -38,6 +40,10 @@ public class LyricChatBubbleData implements IChatBubbleData {
 
     public long getSongId() {
         return songId;
+    }
+
+    public String getSongName() {
+        return songName;
     }
 
     public long getStartTick() {
@@ -61,13 +67,14 @@ public class LyricChatBubbleData implements IChatBubbleData {
     public static class LyricChatSerializer implements IChatBubbleData.ChatSerializer {
         @Override
         public IChatBubbleData readFromBuff(FriendlyByteBuf buf) {
-            return new LyricChatBubbleData(buf.readLong(), buf.readInt(), buf.readLong());
+            return new LyricChatBubbleData(buf.readLong(), buf.readUtf(), buf.readInt(), buf.readLong());
         }
 
         @Override
         public void writeToBuff(FriendlyByteBuf buf, IChatBubbleData data) {
             LyricChatBubbleData bubbleData = (LyricChatBubbleData) data;
             buf.writeLong(bubbleData.songId);
+            buf.writeUtf(bubbleData.songName);
             buf.writeInt(bubbleData.existTick);
             buf.writeLong(bubbleData.startTick);
         }

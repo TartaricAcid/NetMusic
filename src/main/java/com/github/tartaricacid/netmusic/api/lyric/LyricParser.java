@@ -2,7 +2,7 @@ package com.github.tartaricacid.netmusic.api.lyric;
 
 import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicLyric;
 import com.google.gson.Gson;
-import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
 import org.apache.commons.lang3.StringUtils;
 
@@ -15,7 +15,7 @@ public class LyricParser {
     private static final Pattern LRC_PATTERN = Pattern.compile("\\[(\\d+):(\\d+)\\.(\\d+)](.*)");
 
     @Nullable
-    public static LyricRecord parseLyric(String json) {
+    public static LyricRecord parseLyric(String json, String songName) {
         if (StringUtils.isBlank(json)) {
             return null;
         }
@@ -34,11 +34,21 @@ public class LyricParser {
         if (splitOriginal.isEmpty()) {
             return null;
         }
+
+        // 如果第 0 tick 没有歌词，则添加歌曲名称作为第一行歌词
+        if (!splitOriginal.containsKey(0)) {
+            splitOriginal.put(0, songName);
+        }
+
         NetEaseMusicLyric.Lyric translated = rawLyric.translation();
         if (translated != null && StringUtils.isNotBlank(translated.lyric())) {
             Int2ObjectSortedMap<String> splitTranslated = splitLyric(translated.lyric());
             if (splitTranslated.isEmpty()) {
                 return new LyricRecord(splitOriginal);
+            }
+            // 如果第 0 tick 没有歌词，则添加歌曲名称作为第一行歌词
+            if (!splitTranslated.containsKey(0)) {
+                splitTranslated.put(0, songName);
             }
             return new LyricRecord(splitOriginal, splitTranslated);
         } else {
@@ -47,7 +57,7 @@ public class LyricParser {
     }
 
     private static Int2ObjectSortedMap<String> splitLyric(String lrcContent) {
-        Int2ObjectSortedMap<String> lyrics = new Int2ObjectLinkedOpenHashMap<>();
+        Int2ObjectSortedMap<String> lyrics = new Int2ObjectRBTreeMap<>();
 
         if (StringUtils.isBlank(lrcContent)) {
             return lyrics;

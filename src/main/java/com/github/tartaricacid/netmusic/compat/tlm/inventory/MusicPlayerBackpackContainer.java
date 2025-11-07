@@ -122,7 +122,7 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
                 }
                 this.setSoundTicks(info.songTime * 20 + 64);
                 MaidMusicToClientMessage msg = new MaidMusicToClientMessage(this.maid.getId(), info.songUrl, info.songTime, info.songName);
-                MaidMusicToClientMessage.showLyric(this.maid, info.songUrl, info.songTime);
+                MaidMusicToClientMessage.showLyric(this.maid, info.songUrl, info.songName, info.songTime);
                 NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), msg);
                 return true;
             }

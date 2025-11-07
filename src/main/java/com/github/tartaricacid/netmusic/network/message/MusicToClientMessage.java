@@ -56,22 +56,23 @@ public class MusicToClientMessage {
 
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(MusicToClientMessage message) {
-        MusicPlayManager.play(message.url, message.songName, url -> {
-            LyricRecord record = null;
-            // 如果是网易云的音乐，那么尝试添加歌词
-            if (message.url.startsWith(MUSIC_163_URL)) {
-                Matcher matcher = PATTERN.matcher(message.url);
-                if (matcher.find()) {
-                    long musicId = Long.parseLong(matcher.group(1));
-                    try {
-                        String lyric = NetMusic.NET_EASE_WEB_API.lyric(musicId);
-                        record = LyricParser.parseLyric(lyric);
-                    } catch (IOException e) {
-                        NetMusic.LOGGER.error(e);
-                    }
+        // 使用数组方便在 lambda 表达式中修改
+        LyricRecord[] record = new LyricRecord[1];
+
+        // 如果是网易云的音乐，那么尝试添加歌词
+        if (message.url.startsWith(MUSIC_163_URL)) {
+            Matcher matcher = PATTERN.matcher(message.url);
+            if (matcher.find()) {
+                long musicId = Long.parseLong(matcher.group(1));
+                try {
+                    String lyric = NetMusic.NET_EASE_WEB_API.lyric(musicId);
+                    record[0] = LyricParser.parseLyric(lyric, message.songName);
+                } catch (IOException e) {
+                    NetMusic.LOGGER.error(e);
                 }
             }
-            return new NetMusicSound(message.pos, url, message.timeSecond, record);
-        });
+        }
+
+        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
     }
 }

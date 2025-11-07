@@ -34,13 +34,15 @@ public class MaidMusicToClientMessage {
         this.songName = songName;
     }
 
-    public static void showLyric(EntityMaid maid, String url, int timeSecond) {
+    public static void showLyric(EntityMaid maid, String url, String songName, int timeSecond) {
         // 如果是网易云的音乐，那么尝试添加歌词
         if (url.startsWith(MUSIC_163_URL)) {
             Matcher matcher = PATTERN.matcher(url);
             if (matcher.find()) {
                 long musicId = Long.parseLong(matcher.group(1));
-                LyricChatBubbleData bubbleData = new LyricChatBubbleData(musicId, timeSecond * 20 + 20, maid.level().getGameTime());
+                int songTimeTick = timeSecond * 20 + 20;
+                long gameTime = maid.level().getGameTime();
+                LyricChatBubbleData bubbleData = new LyricChatBubbleData(musicId, songName, songTimeTick, gameTime);
                 maid.getChatBubbleManager().addChatBubble(bubbleData);
             }
         }

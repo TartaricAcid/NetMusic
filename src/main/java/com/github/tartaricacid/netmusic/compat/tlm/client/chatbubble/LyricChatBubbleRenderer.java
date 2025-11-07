@@ -20,12 +20,16 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
-    private final ResourceLocation bg;
+    private static final MutableComponent WAITING_TEXT = Component.translatable("gui.netmusic.lyric.waiting");
+    private static final MutableComponent NO_LYRIC_TEXT = Component.translatable("gui.netmusic.lyric.no_lyric");
+
     private final Font font;
+    private final ResourceLocation bg;
     private final long recordStartTick;
 
     @Nullable
     private volatile LyricRecord lyric;
+    private volatile boolean isLoading = true;
 
     public LyricChatBubbleRenderer(LyricChatBubbleData data, ResourceLocation bg) {
         this.bg = bg;
@@ -37,12 +41,16 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
             CompletableFuture.supplyAsync(() -> {
                 try {
                     String lyric = NetMusic.NET_EASE_WEB_API.lyric(data.getSongId());
-                    return LyricParser.parseLyric(lyric);
+                    return LyricParser.parseLyric(lyric, data.getSongName());
                 } catch (IOException e) {
                     NetMusic.LOGGER.error(e);
+                } finally {
+                    isLoading = false;
                 }
                 return null;
             }).thenAccept(lyricRecord -> Minecraft.getInstance().execute(() -> this.lyric = lyricRecord));
+        } else {
+            isLoading = false;
         }
     }
 
@@ -51,7 +59,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         // 因为异步问题，这里需要做个本地缓存
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
-            return 0;
+            return 12;
         }
         int maxHeight = 0;
         Int2ObjectSortedMap<String> lyrics = tmpLyric.getLyrics();
@@ -70,7 +78,10 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         // 因为异步问题，这里需要做个本地缓存
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
-            return 0;
+            if (isLoading) {
+                return font.width(WAITING_TEXT);
+            }
+            return font.width(NO_LYRIC_TEXT);
         }
         int maxWidth = 0;
         Int2ObjectSortedMap<String> lyrics = tmpLyric.getLyrics();
@@ -89,16 +100,19 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         // 因为异步问题，这里需要做个本地缓存
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
+            this.renderDefault(graphics);
             return;
         }
         Int2ObjectSortedMap<String> lyrics = tmpLyric.getLyrics();
         if (lyrics == null || lyrics.isEmpty()) {
+            this.renderDefault(graphics);
+            return;
+        }
+        if (recordStartTick < 0) {
+            this.renderDefault(graphics);
             return;
         }
 
-        if (recordStartTick < 0) {
-            return;
-        }
         // 计算当前播放时间
         int currentTick = (int) (graphics.getMaid().level().getGameTime() - recordStartTick);
         tmpLyric.updateCurrentLine(currentTick);
@@ -107,6 +121,8 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         MutableComponent transLyric = null;
         int currentLyricWidth = font.width(currentLyric);
         int transLyricWidth = 0;
+        int currentLyricColor = 0xAAAAAA;
+        int transLyricColor = 0x000000;
         int y = 2;
 
         Int2ObjectSortedMap<String> transLyrics = tmpLyric.getTransLyrics();
@@ -114,17 +130,27 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
             transLyric = Component.literal(transLyrics.get(transLyrics.firstIntKey()));
             transLyricWidth = font.width(transLyric);
             y += 12;
+        } else {
+            currentLyricColor = 0x000000;
         }
-        int maxWidth = Math.max(currentLyricWidth, transLyricWidth);
 
-        graphics.drawWordWrap(font, currentLyric, (maxWidth - currentLyricWidth) / 2, y, 1000, ChatFormatting.GRAY.getColor());
+        int maxWidth = Math.max(currentLyricWidth, transLyricWidth);
+        graphics.drawWordWrap(font, currentLyric, (maxWidth - currentLyricWidth) / 2, y, 1000, currentLyricColor);
         if (transLyric != null) {
-            graphics.drawWordWrap(font, transLyric, (maxWidth - transLyricWidth) / 2, y - 12, 1000, ChatFormatting.BLACK.getColor());
+            graphics.drawWordWrap(font, transLyric, (maxWidth - transLyricWidth) / 2, y - 12, 1000, transLyricColor);
         }
     }
 
     @Override
     public ResourceLocation getBackgroundTexture() {
         return bg;
+    }
+
+    private void renderDefault(EntityGraphics graphics) {
+        if (isLoading) {
+            graphics.drawWordWrap(font, WAITING_TEXT, 0, 2, 1000, ChatFormatting.GRAY.getColor());
+        } else {
+            graphics.drawWordWrap(font, NO_LYRIC_TEXT, 0, 2, 1000, ChatFormatting.GRAY.getColor());
+        }
     }
 }

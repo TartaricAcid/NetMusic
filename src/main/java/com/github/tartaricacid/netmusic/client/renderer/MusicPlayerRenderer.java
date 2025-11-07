@@ -95,18 +95,21 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         }
 
         Camera camera = this.dispatcher.camera;
+        ChatFormatting currentLyricColor = ChatFormatting.GRAY;
+        ChatFormatting transLyricColor = ChatFormatting.WHITE;
         float y = 0.5f;
 
-        MutableComponent currentLine = Component.literal(lyrics.get(lyrics.firstIntKey()))
-                .withStyle(ChatFormatting.GRAY);
+        MutableComponent currentLine = Component.literal(lyrics.get(lyrics.firstIntKey()));
         MutableComponent translatedLine = null;
 
         Int2ObjectSortedMap<String> transLyrics = lyricRecord.getTransLyrics();
         if (transLyrics != null && !transLyrics.isEmpty()) {
-            translatedLine = Component.literal(transLyrics.get(transLyrics.firstIntKey()))
-                    .withStyle(ChatFormatting.WHITE);
+            translatedLine = Component.literal(transLyrics.get(transLyrics.firstIntKey()));
             y += 0.5f;
+        } else {
+            currentLyricColor = ChatFormatting.WHITE;
         }
+        currentLine = currentLine.withStyle(currentLyricColor);
 
         poseStack.pushPose();
         poseStack.translate(0.5, 1.625, 0.5);
@@ -123,6 +126,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
 
         if (translatedLine != null) {
             float translatedLineWidth = (float) (-this.font.width(translatedLine) / 2);
+            translatedLine = translatedLine.withStyle(transLyricColor);
             this.font.drawInBatch(translatedLine, translatedLineWidth, -y - 12, 0xffffffff, false,
                     poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
                     bgColor, combinedLightIn);

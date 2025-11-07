@@ -1,9 +1,9 @@
 package com.github.tartaricacid.netmusic.compat.tlm.backpack.data;
 
+import com.github.tartaricacid.netmusic.compat.tlm.message.MaidMusicToClientMessage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import com.github.tartaricacid.netmusic.compat.tlm.message.MaidMusicToClientMessage;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.nbt.CompoundTag;
@@ -101,7 +101,7 @@ public class MusicPlayerBackpackData implements IBackpackData {
             this.selectSlotId = slotId - 6;
             this.playTick = info.songTime * 20 + 64;
             MaidMusicToClientMessage msg = new MaidMusicToClientMessage(entityMaid.getId(), info.songUrl, info.songTime, info.songName);
-            MaidMusicToClientMessage.showLyric(entityMaid, info.songUrl, info.songTime);
+            MaidMusicToClientMessage.showLyric(entityMaid, info.songUrl, info.songName, info.songTime);
             NetworkHandler.sendToNearby(entityMaid.level(), entityMaid.blockPosition(), msg);
             return true;
         }
