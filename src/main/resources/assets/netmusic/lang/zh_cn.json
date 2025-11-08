@@ -58,5 +58,10 @@
   "config.netmusic.general.enable_player_lyrics.tooltip": "是否为唱片机启用歌词显示",
   "config.netmusic.general.enable_maid_lyrics": "女仆歌词显示",
   "config.netmusic.general.enable_maid_lyrics.tooltip": "是否为女仆启用歌词显示",
-  "jei.netmusic.altar_craft.item_craft.result": "合成物品"
+  "jei.netmusic.altar_craft.item_craft.result": "合成物品",
+  "item.netmusic.music_cd.tip": "用于写入音乐的唱片，如果为只读则无法覆盖已写入的音乐。",
+  "item.netmusic.music_player_backpack.tip": "为女仆添加音乐播放器功能，可播放已写入的唱片。",
+  "block.netmusic.music_player.tip": "将音乐唱片放入唱片机，享受你喜爱的音乐。",
+  "block.netmusic.cd_burner.tip": "只可写入网易云音乐链接（仅在中国大陆可用）",
+  "block.netmusic.computer.tip": "用于通过本地或网络将喜欢的音乐写入唱片，仅支持 mp3/flac 格式"
 }
