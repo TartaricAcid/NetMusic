@@ -102,6 +102,12 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        url "https://maven.shedaniel.me/"
+        content {
+            includeGroup "me.shedaniel.cloth"
+        }
+    }
 }
 
 dependencies {
@@ -118,6 +124,7 @@ dependencies {
     runtimeOnly(fg.deobf("curse.maven:sound-physics-remastered-535489:5525256"))
 
     implementation fg.deobf('curse.maven:touhou-little-maid-355044:7192649-sources-7192650')
+    implementation fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.106")
 
     runtimeOnly "curse.maven:kotlin-for-forge-351264:4983659"
     runtimeOnly fg.deobf("curse.maven:libipn-679177:4870127")

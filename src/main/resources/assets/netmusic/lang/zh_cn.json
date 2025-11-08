@@ -47,5 +47,16 @@
   "gui.netmusic.computer.time.tips": "时长（秒）",
   "gui.netmusic.computer.time.empty": "歌曲时长不能为空",
   "gui.netmusic.computer.time.not_number": "歌曲时长格式不正确，请输入数字！",
+  "config.netmusic.general": "通用设置",
+  "config.netmusic.general.enable_stereo": "启用立体声",
+  "config.netmusic.general.enable_stereo.tooltip": "是否启用立体声效果",
+  "config.netmusic.general.proxy_type": "代理类型",
+  "config.netmusic.general.proxy_type.tooltip": "代理类型，HTTP 和 SOCKS 都支持",
+  "config.netmusic.general.proxy_address": "代理地址",
+  "config.netmusic.general.proxy_address.tooltip": "代理地址，例如 127.0.0.1:1080，为空则不使用代理",
+  "config.netmusic.general.enable_player_lyrics": "唱片机歌词显示",
+  "config.netmusic.general.enable_player_lyrics.tooltip": "是否为唱片机启用歌词显示",
+  "config.netmusic.general.enable_maid_lyrics": "女仆歌词显示",
+  "config.netmusic.general.enable_maid_lyrics.tooltip": "是否为女仆启用歌词显示",
   "jei.netmusic.altar_craft.item_craft.result": "合成物品"
 }

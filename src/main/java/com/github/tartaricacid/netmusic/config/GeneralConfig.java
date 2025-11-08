@@ -9,6 +9,9 @@ public class GeneralConfig {
     public static ForgeConfigSpec.EnumValue<Proxy.Type> PROXY_TYPE;
     public static ForgeConfigSpec.ConfigValue<String> PROXY_ADDRESS;
 
+    public static ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
+    public static ForgeConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
+
     public static ForgeConfigSpec init() {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         builder.push("general");
@@ -21,6 +24,12 @@ public class GeneralConfig {
 
         builder.comment("Proxy Address, such as 127.0.0.1:1080, empty is no proxy");
         PROXY_ADDRESS = builder.define("ProxyAddress", "");
+
+        builder.comment("Whether to enable lyrics display in the music player");
+        ENABLE_PLAYER_LYRICS = builder.define("EnablePlayerLyrics", true);
+
+        builder.comment("Whether to enable lyrics display for the maid");
+        ENABLE_MAID_LYRICS = builder.define("EnableMaidLyrics", true);
 
         builder.pop();
         return builder.build();

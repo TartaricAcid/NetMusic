@@ -3,6 +3,7 @@ package com.github.tartaricacid.netmusic.client.renderer;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
+import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -81,6 +82,9 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
     }
 
     private void renderLyric(TileEntityMusicPlayer te, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn) {
+        if (!GeneralConfig.ENABLE_PLAYER_LYRICS.get()) {
+            return;
+        }
         LyricRecord lyricRecord = te.lyricRecord;
         if (lyricRecord == null) {
             return;
