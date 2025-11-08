@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
@@ -35,6 +36,11 @@ public class TileEntityMusicPlayer extends BlockEntity {
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
+
+    /**
+     * 仅客户端使用，记录当前音乐的歌词信息，用于渲染歌词
+     */
+    public @Nullable LyricRecord lyricRecord = null;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
         super(TYPE, blockPos, blockState);

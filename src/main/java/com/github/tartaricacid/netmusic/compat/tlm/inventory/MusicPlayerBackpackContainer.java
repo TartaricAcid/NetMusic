@@ -2,13 +2,18 @@ package com.github.tartaricacid.netmusic.compat.tlm.inventory;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.data.MusicPlayerBackpackData;
+import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidMusicToClientMessage;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidStopMusicMessage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
+import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
+import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -117,6 +122,7 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
                 }
                 this.setSoundTicks(info.songTime * 20 + 64);
                 MaidMusicToClientMessage msg = new MaidMusicToClientMessage(this.maid.getId(), info.songUrl, info.songTime, info.songName);
+                MaidMusicToClientMessage.showLyric(this.maid, info.songUrl, info.songName, info.songTime);
                 NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), msg);
                 return true;
             }
@@ -131,6 +137,22 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
         this.setSoundTicks(0);
         MaidStopMusicMessage stopMsg = new MaidStopMusicMessage(this.maid.getId());
         NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), stopMsg);
+
+        // 移除歌词气泡
+        LongSet removeIds = new LongOpenHashSet();
+        ChatBubbleDataCollection collection = maid.getChatBubbleManager().getChatBubbleDataCollection();
+        // 先记录，再移除，避免并发修改异常
+        for (long id : collection.keySet()) {
+            IChatBubbleData data = collection.get(id);
+            if (data.id().equals(LyricChatBubbleData.ID)) {
+                removeIds.add(id);
+            }
+        }
+        for (long id : removeIds) {
+            collection.remove(id);
+        }
+        maid.getChatBubbleManager().forceUpdateChatBubble();
+
         return true;
     }
 

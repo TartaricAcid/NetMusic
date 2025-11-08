@@ -19,8 +19,8 @@ import java.util.function.Function;
 
 @OnlyIn(Dist.CLIENT)
 public final class MusicPlayManager {
-    private static final String ERROR_404 = "http://music.163.com/404";
-    private static final String MUSIC_163_URL = "https://music.163.com/";
+    public static final String ERROR_404 = "http://music.163.com/404";
+    public static final String MUSIC_163_URL = "https://music.163.com/";
     private static final String LOCAL_FILE_PROTOCOL = "file";
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
@@ -29,7 +29,8 @@ public final class MusicPlayManager {
             try {
                 url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
+                return;
             }
         }
         if (url != null) {
@@ -58,11 +59,12 @@ public final class MusicPlayManager {
                 }
             }
             Minecraft.getInstance().submitAsync(() -> {
-                Minecraft.getInstance().getSoundManager().play(sound.apply(urlFinal));
+                SoundInstance instance = sound.apply(urlFinal);
+                Minecraft.getInstance().getSoundManager().play(instance);
                 Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
             });
         } catch (MalformedURLException | URISyntaxException e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Malformed URL: {}", url, e);
         }
     }
 }

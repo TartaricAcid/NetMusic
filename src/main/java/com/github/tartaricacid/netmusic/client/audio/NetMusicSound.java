@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.Util;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import javax.annotation.Nullable;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.net.URL;
@@ -24,9 +26,10 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
     private final URL songUrl;
     private final int tickTimes;
     private final BlockPos pos;
+    private final @Nullable LyricRecord lyricRecord;
     private int tick;
 
-    public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond) {
+    public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond, @Nullable LyricRecord lyricRecord) {
         super(InitSounds.NET_MUSIC.get(), SoundSource.RECORDS, SoundInstance.createUnseededRandom());
         this.songUrl = songUrl;
         this.x = pos.getX() + 0.5f;
@@ -36,6 +39,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         this.volume = 4.0f;
         this.tick = 0;
         this.pos = pos;
+        this.lyricRecord = lyricRecord;
     }
 
     @Override
@@ -46,6 +50,10 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         }
         tick++;
         if (tick > tickTimes + 50) {
+            BlockEntity te = world.getBlockEntity(pos);
+            if (te instanceof TileEntityMusicPlayer musicPlay) {
+                musicPlay.lyricRecord = null;
+            }
             this.stop();
         } else {
             if (world.getGameTime() % 8 == 0) {
@@ -59,11 +67,18 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             }
         }
 
+        // 依据 tick 更新歌词显示
+        if (lyricRecord != null) {
+            lyricRecord.updateCurrentLine(tick);
+        }
+
         BlockEntity te = world.getBlockEntity(pos);
-        if (te instanceof TileEntityMusicPlayer) {
-            TileEntityMusicPlayer musicPlay = (TileEntityMusicPlayer) te;
+        if (te instanceof TileEntityMusicPlayer musicPlay) {
             if (!musicPlay.isPlay()) {
+                musicPlay.lyricRecord = null;
                 this.stop();
+            } else {
+                musicPlay.lyricRecord = lyricRecord;
             }
         } else {
             this.stop();

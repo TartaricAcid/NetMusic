@@ -141,6 +141,8 @@ dependencies {
     implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
     // 女仆模组兼容
     implementation 'curse.maven:touhou-little-maid-355044:7192654-sources-7192655'
+    // Cloth Config (配置界面库)
+    implementation "maven.modrinth:cloth-config:15.0.140+neoforge"
     // IPN
     runtimeOnly "maven.modrinth:kotlin-for-forge:5.4.0"
     runtimeOnly "maven.modrinth:libipn:neoforge-1.21-6.0.2"

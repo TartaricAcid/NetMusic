@@ -105,6 +105,7 @@ public class PlaySoundFunction implements IFunctionCall<PlaySoundFunction.Result
             }
             MaidMusicToClientMessage msg = new MaidMusicToClientMessage(maid.getId(), songResult.getUrl(),
                     songResult.getTimeSecond(), songResult.getName());
+            MaidMusicToClientMessage.showLyric(maid, songResult.getUrl(), songResult.getName(), songResult.getTimeSecond());
             NetworkHandler.sendToNearby(maid.level(), maid.blockPosition(), msg);
             toolResponseText[0] = PLAY_SUCCESS + songResult.getName();
         } catch (Exception e) {
