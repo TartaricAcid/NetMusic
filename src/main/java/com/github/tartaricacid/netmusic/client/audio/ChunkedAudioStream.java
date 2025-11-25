@@ -54,6 +54,7 @@ public class ChunkedAudioStream extends InputStream {
             conn.setConnectTimeout(3_000);
             conn.setReadTimeout(3_000);
             conn.setRequestProperty("Range", "bytes=" + start + "-" + (start + CHUNK_SIZE - 1));
+            currentStart += conn.getContentLengthLong();
             return conn.getInputStream();
         } catch (IOException e) {
             NetMusic.LOGGER.error("Failed to open audio chunk at {}: {}", start, e.getMessage());
@@ -69,7 +70,6 @@ public class ChunkedAudioStream extends InputStream {
         int bytesRead = currentStream.read(b, off, len);
         if (bytesRead == -1) {
             // 到达当前流结尾，打开下一个片段
-            currentStart += CHUNK_SIZE;
             currentStream.close();
             currentStream = openChunk(currentStart);
             if (currentStream == null) {
