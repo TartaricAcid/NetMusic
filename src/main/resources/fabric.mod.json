@@ -28,6 +28,9 @@
     ],
     "fabric-datagen": [
       "com.github.tartaricacid.netmusic.NetMusicDataGenerator"
+    ],
+    "modmenu": [
+      "com.github.tartaricacid.netmusic.compat.modmenu.ModMenuApiImpl"
     ]
   },
   "depends": {

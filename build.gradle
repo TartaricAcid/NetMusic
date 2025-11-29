@@ -45,6 +45,16 @@ repositories {
         name 'Xander Maven'
         url 'https://maven.isxander.dev/releases'
     }
+    maven {
+        name 'terraformersmc Maven'
+        url "https://maven.terraformersmc.com"
+    }
+    maven {
+        url "https://maven.shedaniel.me/"
+        content {
+            includeGroup "me.shedaniel.cloth"
+        }
+    }
 }
 
 loom {
@@ -67,16 +77,27 @@ dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    // mp3 解码库
     implementation include("com.googlecode.soundlibs:mp3spi:1.9.5.4")
     implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
     implementation include("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
+    // flac 解码库
     implementation include("libs:jflac-codec-1.5.3:SNAPSHOT")
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // YACL
     modImplementation include("dev.isxander:yet-another-config-lib:3.5.0+1.20.1-fabric")
     // Fabric API
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     // JEI
     modRuntimeOnly("mezz.jei:jei-${minecraft_version}-fabric:${jei_version}")
+    // ModMenu
+    modImplementation("com.terraformersmc:modmenu:7.2.2")
+    // Cloth Config API
+    modImplementation("me.shedaniel.cloth:cloth-config-fabric:11.1.136") {
+        exclude(group: "net.fabricmc.fabric-api")
+    }
+
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
 }
 
 processResources {
