@@ -24,8 +24,8 @@ import java.util.function.Function;
  */
 @Environment(EnvType.CLIENT)
 public class MusicPlayManager {
-    private static final String ERROR_404 = "http://music.163.com/404";
-    private static final String MUSIC_163_URL = "https://music.163.com/";
+    public static final String ERROR_404 = "http://music.163.com/404";
+    public static final String MUSIC_163_URL = "https://music.163.com/";
     private static final String LOCAL_FILE_PROTOCOL = "file";
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
@@ -34,7 +34,8 @@ public class MusicPlayManager {
             try {
                 url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
+                return;
             }
         }
         if (url != null) {
@@ -67,7 +68,7 @@ public class MusicPlayManager {
                 setNowPlaying(Text.literal(songName));
             });
         } catch (MalformedURLException | URISyntaxException e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Malformed URL: {}", url, e);
         }
     }
 

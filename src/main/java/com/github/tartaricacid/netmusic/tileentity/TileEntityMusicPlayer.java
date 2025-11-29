@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
@@ -29,7 +30,6 @@ import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISA
  */
 public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv {
     public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder.create(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER).build(null);
-    private static final String CD_ITEM_TAG = "ItemStackCD";
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
@@ -37,7 +37,11 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
-    private boolean isEmpty = true;
+
+    /**
+     * 仅客户端使用，记录当前音乐的歌词信息，用于渲染歌词
+     */
+    public @Nullable LyricRecord lyricRecord = null;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
         super(TYPE, blockPos, blockState);
@@ -134,7 +138,6 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         isPlay = nbt.getBoolean(IS_PLAY_TAG);
         currentTime = nbt.getInt(CURRENT_TIME_TAG);
         hasSignal = nbt.getBoolean(SIGNAL_TAG);
-        isEmpty = nbt.getBoolean("isEmpty");
     }
 
     @Override
@@ -143,7 +146,6 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         nbt.putBoolean(IS_PLAY_TAG, isPlay);
         nbt.putInt(CURRENT_TIME_TAG, currentTime);
         nbt.putBoolean(SIGNAL_TAG, hasSignal);
-        nbt.putBoolean("isEmpty", isEmpty);
         super.writeNbt(nbt, registryLookup);
     }
 
@@ -179,13 +181,8 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     @Override
     public void markDirty() {
         super.markDirty();
-        isEmpty = getStack(0).isEmpty();
         BlockState state = world.getBlockState(pos);
         world.updateListeners(pos, state, state, 0);
     }
 
-    @Override
-    public boolean isEmpty() {
-        return isEmpty;
-    }
 }

@@ -1,10 +1,12 @@
 package com.github.tartaricacid.netmusic.audio;
 
+import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.AudioStream;
+import net.minecraft.client.sound.MovingSoundInstance;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.sound.SoundLoader;
 import net.minecraft.client.world.ClientWorld;
@@ -14,6 +16,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 
+import javax.annotation.Nullable;
 import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,13 +24,14 @@ import java.util.concurrent.CompletableFuture;
  * @author : IMG
  * @create : 2024/10/2
  */
-public class NetMusicSound extends AbstractTickableSoundInstance {
+public class NetMusicSound extends MovingSoundInstance {
     private final URL songUrl;
     private final int tickTimes;
     private final BlockPos pos;
+    private final @Nullable LyricRecord lyricRecord;
     private int tick;
 
-    public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond) {
+    public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond, @Nullable LyricRecord lyricRecord) {
         super(InitSounds.NET_MUSIC, SoundCategory.RECORDS, SoundInstance.createRandom());
         this.songUrl = songUrl;
         this.x = pos.getX() + 0.5f;
@@ -37,6 +41,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         this.volume = 4.0f;
         this.tick = 0;
         this.pos = pos;
+        this.lyricRecord = lyricRecord;
     }
 
     @Override
@@ -47,7 +52,11 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         }
         tick++;
         if (tick > tickTimes + 50) {
-            this.stop();
+            BlockEntity te = world.getBlockEntity(pos);
+            if (te instanceof TileEntityMusicPlayer musicPlayer) {
+                musicPlayer.lyricRecord = null;
+            }
+            this.setDone();
         } else {
             if (world.getTime() % 8 == 0) {
                 for (int i = 0; i < 2; i++) {
@@ -60,14 +69,21 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             }
         }
 
+        // 依据 tick 更新歌词显示
+        if (lyricRecord != null) {
+            lyricRecord.updateCurrentLine(tick);
+        }
+
         BlockEntity te = world.getBlockEntity(pos);
-        if (te instanceof TileEntityMusicPlayer) {
-            TileEntityMusicPlayer musicPlay = (TileEntityMusicPlayer) te;
+        if (te instanceof TileEntityMusicPlayer musicPlay) {
             if (!musicPlay.isPlay()) {
-                this.stop();
+                musicPlay.lyricRecord = null;
+                this.setDone();
+            } else {
+                musicPlay.lyricRecord = lyricRecord;
             }
         } else {
-            this.stop();
+            this.setDone();
         }
     }
 
