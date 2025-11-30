@@ -24,6 +24,9 @@ public class GeneralConfig {
     @SerialEntry(value = "ProxyAddress", comment = "Proxy Address, such as 127.0.0.1:1080, empty is no proxy")
     public static String PROXY_ADDRESS = "";
 
+    @SerialEntry(value = "EnablePlayerLyrics", comment = "Whether to enable lyrics display in the music player")
+    public static Boolean ENABLE_PLAYER_LYRICS = true;
+
     public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
             .createBuilder(GeneralConfig.class)
             .id(Identifier.of(NetMusic.MOD_ID, "common"))
