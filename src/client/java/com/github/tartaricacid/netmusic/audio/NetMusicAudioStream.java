@@ -32,18 +32,29 @@ public class NetMusicAudioStream implements AudioStream {
         skipID3(bufferedInputStream);
         AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
         AudioFormat originalFormat = originalInputStream.getFormat();
-        AudioFormat targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
-                originalFormat.getChannels(), originalFormat.getChannels() * 2, originalFormat.getSampleRate(), false);
+        AudioFormat targetFormat = getTargetPCMAudioFormat(originalFormat);
         AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
         if (GeneralConfig.ENABLE_STEREO) {
             targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     1, 2, originalFormat.getSampleRate(), false);
-            this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         } else {
-            this.stream = targetInputStream;
+            targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
+                    2, 4, originalFormat.getSampleRate(), false);
         }
+        this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         this.frameSize = stream.getFormat().getFrameSize();
         frame = new byte[frameSize];
+    }
+
+    private AudioFormat getTargetPCMAudioFormat(AudioFormat originalFormat) {
+        int sampleSizeInBits = originalFormat.getSampleSizeInBits();
+        if (sampleSizeInBits == AudioSystem.NOT_SPECIFIED) {
+            // mp3 没有位深, 默认转换为 16 位深
+            sampleSizeInBits = 16;
+        }
+        int frameSize = (sampleSizeInBits / 8) * originalFormat.getChannels();
+        return new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), sampleSizeInBits,
+                originalFormat.getChannels(), frameSize, originalFormat.getSampleRate(), false);
     }
 
     @Override
