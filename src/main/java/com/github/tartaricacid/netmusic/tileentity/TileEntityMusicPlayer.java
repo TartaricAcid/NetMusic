@@ -21,6 +21,7 @@ import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import java.util.HashSet;
@@ -274,6 +275,24 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
                 //     PlayProgressMessage msg = new PlayProgressMessage(blockPos, calculatedProgress);
                 //     NetworkHandler.sendToNearBy(level, blockPos, msg);
                 // }
+            }
+            // 仅在存在 net_music_list 模组时执行曲终停止逻辑（避免在没有该模组的环境引发不必要的同步）
+            if (FabricLoader.getInstance().isModLoaded("net_music_list") && level instanceof ServerWorld) {
+                ItemStack stackInSlot = te.getItems().getFirst();
+                if (!stackInSlot.isEmpty()) {
+                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                    if (songInfo != null) {
+                        if (te.playProgress >= songInfo.songTime * 20) {
+                            NetMusic.LOGGER.info("[TileEntityMusicPlayer] Song finished at pos {}, progress={} ticks, stopping playback", blockPos, te.playProgress);
+                            te.stopPlayback();
+                            // 将进度归零并同步给附近客户端
+                            te.setPlayProgress(0);
+                            // 向附近客户端发送停止消息，确保客户端本地停止
+                            StopMusicMessage stop = new StopMusicMessage(blockPos);
+                            NetworkHandler.sendToNearBy(level, blockPos, stop);
+                        }
+                    }
+                }
             }
         }
 
