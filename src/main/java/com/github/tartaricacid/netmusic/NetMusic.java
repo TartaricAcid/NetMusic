@@ -41,6 +41,8 @@ public class NetMusic implements ModInitializer {
         InitSounds.init();
         CommandRegistry.registryCommand();
         ReceiverRegistry.register();
+        // 注册服务器事件处理（玩家加入时的重检逻辑）
+        com.github.tartaricacid.netmusic.init.ServerEventHandler.register();
         GeneralConfig.INSTANCE.load();
     }
 }

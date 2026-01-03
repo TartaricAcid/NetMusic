@@ -33,6 +33,9 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
             NetMusic.LOGGER.info("[MusicToClientMessageReceiver] EXECUTING ON CLIENT THREAD: song={}, playProgress={} ticks, pos={}", 
                     message.getSongName(), message.getPlayProgress(), message.getPos());
             
+            // 预先注册播放位置，作为占位符，防止并发到达的重复消息在注册前通过检查造成竞态
+            ClientMusicPlaybackManager.register(message.getPos());
+
             CompletableFuture.runAsync(() -> {
                 NetMusic.LOGGER.info("[MusicToClientMessageReceiver] STARTING ASYNC TASK: song={}, playProgress={} ticks, pos={}", 
                         message.getSongName(), message.getPlayProgress(), message.getPos());
@@ -56,16 +59,15 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
 
                 NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Creating NetMusicSound with startProgress={} ticks", message.getPlayProgress());
 
-                // 去重：如果客户端已在该位置短时间内开始播放，则跳过重复创建
+                // 去重：如果客户端已在该位置短时间内开始播放，则跳过重复创建（占位已注册）
                 if (ClientMusicPlaybackManager.isPlayingAt(message.getPos())) {
-                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Skipping play because client already playing at pos {}", message.getPos());
-                    return;
+                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Proceeding to create NetMusicSound for pos {}", message.getPos());
                 }
 
                 MusicPlayManager.play(
-                    message.getUrl(),
-                    message.getSongName(),
-                    url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                        message.getUrl(),
+                        message.getSongName(),
+                        url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
                 );
             }, Util.getMainWorkerExecutor());
         });
