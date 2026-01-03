@@ -56,6 +56,8 @@
   "config.netmusic.general.proxy_address.tooltip": "代理地址，例如 127.0.0.1:1080，为空则不使用代理",
   "config.netmusic.general.enable_player_lyrics": "唱片机歌词显示",
   "config.netmusic.general.enable_player_lyrics.tooltip": "是否为唱片机启用歌词显示",
+  "config.netmusic.general.enable_auto_stop_on_end": "曲终自动停止",
+  "config.netmusic.general.enable_auto_stop_on_end.tooltip": "当歌曲播放完毕时自动停止并重置进度（安装 net_music_list 模组时强制开启）",
   "config.netmusic.general.enable_maid_lyrics": "女仆歌词显示",
   "config.netmusic.general.enable_maid_lyrics.tooltip": "是否为女仆启用歌词显示",
   "jei.netmusic.altar_craft.item_craft.result": "合成物品",

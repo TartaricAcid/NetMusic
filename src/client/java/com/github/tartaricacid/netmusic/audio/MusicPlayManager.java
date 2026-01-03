@@ -65,20 +65,29 @@ public class MusicPlayManager {
             }
             MinecraftClient.getInstance().submit(() -> {
                 try {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Creating sound instance from: {}", url);
                     SoundInstance inst = sound.apply(urlFinal);
+                    NetMusic.LOGGER.info("[MusicPlayManager] Sound instance created: {}, class={}", inst, inst == null ? "null" : inst.getClass().getSimpleName());
+                    if (inst == null) {
+                        NetMusic.LOGGER.error("[MusicPlayManager] Sound instance creation returned null for URL: {}", url);
+                        return;
+                    }
                     // 如果是 NetMusicSound，则在 ClientMusicPlaybackManager 中注册
                     if (inst instanceof NetMusicSound) {
                         NetMusicSound ns = (NetMusicSound) inst;
                         ClientMusicPlaybackManager.registerSound(ns.getPos(), inst);
+                        NetMusic.LOGGER.info("[MusicPlayManager] Registered NetMusicSound for pos {} in ClientMusicPlaybackManager", ns.getPos());
                     }
+                    NetMusic.LOGGER.info("[MusicPlayManager] Calling SoundManager.play() for: {}", inst);
                     MinecraftClient.getInstance().getSoundManager().play(inst);
+                    NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called successfully");
                     setNowPlaying(Text.literal(songName));
                 } catch (Exception e) {
-                    NetMusic.LOGGER.error("Failed to create/play sound instance: {}", e.getMessage());
+                    NetMusic.LOGGER.error("[MusicPlayManager] Failed to create/play sound instance: {}", e.getMessage(), e);
                 }
             });
         } catch (MalformedURLException | URISyntaxException e) {
-            NetMusic.LOGGER.error("Malformed URL: {}", url, e);
+            NetMusic.LOGGER.error("[MusicPlayManager] Malformed URL: {}", url, e);
         }
     }
 
