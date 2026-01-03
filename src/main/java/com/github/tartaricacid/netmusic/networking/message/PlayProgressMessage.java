@@ -11,7 +11,7 @@ import net.minecraft.util.math.BlockPos;
 /**
  * 用于同步音乐播放进度的消息
  * @author : BLRINK317
- * @create : 2025/01/03
+ * @create : 2026/01/03
  */
 public class PlayProgressMessage implements CustomPayload {
     private static final Identifier PACKET_ID = Identifier.of(NetMusic.MOD_ID, "play_progress");

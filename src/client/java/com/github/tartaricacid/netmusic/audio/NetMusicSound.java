@@ -4,8 +4,7 @@ import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.networking.message.UpdatePlayProgressC2SMessage;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import com.github.tartaricacid.netmusic.audio.ClientMusicPlaybackManager;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.sound.AudioStream;
@@ -47,12 +46,16 @@ public class NetMusicSound extends MovingSoundInstance {
         this.z = pos.getZ() + 0.5f;
         this.tickTimes = timeSecond * 20;
         this.volume = 4.0f;
+        this.relative = false; // ensure positional audio so attenuation applies
+        this.attenuationType = SoundInstance.AttenuationType.LINEAR; // 启用距离衰减
         this.tick = startProgress; // 从保存的进度开始
         this.pos = pos;
         this.lyricRecord = lyricRecord;
         this.startProgress = startProgress;
         NetMusic.LOGGER.info("[NetMusicSound] Created with startProgress={} ticks ({}s), total duration={}s, volume={} at pos {}", 
-                startProgress, startProgress / 20, timeSecond, this.volume, pos);
+            startProgress, startProgress / 20, timeSecond, this.volume, pos);
+        // 注册播放位置，避免短时间重复播放
+        ClientMusicPlaybackManager.register(pos);
         
         // 如果从非零进度开始，立即更新歌词到正确位置
         // 歌词时间单位：(milliseconds / 50)，即 50ms = 1个歌词单位
@@ -64,6 +67,10 @@ public class NetMusicSound extends MovingSoundInstance {
         }
     }
 
+    public BlockPos getPos() {
+        return pos;
+    }
+
     @Override
     public void tick() {
         ClientWorld world = MinecraftClient.getInstance().world;
@@ -71,16 +78,14 @@ public class NetMusicSound extends MovingSoundInstance {
             return;
         }
         tick++;
+
         
-        // 实时保存播放进度，并每20 tick发送一次到服务器
+        // 客户端只负责播放音频，进度由服务器计算并同步（PlayProgressMessage）
+        // 这样可以避免多客户端并发上传导致的同步问题
         BlockEntity te = world.getBlockEntity(pos);
         if (te instanceof TileEntityMusicPlayer musicPlayer) {
-            musicPlayer.setPlayProgress(tick);
-            
-            // 每20 tick向服务器发送一次进度更新
-            if (tick % 20 == 0) {
-                ClientPlayNetworking.send(new UpdatePlayProgressC2SMessage(pos, tick));
-            }
+            // 不再本地修改进度，等待服务器通过 PlayProgressMessage 同步
+            // musicPlayer.setPlayProgress(tick); // REMOVED - Server is now authority
             
             if (tick == 1) {
                 NetMusic.LOGGER.info("[NetMusicSound] Started playback at tick=1, recovered progress from {}", startProgress);
@@ -90,6 +95,7 @@ public class NetMusicSound extends MovingSoundInstance {
             if (!musicPlayer.isPlay()) {
                 NetMusic.LOGGER.info("[NetMusicSound] Music player stopped at tick={}", tick);
                 musicPlayer.lyricRecord = null;
+                ClientMusicPlaybackManager.unregister(pos);
                 this.setDone();
                 return;
             }
@@ -100,6 +106,7 @@ public class NetMusicSound extends MovingSoundInstance {
             if (tick == 1) {
                 NetMusic.LOGGER.warn("[NetMusicSound] TileEntityMusicPlayer not found at pos {}", pos);
             }
+            ClientMusicPlaybackManager.unregister(pos);
             this.setDone();
             return;
         }
@@ -110,6 +117,7 @@ public class NetMusicSound extends MovingSoundInstance {
                 endMusicPlayer.lyricRecord = null;
                 NetMusic.LOGGER.info("[NetMusicSound] Music playback finished at tick={}", tick);
             }
+            ClientMusicPlaybackManager.unregister(pos);
             this.setDone();
         } else {
             if (world.getTime() % 8 == 0) {

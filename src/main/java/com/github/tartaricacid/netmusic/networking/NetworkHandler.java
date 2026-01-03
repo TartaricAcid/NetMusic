@@ -14,7 +14,7 @@ import net.minecraft.world.World;
  */
 public class NetworkHandler {
 
-    public static void sendToNearBy(World world, BlockPos pos, CustomPayload toSend) {
+    public static int sendToNearBy(World world, BlockPos pos, CustomPayload toSend) {
         if (world instanceof ServerWorld) {
             ServerWorld serverWorld = (ServerWorld) world;
             var players = serverWorld.getServer().getPlayerManager().getPlayerList();
@@ -28,7 +28,9 @@ public class NetworkHandler {
                 }
             }
             NetMusic.LOGGER.info("[NetworkHandler] sendToNearBy: sent {} messages at pos {}", sentCount, pos);
+            return sentCount;
         }
+        return 0;
     }
 
     public static void sendToClientPlayer(CustomPayload toSend, ServerPlayerEntity player) {

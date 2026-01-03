@@ -1,0 +1,26 @@
+
+> Configure project :
+Fabric Loom: 1.8.13
+
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+
+> Task :compileClientJava FAILED
+D:\Dev\NetMusic\src\client\java\com\github\tartaricacid\netmusic\audio\NetMusicSound.java:49: 閿欒: 鎵句笉鍒扮鍙?        this.distance = 32.0f; // 琛板噺璺濈锛堜笌鍞辩墖鏈烘帴杩戯級
+            ^
+  绗﹀彿: 鍙橀噺 distance
+1 涓敊璇?
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileClientJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1s
+3 actionable tasks: 1 executed, 2 up-to-date

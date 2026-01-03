@@ -10,7 +10,7 @@ import net.minecraft.client.MinecraftClient;
 /**
  * 处理来自服务器的播放进度同步消息
  * @author : BLRINK317
- * @create : 2025/01/03
+ * @create : 2026/01/03
  */
 public class PlayProgressMessageReceiver implements ClientPlayNetworking.PlayPayloadHandler<PlayProgressMessage> {
     @Override

@@ -11,7 +11,7 @@ import net.minecraft.util.math.BlockPos;
 /**
  * 客户端向服务器发送的播放进度更新消息
  * @author : BLRINK317
- * @create : 2025/01/03
+ * @create : 2026/01/03
  */
 public class UpdatePlayProgressC2SMessage implements CustomPayload {
     private static final Identifier PACKET_ID = Identifier.of(NetMusic.MOD_ID, "update_play_progress_c2s");

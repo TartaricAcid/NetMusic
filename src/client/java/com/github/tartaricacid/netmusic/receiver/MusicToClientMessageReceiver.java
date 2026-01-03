@@ -5,6 +5,7 @@ import com.github.tartaricacid.netmusic.api.lyric.LyricParser;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.audio.NetMusicSound;
+import com.github.tartaricacid.netmusic.audio.ClientMusicPlaybackManager;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.networking.message.MusicToClientMessage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -26,11 +27,16 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
 
     @Override
     public void receive(MusicToClientMessage message, ClientPlayNetworking.Context context) {
+        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] RECEIVED MESSAGE: song={}, playProgress={} ticks, pos={}, client world exists={}", 
+                message.getSongName(), message.getPlayProgress(), message.getPos(), context.client().world != null);
         context.client().execute(() -> {
-            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Received music message: song={}, playProgress={} ticks, pos={}", 
+            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] EXECUTING ON CLIENT THREAD: song={}, playProgress={} ticks, pos={}", 
                     message.getSongName(), message.getPlayProgress(), message.getPos());
             
             CompletableFuture.runAsync(() -> {
+                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] STARTING ASYNC TASK: song={}, playProgress={} ticks, pos={}", 
+                        message.getSongName(), message.getPlayProgress(), message.getPos());
+                
                 // 使用数组方便在 lambda 表达式中修改
                 LyricRecord[] record = new LyricRecord[1];
 
@@ -49,10 +55,17 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                 }
 
                 NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Creating NetMusicSound with startProgress={} ticks", message.getPlayProgress());
+
+                // 去重：如果客户端已在该位置短时间内开始播放，则跳过重复创建
+                if (ClientMusicPlaybackManager.isPlayingAt(message.getPos())) {
+                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Skipping play because client already playing at pos {}", message.getPos());
+                    return;
+                }
+
                 MusicPlayManager.play(
-                        message.getUrl(),
-                        message.getSongName(),
-                        url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                    message.getUrl(),
+                    message.getSongName(),
+                    url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
                 );
             }, Util.getMainWorkerExecutor());
         });

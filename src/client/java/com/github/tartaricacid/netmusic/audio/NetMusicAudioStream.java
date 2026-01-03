@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.audio;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.NetWorker;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import net.minecraft.client.sound.AudioStream;
@@ -54,8 +55,11 @@ public class NetMusicAudioStream implements AudioStream {
                     ", sampleRate=" + standardFormat.getSampleRate() +
                     ", frameSize=" + standardFormat.getFrameSize());
             
-            // 根据配置决定最终的声道数
-            int finalChannels = GeneralConfig.ENABLE_STEREO ? 2 : originalChannels;
+            // OpenAL 无法对立体声做 3D 衰减；强制下混为单声道以恢复距离衰减
+            if (GeneralConfig.ENABLE_STEREO) {
+                NetMusic.LOGGER.info("[NetMusicAudioStream] Stereo requested, but spatial playback needs mono; downmixing to 1 channel");
+            }
+            int finalChannels = 1;
             AudioFormat targetFormat = new AudioFormat(
                     AudioFormat.Encoding.PCM_SIGNED,
                     originalSampleRate,

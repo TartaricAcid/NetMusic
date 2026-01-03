@@ -64,8 +64,18 @@ public class MusicPlayManager {
                 }
             }
             MinecraftClient.getInstance().submit(() -> {
-                MinecraftClient.getInstance().getSoundManager().play(sound.apply(urlFinal));
-                setNowPlaying(Text.literal(songName));
+                try {
+                    SoundInstance inst = sound.apply(urlFinal);
+                    // 如果是 NetMusicSound，则在 ClientMusicPlaybackManager 中注册
+                    if (inst instanceof NetMusicSound) {
+                        NetMusicSound ns = (NetMusicSound) inst;
+                        ClientMusicPlaybackManager.registerSound(ns.getPos(), inst);
+                    }
+                    MinecraftClient.getInstance().getSoundManager().play(inst);
+                    setNowPlaying(Text.literal(songName));
+                } catch (Exception e) {
+                    NetMusic.LOGGER.error("Failed to create/play sound instance: {}", e.getMessage());
+                }
             });
         } catch (MalformedURLException | URISyntaxException e) {
             NetMusic.LOGGER.error("Malformed URL: {}", url, e);

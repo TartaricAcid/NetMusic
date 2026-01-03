@@ -8,6 +8,7 @@ import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.networking.NetworkHandler;
 import com.github.tartaricacid.netmusic.networking.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.networking.message.PlayProgressMessage;
+import com.github.tartaricacid.netmusic.networking.message.StopMusicMessage;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
@@ -20,6 +21,11 @@ import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -37,13 +43,16 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
     private static final String PLAY_PROGRESS_TAG = "PlayProgress";
+    private static final String PLAY_START_WORLD_TICK_TAG = "PlayStartWorldTick";
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(1, ItemStack.EMPTY);
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
     private int playProgress = 0; // 用于保存当前的播放进度（以 tick 为单位）
+    private long playStartWorldTick = 0; // 记录播放开始时的世界 tick，用于服务器端计算进度
     private boolean wasPlayingBeforeLoad = false; // 标记加载前是否在播放
-    private boolean hasPerformedRecovery = false; // 标记是否已经进行过恢复
+    // 记录哪些玩家已收到 MusicToClientMessage（用于在玩家进入范围时触发完整播放恢复）
+    private final Set<UUID> notifiedPlayers = new HashSet<>();
 
     /**
      * 仅客户端使用，记录当前音乐的歌词信息，用于渲染歌词
@@ -118,11 +127,13 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
                 // 更换了不同的CD
                 playProgress = 0;
                 isPlay = false;
+                notifiedPlayers.clear();
                 NetMusic.LOGGER.info("[TileEntityMusicPlayer] CD changed, resetting progress to 0 at pos {}", pos);
             } else if (oldSongInfo == null && newSongInfo != null) {
                 // 插入新CD，从头播放
                 playProgress = 0;
                 isPlay = false;
+                notifiedPlayers.clear();
                 NetMusic.LOGGER.info("[TileEntityMusicPlayer] CD inserted, progress reset to 0 at pos {}", pos);
             }
         }
@@ -135,6 +146,7 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     private void stopPlayback() {
         isPlay = false;
         playProgress = 0;
+        notifiedPlayers.clear();
         NetMusic.LOGGER.info("[TileEntityMusicPlayer] Stopped playback and reset progress at pos {}", pos);
     }
 
@@ -193,20 +205,72 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         
         // 检查是否需要恢复播放（世界加载时）
         // wasPlayingBeforeLoad 被readNbt设置，indicating前一次加载时在播放
-        // hasPerformedRecovery 确保只恢复一次
-        if (te.wasPlayingBeforeLoad && te.isPlay && !te.hasPerformedRecovery && level != null && !level.isClient) {
-            // 只有在至少有一个玩家在服务器上时才恢复
-            // 这样确保恢复消息能被发送给至少一个玩家
-            MinecraftServer server = ((net.minecraft.server.world.ServerWorld) level).getServer();
-            if (server != null && !server.getPlayerManager().getPlayerList().isEmpty()) {
-                te.hasPerformedRecovery = true;
-                ItemStack stackInSlot = te.getItems().getFirst();
-                if (!stackInSlot.isEmpty()) {
-                    ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
-                    if (songInfo != null) {
-                        NetMusic.LOGGER.info("[TileEntityMusicPlayer] Recovering playback from world reload: progress={} ticks ({}s), pos={}", 
-                                te.playProgress, te.playProgress / 20, blockPos);
-                        te.recoverPlayback(songInfo);
+        if (te.wasPlayingBeforeLoad && te.isPlay && level != null && !level.isClient) {
+            ItemStack stackInSlot = te.getItems().getFirst();
+            if (!stackInSlot.isEmpty()) {
+                ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                if (songInfo != null) {
+                    NetMusic.LOGGER.info("[TileEntityMusicPlayer] Recovering playback from world/chunk reload: progress={} ticks ({}s), pos={}", 
+                            te.playProgress, te.playProgress / 20, blockPos);
+                    int sent = te.recoverPlayback(songInfo);
+                    if (sent > 0) {
+                        te.wasPlayingBeforeLoad = false;
+                    }
+                }
+            }
+        }
+        
+        // 服务器端计算播放进度（由服务器作为唯一源头）
+        if (te.isPlay && level != null && !level.isClient) {
+            if (te.playStartWorldTick == 0) {
+                // 区块重新加载后保护：如果未写入起始tick，回溯到当前进度对应的起始时间
+                te.playStartWorldTick = level.getTime() - te.playProgress;
+            }
+            long currentWorldTick = level.getTime();
+            int calculatedProgress = (int) (currentWorldTick - te.playStartWorldTick);
+            
+            // 如果计算出的进度与存储的进度不同，更新它（每20 tick同步一次到客户端）
+            if (calculatedProgress != te.playProgress) {
+                te.playProgress = calculatedProgress;
+                if (calculatedProgress % 100 == 0) {
+                    NetMusic.LOGGER.info("[TileEntityMusicPlayer] Server calculated progress: {} ticks ({}s) at pos {}", 
+                            te.playProgress, te.playProgress / 20, blockPos);
+                }
+                te.markDirty(); // 确保区块保存时写入最新进度
+                
+                // 每20 tick同步进度到所有客户端
+                if (calculatedProgress % 20 == 0) {
+                    PlayProgressMessage msg = new PlayProgressMessage(blockPos, calculatedProgress);
+                    NetworkHandler.sendToNearBy(level, blockPos, msg);
+                }
+            }
+        }
+
+        // 向刚进入范围的玩家发送完整的 MusicToClientMessage（确保他们开始播放并跳到保存进度）
+        if (te.isPlay && level instanceof ServerWorld) {
+            ServerWorld serverWorld = (ServerWorld) level;
+            ItemStack stackInSlot = te.getItems().getFirst();
+            if (!stackInSlot.isEmpty()) {
+                ItemMusicCD.SongInfo songInfo = ItemMusicCD.getSongInfo(stackInSlot);
+                if (songInfo != null) {
+                    for (ServerPlayerEntity p : serverWorld.getPlayers()) {
+                        double dist2 = p.squaredDistanceTo(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+                        if (dist2 < 96 * 96) {
+                            if (!te.notifiedPlayers.contains(p.getUuid())) {
+                                MusicToClientMessage msg = new MusicToClientMessage(blockPos, songInfo.songUrl, songInfo.songTime, songInfo.songName, te.playProgress);
+                                NetworkHandler.sendToClientPlayer(msg, p);
+                                te.notifiedPlayers.add(p.getUuid());
+                                NetMusic.LOGGER.info("[TileEntityMusicPlayer] Sent MusicToClientMessage to player {} on enter range at pos {}", p.getName().getString(), blockPos);
+                            }
+                        } else {
+                            // 离开范围则向该玩家发送停止消息并移除标记，确保客户端停止本地播放
+                            if (te.notifiedPlayers.contains(p.getUuid())) {
+                                StopMusicMessage stopMsg = new StopMusicMessage(blockPos);
+                                NetworkHandler.sendToClientPlayer(stopMsg, p);
+                                te.notifiedPlayers.remove(p.getUuid());
+                                NetMusic.LOGGER.info("[TileEntityMusicPlayer] Sent StopMusicMessage to player {} on leave range at pos {}", p.getName().getString(), blockPos);
+                            }
+                        }
                     }
                 }
             }
@@ -237,12 +301,28 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         currentTime = nbt.getInt(CURRENT_TIME_TAG);
         hasSignal = nbt.getBoolean(SIGNAL_TAG);
         playProgress = nbt.getInt(PLAY_PROGRESS_TAG);
+        playStartWorldTick = nbt.getLong(PLAY_START_WORLD_TICK_TAG);
         
-        NetMusic.LOGGER.info("[TileEntityMusicPlayer] readNbt: isPlay={}, playProgress={} ticks ({}s) from NBT at pos {}", 
-                isPlay, playProgress, playProgress / 20, pos);
+        // 日志输出读取的信息
+        // NetMusic.LOGGER.info("[TileEntityMusicPlayer] readNbt: isPlay={}, playProgress={} ticks ({}s) from NBT at pos {}", 
+        //         isPlay, playProgress, playProgress / 20, pos);
         
-        // 保存加载时的playback状态，以便在tick时检测世界重载
+        // 如果存在进度且槽位有唱片，但 isPlay 被存为 false（例如区块卸载时未正确保存），强制标记为需要恢复
+        if (!isPlay && playProgress > 0 && !items.getFirst().isEmpty()) {
+            NetMusic.LOGGER.info("[TileEntityMusicPlayer] Detected stored progress {} ticks with CD present; marking for recovery despite isPlay=false", playProgress);
+            isPlay = true;
+        }
+
+        // 保存加载时的playback状态，以便在tick时检测世界/区块重载
         wasPlayingBeforeLoad = isPlay;
+
+        // 区块/世界重载后不再用旧的 playStartWorldTick 继续往前推进，
+        // 重新以存储的 playProgress 作为“暂停点”进行恢复，避免长时间卸载导致进度超前。
+        if (isPlay) {
+            playStartWorldTick = 0;
+        }
+
+        // 不在 readNbt 中立即尝试恢复；恢复逻辑由 tick 统一处理以避免重复发送
     }
 
     @Override
@@ -252,6 +332,7 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         nbt.putInt(CURRENT_TIME_TAG, currentTime);
         nbt.putBoolean(SIGNAL_TAG, hasSignal);
         nbt.putInt(PLAY_PROGRESS_TAG, playProgress);
+        nbt.putLong(PLAY_START_WORLD_TICK_TAG, playStartWorldTick);
         super.writeNbt(nbt, registryLookup);
     }
 
@@ -280,9 +361,24 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     }
 
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
-        this.setCurrentTime(info.songTime * 20 + 64);
+        int remainingTicks = Math.max(info.songTime * 20 - playProgress + 64, 0);
+        this.setCurrentTime(remainingTicks);
         setPlay(true);
         if (world != null && !world.isClient) {
+            // 在发送播放消息前，先将当前范围内的玩家标记为已通知，避免后续重复发送
+            if (world instanceof ServerWorld) {
+                ServerWorld serverWorld = (ServerWorld) world;
+                for (ServerPlayerEntity p : serverWorld.getPlayers()) {
+                    double dist2 = p.squaredDistanceTo(pos.getX(), pos.getY(), pos.getZ());
+                    if (dist2 < 96 * 96) {
+                        notifiedPlayers.add(p.getUuid());
+                    }
+                }
+            }
+            // 记录播放开始时的世界 tick，用于服务器端计算进度
+            playStartWorldTick = world.getTime();
+            // 已经由正常播放流程发送过播放消息，不应再进行 reload 恢复发送
+            wasPlayingBeforeLoad = false;
             NetMusic.LOGGER.info("[TileEntityMusicPlayer] setPlayToClient: song={}, songTime={}s, playProgress={}s ({}ticks) at pos {}", 
                     info.songName, info.songTime, playProgress / 20, playProgress, pos);
             MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName, playProgress);
@@ -291,14 +387,55 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     }
 
     // 用于世界重载恢复时，直接发送消息，保持原有的 playProgress
-    public void recoverPlayback(ItemMusicCD.SongInfo info) {
-        setPlay(true);
+    public int recoverPlayback(ItemMusicCD.SongInfo info) {
+        // 防止进度超过曲终：若存储进度超过曲长，视为播放结束
+        if (playProgress >= info.songTime * 20) {
+            NetMusic.LOGGER.info("[TileEntityMusicPlayer] Stored progress {} ticks exceeds song length {}; not recovering", playProgress, info.songTime * 20);
+            stopPlayback();
+            return 0;
+        }
+        int remainingTicks = Math.max(info.songTime * 20 - playProgress + 64, 0);
+        this.setCurrentTime(remainingTicks);
+        this.isPlay = true;
+        playStartWorldTick = world.getTime() - playProgress;
+        markDirty();
         if (world != null && !world.isClient) {
             NetMusic.LOGGER.info("[TileEntityMusicPlayer] recoverPlayback: song={}, songTime={}s, playProgress={}s ({}ticks) at pos {}", 
                     info.songName, info.songTime, playProgress / 20, playProgress, pos);
-            MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName, playProgress);
-            NetworkHandler.sendToNearBy(world, pos, msg);
+            // 如果当前范围内已有玩家被标记为已通知，则跳过恢复发送，避免重复
+            if (world instanceof ServerWorld) {
+                ServerWorld serverWorld = (ServerWorld) world;
+                boolean anyNotifiedInRange = false;
+                for (ServerPlayerEntity p : serverWorld.getPlayers()) {
+                    double d2 = p.squaredDistanceTo(pos.getX(), pos.getY(), pos.getZ());
+                    if (d2 < 96 * 96 && notifiedPlayers.contains(p.getUuid())) {
+                        anyNotifiedInRange = true;
+                        break;
+                    }
+                }
+                if (anyNotifiedInRange) {
+                    NetMusic.LOGGER.info("[TileEntityMusicPlayer] recoverPlayback: skip sending because players already notified at pos {}", pos);
+                    return 0;
+                }
+            }
+            int sent = 0;
+            if (world instanceof ServerWorld) {
+                ServerWorld serverWorld = (ServerWorld) world;
+                for (ServerPlayerEntity p : serverWorld.getPlayers()) {
+                    double d2 = p.squaredDistanceTo(pos.getX(), pos.getY(), pos.getZ());
+                    if (d2 < 96 * 96 && !notifiedPlayers.contains(p.getUuid())) {
+                        MusicToClientMessage msg = new MusicToClientMessage(pos, info.songUrl, info.songTime, info.songName, playProgress);
+                        NetworkHandler.sendToClientPlayer(msg, p);
+                        notifiedPlayers.add(p.getUuid());
+                        sent++;
+                        NetMusic.LOGGER.info("[TileEntityMusicPlayer] recoverPlayback: Sent MusicToClientMessage to player {} at pos {}", p.getName().getString(), pos);
+                    }
+                }
+            }
+            NetMusic.LOGGER.info("[TileEntityMusicPlayer] recoverPlayback: sent {} messages", sent);
+            return sent;
         }
+        return 0;
     }
 
     @Override

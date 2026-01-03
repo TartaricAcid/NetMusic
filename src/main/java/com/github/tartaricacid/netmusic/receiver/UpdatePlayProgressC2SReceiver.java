@@ -13,7 +13,7 @@ import net.minecraft.world.World;
 /**
  * 处理客户端发送的播放进度更新消息
  * @author : BLRINK317
- * @create : 2025/01/03
+ * @create : 2026/01/03
  */
 public class UpdatePlayProgressC2SReceiver implements ServerPlayNetworking.PlayPayloadHandler<UpdatePlayProgressC2SMessage> {
     

@@ -1,0 +1,26 @@
+
+> Configure project :
+Fabric Loom: 1.8.13
+
+> Task :compileJava FAILED
+D:\Dev\NetMusic\src\main\java\com\github\tartaricacid\netmusic\tileentity\TileEntityMusicPlayer.java:59: 閿欒: 鏂规硶涓嶄細瑕嗙洊鎴栧疄鐜拌秴绫诲瀷鐨勬柟娉?    @Override
+    ^
+D:\Dev\NetMusic\src\main\java\com\github\tartaricacid\netmusic\tileentity\TileEntityMusicPlayer.java:61: 閿欒: 鎵句笉鍒扮鍙?        super.onLoad();
+             ^
+  绗﹀彿: 鏂规硶 onLoad()
+娉? D:\Dev\NetMusic\src\main\java\com\github\tartaricacid\netmusic\block\BlockMusicPlayer.java浣跨敤浜嗘湭缁忔鏌ユ垨涓嶅畨鍏ㄧ殑鎿嶄綔銆?
+娉? 鏈夊叧璇︾粏淇℃伅, 璇蜂娇鐢?-Xlint:unchecked 閲嶆柊缂栬瘧銆?
+2 涓敊璇?
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1s
+1 actionable task: 1 executed
