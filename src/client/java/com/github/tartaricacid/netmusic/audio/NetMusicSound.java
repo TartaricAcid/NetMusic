@@ -32,6 +32,8 @@ public class NetMusicSound extends MovingSoundInstance {
     private final BlockPos pos;
     private final @Nullable LyricRecord lyricRecord;
     private int tick;
+    // 本地运行的 tick 计数（用于防止瞬态状态导致的立即停止）
+    private int localTicks = 0;
     private final int startProgress; // 开始播放的进度（以 tick 为单位）
 
     public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond, @Nullable LyricRecord lyricRecord) {
@@ -78,6 +80,7 @@ public class NetMusicSound extends MovingSoundInstance {
             return;
         }
         tick++;
+        localTicks++;
 
         
         // 客户端只负责播放音频，进度由服务器计算并同步（PlayProgressMessage）
@@ -87,28 +90,36 @@ public class NetMusicSound extends MovingSoundInstance {
             // 不再本地修改进度，等待服务器通过 PlayProgressMessage 同步
             // musicPlayer.setPlayProgress(tick); // REMOVED - Server is now authority
             
-            if (tick == 1) {
-                NetMusic.LOGGER.info("[NetMusicSound] Started playback at tick=1, recovered progress from {}", startProgress);
-            }
+                if (localTicks == 1) {
+                    NetMusic.LOGGER.info("[NetMusicSound] Started playback (localTicks=1), recovered progress from {}", startProgress);
+                }
             
             // 检查播放是否停止
             if (!musicPlayer.isPlay()) {
-                NetMusic.LOGGER.info("[NetMusicSound] Music player stopped at tick={}", tick);
-                musicPlayer.lyricRecord = null;
-                ClientMusicPlaybackManager.unregister(pos);
-                this.setDone();
-                return;
+                // 防止瞬态状态立刻停止：仅在本地运行超过 5 tick 后才真正停止(主要应对玩家进入服务器时重置播放状态标记导致的瞬态状态停止问题)
+                if (localTicks <= 5) {
+                    NetMusic.LOGGER.info("[NetMusicSound] Detected musicPlayer.isPlay()==false but localTicks={} <= 5, deferring stop", localTicks);
+                } else {
+                    NetMusic.LOGGER.info("[NetMusicSound] Music player stopped at tick={}", tick);
+                    musicPlayer.lyricRecord = null;
+                    ClientMusicPlaybackManager.unregister(pos);
+                    this.setDone();
+                    return;
+                }
             }
             
             // 如果是首次同步歌词记录
             musicPlayer.lyricRecord = lyricRecord;
         } else {
-            if (tick == 1) {
-                NetMusic.LOGGER.warn("[NetMusicSound] TileEntityMusicPlayer not found at pos {}", pos);
+            // 若在本地运行尚短，则延后停止以避免瞬态世界/区块加载竞态
+            if (localTicks <= 5) {
+                NetMusic.LOGGER.warn("[NetMusicSound] TileEntityMusicPlayer not found at pos {} but localTicks={} <= 5, deferring stop", pos, localTicks);
+            } else {
+                NetMusic.LOGGER.warn("[NetMusicSound] TileEntityMusicPlayer not found at pos {}, stopping sound", pos);
+                ClientMusicPlaybackManager.unregister(pos);
+                this.setDone();
+                return;
             }
-            ClientMusicPlaybackManager.unregister(pos);
-            this.setDone();
-            return;
         }
         
         if (tick > tickTimes + 50) {
