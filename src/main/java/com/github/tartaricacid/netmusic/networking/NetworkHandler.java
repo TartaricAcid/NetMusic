@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.networking;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -16,10 +17,17 @@ public class NetworkHandler {
     public static void sendToNearBy(World world, BlockPos pos, CustomPayload toSend) {
         if (world instanceof ServerWorld) {
             ServerWorld serverWorld = (ServerWorld) world;
-
-            serverWorld.getServer().getPlayerManager().getPlayerList().stream()
-                    .filter(p -> p.squaredDistanceTo(pos.getX(), pos.getY(), pos.getZ()) < 96 * 96)
-                    .forEach(p -> ServerPlayNetworking.send(p, toSend));
+            var players = serverWorld.getServer().getPlayerManager().getPlayerList();
+            int sentCount = 0;
+            for (ServerPlayerEntity p : players) {
+                double dist = p.squaredDistanceTo(pos.getX(), pos.getY(), pos.getZ());
+                if (dist < 96 * 96) {
+                    ServerPlayNetworking.send(p, toSend);
+                    sentCount++;
+                    NetMusic.LOGGER.info("[NetworkHandler] Sent {} to player {} at distance {}", toSend.getClass().getSimpleName(), p.getName().getString(), Math.sqrt(dist));
+                }
+            }
+            NetMusic.LOGGER.info("[NetworkHandler] sendToNearBy: sent {} messages at pos {}", sentCount, pos);
         }
     }
 

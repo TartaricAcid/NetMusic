@@ -25,18 +25,26 @@ public class MusicToClientMessage implements CustomPayload {
             MusicToClientMessage::getTimeSecond,
             PacketCodecs.STRING,
             MusicToClientMessage::getSongName,
+            PacketCodecs.VAR_INT,
+            MusicToClientMessage::getPlayProgress,
             MusicToClientMessage::new
     );
     private final BlockPos pos;
     private final String url;
     private final int timeSecond;
     private final String songName;
+    private final int playProgress; // 播放进度（以 tick 为单位）
 
     public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName) {
+        this(pos, url, timeSecond, songName, 0);
+    }
+
+    public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName, int playProgress) {
         this.pos = pos;
         this.url = url;
         this.timeSecond = timeSecond;
         this.songName = songName;
+        this.playProgress = playProgress;
     }
 
     public BlockPos getPos() {
@@ -53,6 +61,10 @@ public class MusicToClientMessage implements CustomPayload {
 
     public String getSongName() {
         return songName;
+    }
+
+    public int getPlayProgress() {
+        return playProgress;
     }
 
     @Override

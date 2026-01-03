@@ -27,6 +27,9 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
     @Override
     public void receive(MusicToClientMessage message, ClientPlayNetworking.Context context) {
         context.client().execute(() -> {
+            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Received music message: song={}, playProgress={} ticks, pos={}", 
+                    message.getSongName(), message.getPlayProgress(), message.getPos());
+            
             CompletableFuture.runAsync(() -> {
                 // 使用数组方便在 lambda 表达式中修改
                 LyricRecord[] record = new LyricRecord[1];
@@ -45,10 +48,11 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                     }
                 }
 
+                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Creating NetMusicSound with startProgress={} ticks", message.getPlayProgress());
                 MusicPlayManager.play(
                         message.getUrl(),
                         message.getSongName(),
-                        url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0])
+                        url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
                 );
             }, Util.getMainWorkerExecutor());
         });

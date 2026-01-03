@@ -26,24 +26,62 @@ public class NetMusicAudioStream implements AudioStream {
     private final byte[] frame;
 
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        Proxy proxy = NetWorker.getProxyFromConfig();
-        // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-        BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
-        skipID3(bufferedInputStream);
-        AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
-        AudioFormat originalFormat = originalInputStream.getFormat();
-        AudioFormat targetFormat = getTargetPCMAudioFormat(originalFormat);
-        AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
-        if (GeneralConfig.ENABLE_STEREO) {
-            targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
-                    1, 2, originalFormat.getSampleRate(), false);
-        } else {
-            targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
-                    2, 4, originalFormat.getSampleRate(), false);
+        try {
+            System.out.println("[NetMusicAudioStream] ========== START CREATING AUDIO STREAM ==========");
+            System.out.println("[NetMusicAudioStream] URL: " + url);
+            
+            Proxy proxy = NetWorker.getProxyFromConfig();
+            // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
+            BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
+            skipID3(bufferedInputStream);
+            AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
+            AudioFormat originalFormat = originalInputStream.getFormat();
+            
+            System.out.println("[NetMusicAudioStream] Original format: channels=" + originalFormat.getChannels() + 
+                    ", sampleRate=" + originalFormat.getSampleRate() + 
+                    ", encoding=" + originalFormat.getEncoding() +
+                    ", frameSize=" + originalFormat.getFrameSize());
+            
+            // 获取原始格式信息
+            int originalSampleRate = (int) originalFormat.getSampleRate();
+            int originalChannels = originalFormat.getChannels();
+            
+            // 先转换为标准 PCM 格式
+            AudioFormat standardFormat = getTargetPCMAudioFormat(originalFormat);
+            AudioInputStream standardInputStream = AudioSystem.getAudioInputStream(standardFormat, originalInputStream);
+            
+            System.out.println("[NetMusicAudioStream] Standard format: channels=" + standardFormat.getChannels() + 
+                    ", sampleRate=" + standardFormat.getSampleRate() +
+                    ", frameSize=" + standardFormat.getFrameSize());
+            
+            // 根据配置决定最终的声道数
+            int finalChannels = GeneralConfig.ENABLE_STEREO ? 2 : originalChannels;
+            AudioFormat targetFormat = new AudioFormat(
+                    AudioFormat.Encoding.PCM_SIGNED,
+                    originalSampleRate,
+                    16,
+                    finalChannels,
+                    finalChannels * 2,
+                    originalSampleRate,
+                    false
+            );
+            
+            System.out.println("[NetMusicAudioStream] Target format: channels=" + finalChannels + 
+                    ", sampleRate=" + originalSampleRate +
+                    ", frameSize=" + (finalChannels * 2) +
+                    ", ENABLE_STEREO=" + GeneralConfig.ENABLE_STEREO);
+            
+            this.stream = AudioSystem.getAudioInputStream(targetFormat, standardInputStream);
+            this.frameSize = stream.getFormat().getFrameSize();
+            frame = new byte[frameSize];
+            
+            System.out.println("[NetMusicAudioStream] Final stream created successfully! frameSize=" + frameSize);
+            System.out.println("[NetMusicAudioStream] ========== END CREATING AUDIO STREAM ==========");
+        } catch (Exception e) {
+            System.err.println("[NetMusicAudioStream] !!!! ERROR: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace(System.err);
+            throw e;
         }
-        this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
-        this.frameSize = stream.getFormat().getFrameSize();
-        frame = new byte[frameSize];
     }
 
     private AudioFormat getTargetPCMAudioFormat(AudioFormat originalFormat) {
@@ -94,6 +132,75 @@ public class NetMusicAudioStream implements AudioStream {
     @Override
     public void close() throws IOException {
         stream.close();
+    }
+
+    /**
+     * 跳过到指定的播放进度（以 tick 为单位）
+     * 20 ticks = 1 秒
+     *
+     * @param startProgress 开始进度（以 tick 为单位）
+     * @throws IOException IO 异常
+     */
+    public void skipToProgress(int startProgress) throws IOException {
+        if (startProgress <= 0) {
+            System.out.println("[NetMusicAudioStream] skipToProgress: progress <= 0, skipping");
+            return;
+        }
+        
+        try {
+            System.out.println("[NetMusicAudioStream] ========== START SKIP TO PROGRESS ==========");
+            System.out.println("[NetMusicAudioStream] startProgress: " + startProgress + " ticks");
+            
+            // 将 tick 转换为秒
+            float seconds = startProgress / 20.0f;
+            System.out.println("[NetMusicAudioStream] Converted to: " + seconds + " seconds");
+            
+            // 计算需要跳过的字节数
+            AudioFormat format = stream.getFormat();
+            int sampleRate = (int) format.getSampleRate();
+            int bytesPerFrame = format.getFrameSize();
+            int bytesPerSecond = sampleRate * bytesPerFrame;
+            long bytesToSkip = (long) (seconds * bytesPerSecond);
+            
+            System.out.println("[NetMusicAudioStream] Sample rate: " + sampleRate);
+            System.out.println("[NetMusicAudioStream] Bytes per frame: " + bytesPerFrame);
+            System.out.println("[NetMusicAudioStream] Bytes per second: " + bytesPerSecond);
+            System.out.println("[NetMusicAudioStream] Total bytes to skip: " + bytesToSkip);
+            
+            // 对齐到帧边界
+            bytesToSkip = (bytesToSkip / bytesPerFrame) * bytesPerFrame;
+            System.out.println("[NetMusicAudioStream] Aligned bytes to skip: " + bytesToSkip);
+            
+            // 由于网络流不支持 skip()，我们需要通过读取来跳过数据
+            System.out.println("[NetMusicAudioStream] Using read-based skip method for network streams");
+            long totalRead = 0;
+            byte[] skipBuffer = new byte[65536]; // 64KB 缓冲区
+            int bytesRead;
+            
+            while (totalRead < bytesToSkip) {
+                long remainingToSkip = bytesToSkip - totalRead;
+                int bufferSize = remainingToSkip > skipBuffer.length ? skipBuffer.length : (int) remainingToSkip;
+                
+                bytesRead = stream.read(skipBuffer, 0, bufferSize);
+                if (bytesRead <= 0) {
+                    System.out.println("[NetMusicAudioStream] WARNING: End of stream reached, only skipped " + totalRead + " / " + bytesToSkip + " bytes");
+                    break;
+                }
+                totalRead += bytesRead;
+                
+                if (totalRead % (bytesPerSecond * 5) < bytesRead || totalRead == bytesToSkip) {
+                    System.out.println("[NetMusicAudioStream] Skipping progress: " + totalRead + " / " + bytesToSkip + " bytes (" + 
+                            (100.0 * totalRead / bytesToSkip) + "%)");
+                }
+            }
+            
+            System.out.println("[NetMusicAudioStream] Total skipped: " + totalRead + " bytes, percentage: " + (100.0 * totalRead / bytesToSkip) + "%");
+            System.out.println("[NetMusicAudioStream] ========== END SKIP TO PROGRESS ==========");
+        } catch (Exception e) {
+            // 如果跳转失败，记录日志但继续播放（从开头播放）
+            System.err.println("[NetMusicAudioStream] !!!! ERROR IN SKIP: " + e.getClass().getName() + ": " + e.getMessage());
+            e.printStackTrace(System.err);
+        }
     }
 
     /**
