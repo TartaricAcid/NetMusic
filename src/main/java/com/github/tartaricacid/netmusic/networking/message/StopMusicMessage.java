@@ -15,20 +15,38 @@ public class StopMusicMessage implements CustomPayload {
     private static final Identifier PACKET_ID = Identifier.of(NetMusic.MOD_ID, "stop_music");
 
     public static final CustomPayload.Id<StopMusicMessage> TYPE = new CustomPayload.Id<>(PACKET_ID);
-    public static final PacketCodec<PacketByteBuf, StopMusicMessage> STREAM_CODEC = PacketCodec.tuple(
+        public static final PacketCodec<PacketByteBuf, StopMusicMessage> STREAM_CODEC = PacketCodec.tuple(
             BlockPos.PACKET_CODEC,
             StopMusicMessage::getPos,
+            PacketCodecs.STRING,
+            StopMusicMessage::getEntityUuidString,
             StopMusicMessage::new
-    );
+        );
 
     private final BlockPos pos;
+    private final boolean hasEntity;
+    private final String entityUuidString;
 
     public StopMusicMessage(BlockPos pos) {
+        this(pos, "");
+    }
+
+    public StopMusicMessage(BlockPos pos, String entityUuidString) {
         this.pos = pos;
+        this.entityUuidString = entityUuidString == null ? "" : entityUuidString;
+        this.hasEntity = !this.entityUuidString.isEmpty();
     }
 
     public BlockPos getPos() {
         return pos;
+    }
+
+    public boolean hasEntity() {
+        return hasEntity;
+    }
+
+    public String getEntityUuidString() {
+        return entityUuidString;
     }
 
     @Override

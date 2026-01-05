@@ -24,6 +24,10 @@ public class PlayProgressMessageReceiver implements ClientPlayNetworking.PlayPay
                         NetMusic.LOGGER.info("[PlayProgressMessageReceiver] Received play progress sync: {} ticks at pos {}", message.getProgress(), message.getPos());
                     }
                     musicPlayer.setPlayProgress(message.getProgress());
+                    // Also apply progress correction to any active client-side sound at this pos
+                    try {
+                        com.github.tartaricacid.netmusic.audio.ClientMusicPlaybackManager.applyProgressToPos(message.getPos(), message.getProgress());
+                    } catch (Throwable ignored) {}
                 } else {
                     NetMusic.LOGGER.warn("[PlayProgressMessageReceiver] Block entity is not TileEntityMusicPlayer at pos {}", message.getPos());
                 }

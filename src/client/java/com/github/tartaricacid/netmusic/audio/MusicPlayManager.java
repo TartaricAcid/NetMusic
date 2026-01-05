@@ -72,11 +72,22 @@ public class MusicPlayManager {
                         NetMusic.LOGGER.error("[MusicPlayManager] Sound instance creation returned null for URL: {}", url);
                         return;
                     }
-                    // 如果是 NetMusicSound，则在 ClientMusicPlaybackManager 中注册
+                    // 如果是 NetMusicSound，则尝试原子注册：仅当没有其它播放时才注册并播放
                     if (inst instanceof NetMusicSound) {
                         NetMusicSound ns = (NetMusicSound) inst;
-                        ClientMusicPlaybackManager.registerSound(ns.getPos(), inst);
-                        NetMusic.LOGGER.info("[MusicPlayManager] Registered NetMusicSound for pos {} in ClientMusicPlaybackManager", ns.getPos());
+                        boolean registered = true;
+                        if (ns.getPos() != null) {
+                            registered = ClientMusicPlaybackManager.registerIfAbsentPos(ns.getPos(), inst);
+                            NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentPos returned {} for pos {}", registered, ns.getPos());
+                        } else if (ns.getEntityUuid() != null) {
+                            registered = ClientMusicPlaybackManager.registerIfAbsentEntity(ns.getEntityUuid(), inst);
+                            NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentEntity returned {} for entity {}", registered, ns.getEntityUuid());
+                        }
+                        if (!registered) {
+                            NetMusic.LOGGER.info("[MusicPlayManager] Registration failed (duplicate), aborting play for {}", inst);
+                            // 不进行注销清理：已存在的注册属于其它播放实例，注销可能会停止它们。
+                            return;
+                        }
                     }
                     NetMusic.LOGGER.info("[MusicPlayManager] Calling SoundManager.play() for: {}", inst);
                     MinecraftClient.getInstance().getSoundManager().play(inst);

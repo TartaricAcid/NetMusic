@@ -13,7 +13,16 @@ public class StopMusicMessageReceiver implements ClientPlayNetworking.PlayPayloa
     public void receive(StopMusicMessage message, ClientPlayNetworking.Context context) {
         NetMusic.LOGGER.info("[StopMusicMessageReceiver] RECEIVED stop for pos={}", message.getPos());
         context.client().execute(() -> {
-            ClientMusicPlaybackManager.stopAndUnregister(message.getPos());
+            if (message.hasEntity()) {
+                try {
+                    java.util.UUID entityUuid = java.util.UUID.fromString(message.getEntityUuidString());
+                    ClientMusicPlaybackManager.stopAndUnregisterForEntity(entityUuid);
+                } catch (Exception e) {
+                    NetMusic.LOGGER.error("[StopMusicMessageReceiver] Invalid entity UUID in stop message: {}", message.getEntityUuidString(), e);
+                }
+            } else {
+                ClientMusicPlaybackManager.stopAndUnregister(message.getPos());
+            }
         });
     }
 }

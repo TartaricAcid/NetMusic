@@ -33,14 +33,51 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
             NetMusic.LOGGER.info("[MusicToClientMessageReceiver] EXECUTING ON CLIENT THREAD: song={}, playProgress={} ticks, pos={}, client={}", 
                     message.getSongName(), message.getPlayProgress(), message.getPos(), context.client() == null ? "null" : "ok");
             
-            // 防御性机制：确保该位置的旧播放记录被清理（防止2秒保护窗口阻止重新播放）
-            // 这对于玩家快速重连的场景很重要
-            ClientMusicPlaybackManager.stopAndUnregister(message.getPos());
-            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Cleared old playback record for pos {} (defensive cleanup)", message.getPos());
-            
-            // 预先注册播放位置，作为占位符，防止并发到达的重复消息在注册前通过检查造成竞态
-            ClientMusicPlaybackManager.register(message.getPos());
-            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Registered position: {}", message.getPos());
+            // 如果是实体跟随类型，优先使用 entityId 在本地直接查找对应实体；找不到则不播放（不回退到 UUID 遍历）
+            if (message.hasEntity()) {
+                int entityId = message.getEntityId();
+                if (entityId == -1) {
+                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Message marked as entity but entityId == -1, skipping playback at pos {}", message.getPos());
+                    return;
+                }
+                boolean found = false;
+                try {
+                    if (context.client().world != null) {
+                        net.minecraft.entity.Entity e = context.client().world.getEntityById(entityId);
+                            if (e != null) {
+                                found = true;
+                                // 尝试预占实体 key（原子操作）
+                                boolean reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
+                                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Reserved entity {} for playback: {}", e.getUuid(), reserved);
+                                if (!reserved) {
+                                    // 如果预占失败，尝试清理残留旧注册后重试一次
+                                    boolean cleaned = ClientMusicPlaybackManager.cleanupStaleEntityRegistration(e.getUuid(), 5000L);
+                                    if (cleaned) {
+                                        reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
+                                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retried reservation for entity {} after cleanup: {}", e.getUuid(), reserved);
+                                    }
+                                    if (!reserved) {
+                                        NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity {} already reserved, skipping playback", e.getUuid());
+                                        return;
+                                    }
+                                }
+                            }
+                    }
+                } catch (Exception ignored) {}
+
+                if (!found) {
+                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity with id {} not found locally, skipping playback", entityId);
+                    return;
+                }
+            } else {
+                // 尝试预占位置（原子操作）；若预占失败则已有其它路径在处理播放，直接跳过
+                boolean reservedPos = ClientMusicPlaybackManager.reservePos(message.getPos());
+                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Reserved position {} for playback: {}", message.getPos(), reservedPos);
+                if (!reservedPos) {
+                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Pos {} already reserved, skipping playback", message.getPos());
+                    return;
+                }
+            }
 
             // 延迟执行以确保世界和音频系统完全加载（解决单人模式首次加载时音频不播放的问题）
             // 对于已经加载的世界，20 tick（1秒）延迟几乎无影响；对于首次加载，这能确保SoundManager准备就绪
@@ -69,19 +106,79 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
 
                     NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Creating NetMusicSound with startProgress={} ticks", message.getPlayProgress());
 
-                    // 去重：如果客户端已在该位置短时间内开始播放，则跳过重复创建（占位已注册）
-                    if (ClientMusicPlaybackManager.isPlayingAt(message.getPos())) {
-                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Proceeding to create NetMusicSound for pos {}", message.getPos());
+                    // 实体消息已在上面用 entityId 校验并注册，此处直接创建 entity-based 声音
+                    boolean useEntity = message.hasEntity();
+                    java.util.UUID entityUuidCheck = null;
+                    if (useEntity) {
+                        try {
+                            int entityId = message.getEntityId();
+                            if (context.client().world != null) {
+                                net.minecraft.entity.Entity e = context.client().world.getEntityById(entityId);
+                                if (e != null) entityUuidCheck = e.getUuid();
+                            }
+                        } catch (Exception ignored) {}
+                        if (entityUuidCheck != null) {
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Proceeding to create NetMusicSound for entity {}", entityUuidCheck);
+                        } else {
+                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity not found at sound-creation time, aborting");
+                            try {
+                                String s = message.getEntityUuidString();
+                                if (s != null && !s.isEmpty()) {
+                                    ClientMusicPlaybackManager.cancelReservationEntity(java.util.UUID.fromString(s));
+                                }
+                            } catch (Throwable ignored) {}
+                            return;
+                        }
                     } else {
-                        NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Position {} is not in playing window (2s), but creating anyway", message.getPos());
+                        if (ClientMusicPlaybackManager.isPlayingAt(message.getPos())) {
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Proceeding to create NetMusicSound for pos {}", message.getPos());
+                        } else {
+                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Position {} is not in playing window (2s), but creating anyway", message.getPos());
+                        }
                     }
 
                     try {
-                        MusicPlayManager.play(
-                                message.getUrl(),
-                                message.getSongName(),
-                                url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
-                        );
+                        if (useEntity && entityUuidCheck != null) {
+                            final java.util.UUID finalEntityUuid = entityUuidCheck;
+                            // 尝试直接使用实体实例创建声音，以便声音一创建就有正确的位置
+                            try {
+                                net.minecraft.entity.Entity entTemp = null;
+                                if (context.client().world != null) {
+                                    entTemp = context.client().world.getEntityById(message.getEntityId());
+                                }
+                                final net.minecraft.entity.Entity ent = entTemp;
+                                if (ent != null) {
+                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] DEBUG: entity present at creation: id={}, uuid={}, isRemoved={}, lookupByIdSame={} (clientWorldExists={})",
+                                        ent.getId(), ent.getUuid(), ent.isRemoved(), context.client().world != null && context.client().world.getEntityById(ent.getId()) == ent,
+                                        context.client().world != null);
+                                    MusicPlayManager.play(
+                                        message.getUrl(),
+                                        message.getSongName(),
+                                        url -> new NetMusicSound(ent, url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                                    );
+                                } else {
+                                    // 回退到 uuid 构造（兼容旧逻辑），虽然不理想，但保证不会崩溃
+                                    MusicPlayManager.play(
+                                            message.getUrl(),
+                                            message.getSongName(),
+                                            url -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                                    );
+                                }
+                            } catch (Exception ex) {
+                                NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Failed to create entity-based NetMusicSound using entity instance, falling back to uuid constructor: {}", ex.getMessage());
+                                MusicPlayManager.play(
+                                        message.getUrl(),
+                                        message.getSongName(),
+                                        url -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                                );
+                            }
+                        } else {
+                            MusicPlayManager.play(
+                                    message.getUrl(),
+                                    message.getSongName(),
+                                    url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                            );
+                        }
                         NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Successfully called MusicPlayManager.play for pos {}", message.getPos());
                     } catch (Exception e) {
                         NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error creating/playing sound for pos {}: {}", message.getPos(), e.getMessage());
