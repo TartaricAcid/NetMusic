@@ -129,6 +129,36 @@ public class NetMusicClient implements ClientModInitializer {
                 NetMusic.LOGGER.error("[NetMusicClient] Error while clearing playback on disconnect: {}", t.getMessage());
             }
         });
+
+        // 事件驱动式：扫描新出现的实体并尝试将已存在的 UUID-based 声音绑定上去
+        // 为了性能只在较低频率（每 20 ticks）执行，并仅处理新出现的实体
+        final java.util.Set<java.util.UUID> known = java.util.concurrent.ConcurrentHashMap.newKeySet();
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            try {
+                if (client.world == null) {
+                    known.clear();
+                    return;
+                }
+                if (client.player == null) return;
+                if (client.world.getTime() % 20L != 0L) return; // 每 20 tick 扫描一次
+
+                Iterable<net.minecraft.entity.Entity> ents = client.world.getEntities();
+                java.util.Set<java.util.UUID> current = new java.util.HashSet<>();
+                for (net.minecraft.entity.Entity e : ents) {
+                    try {
+                        java.util.UUID uid = e.getUuid();
+                        current.add(uid);
+                        if (!known.contains(uid)) {
+                            // 新出现的实体，通知播放管理器尝试绑定
+                            com.github.tartaricacid.netmusic.audio.ClientMusicPlaybackManager.notifyEntityLoaded(uid, e);
+                        }
+                    } catch (Throwable ignored) {}
+                }
+                // 更新 known 集合以便下次比较，同时清除已离开的实体
+                known.clear();
+                known.addAll(current);
+            } catch (Throwable ignored) {}
+        });
     }
 
     // 被 TileEntity 通过反射调用，注册一个 pending 播放请求

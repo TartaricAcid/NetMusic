@@ -423,15 +423,8 @@ public class EntityMusicPlayerManager {
                 try {
                     var entity = serverWorld.getEntity(entityUuid);
                     if (entity == null || entity.isRemoved()) {
-                        // 如果这是一个玩家 UUID，且玩家只是离线（非实体死亡），不要立即移除绑定
-                        var onlinePlayer = serverWorld.getServer().getPlayerManager().getPlayer(entityUuid);
-                        if (onlinePlayer == null) {
-                            // 不是在线玩家：可能是实体已死亡或被卸载，安全移除
-                            remove = true;
-                        } else {
-                            // 在线玩家存在但实体为 null，说明实体尚未加载，延迟处理
-                            remove = false;
-                        }
+                        // 实体不存在或已被移除：立即移除映射（避免长期保留导致进度异常）
+                        remove = true;
                     }
                 } catch (Exception ignored) {
                     remove = true;
@@ -439,7 +432,20 @@ public class EntityMusicPlayerManager {
 
                 if (remove) {
                     try {
-                        te.unregisterActiveEntity(serverWorld, entityUuid, "cleanupInvalidEntities");
+                        // 仅在映射仍指向该 TE 时移除，避免并发或 race 导致误删除其他绑定
+                        var currentMap = TileEntityMusicPlayer.getActiveMapForWorldEntities(serverWorld);
+                        if (currentMap != null) {
+                            TileEntityMusicPlayer mapped = currentMap.get(entityUuid);
+                            if (mapped == te) {
+                                currentMap.remove(entityUuid);
+                                try {
+                                    te.markDirty();
+                                } catch (Exception ignored) {}
+                                NetMusic.LOGGER.info("[EntityMusicPlayerManager] Cleaned up entity {} mapping for TE at {} (cleanupInvalidEntities)", entityUuid, te.getPos());
+                            } else {
+                                NetMusic.LOGGER.debug("[EntityMusicPlayerManager] Skipped cleanup for entity {} because mapping changed", entityUuid);
+                            }
+                        }
                     } catch (Exception e) {
                         NetMusic.LOGGER.error("[EntityMusicPlayerManager] Error cleaning up entity {} for TE at {}: {}", entityUuid, te.getPos(), e.getMessage());
                     }

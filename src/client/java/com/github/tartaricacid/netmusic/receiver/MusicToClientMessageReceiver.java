@@ -33,7 +33,7 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
             NetMusic.LOGGER.info("[MusicToClientMessageReceiver] EXECUTING ON CLIENT THREAD: song={}, playProgress={} ticks, pos={}, client={}", 
                     message.getSongName(), message.getPlayProgress(), message.getPos(), context.client() == null ? "null" : "ok");
             
-            // 如果是实体跟随类型，优先使用 entityId 在本地直接查找对应实体；找不到则不播放（不回退到 UUID 遍历）
+            // 如果是实体跟随类型，优先使用 entityId 在本地直接查找对应实体；找不到则回退到 UUID 路径进行预占并创建基于 UUID 的声音
             if (message.hasEntity()) {
                 int entityId = message.getEntityId();
                 if (entityId == -1) {
@@ -44,33 +44,58 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                 try {
                     if (context.client().world != null) {
                         net.minecraft.entity.Entity e = context.client().world.getEntityById(entityId);
-                            if (e != null) {
-                                found = true;
-                                // 尝试预占实体 key（原子操作）
-                                boolean reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
-                                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Reserved entity {} for playback: {}", e.getUuid(), reserved);
+                        if (e != null) {
+                            found = true;
+                            // 尝试预占实体 key（原子操作）
+                            boolean reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Reserved entity {} for playback: {}", e.getUuid(), reserved);
+                            if (!reserved) {
+                                // 如果预占失败，尝试清理残留旧注册后重试一次
+                                boolean cleaned = ClientMusicPlaybackManager.cleanupStaleEntityRegistration(e.getUuid(), 5000L);
+                                if (cleaned) {
+                                    reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
+                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retried reservation for entity {} after cleanup: {}", e.getUuid(), reserved);
+                                }
                                 if (!reserved) {
-                                    // 如果预占失败，尝试清理残留旧注册后重试一次
-                                    boolean cleaned = ClientMusicPlaybackManager.cleanupStaleEntityRegistration(e.getUuid(), 5000L);
-                                    if (cleaned) {
-                                        reserved = ClientMusicPlaybackManager.reserveEntity(e.getUuid());
-                                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retried reservation for entity {} after cleanup: {}", e.getUuid(), reserved);
-                                    }
-                                    if (!reserved) {
-                                        NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity {} already reserved, skipping playback", e.getUuid());
-                                        return;
-                                    }
+                                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity {} already reserved, skipping playback", e.getUuid());
+                                    return;
                                 }
                             }
+                        }
                     }
                 } catch (Exception ignored) {}
 
                 if (!found) {
-                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity with id {} not found locally, skipping playback", entityId);
-                    return;
+                    // 当实体 id 在本地未找到时，尝试回退到 UUID 路径：使用消息中的 UUID 预占并创建基于 UUID 的声音
+                    try {
+                        String s = message.getEntityUuidString();
+                        if (s != null && !s.isEmpty()) {
+                            java.util.UUID uid = java.util.UUID.fromString(s);
+                            boolean reservedUuid = ClientMusicPlaybackManager.reserveEntity(uid);
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Entity id {} not found, reserved by UUID {}: {}", entityId, uid, reservedUuid);
+                            if (!reservedUuid) {
+                                boolean cleaned = ClientMusicPlaybackManager.cleanupStaleEntityRegistration(uid, 5000L);
+                                if (cleaned) {
+                                    reservedUuid = ClientMusicPlaybackManager.reserveEntity(uid);
+                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retried reservation for UUID {} after cleanup: {}", uid, reservedUuid);
+                                }
+                            }
+                            if (!reservedUuid) {
+                                NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] UUID {} already reserved, skipping playback", uid);
+                                return;
+                            }
+                            // 标记为使用 UUID 路径创建
+                            found = true; // allow creation to continue using UUID constructor
+                        } else {
+                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity with id {} not found and no UUID provided, skipping playback", entityId);
+                            return;
+                        }
+                    } catch (Exception ex) {
+                        NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Failed to fallback to UUID for entity id {}: {}", entityId, ex.getMessage());
+                        return;
+                    }
                 }
             } else {
-                // 尝试预占位置（原子操作）；若预占失败则已有其它路径在处理播放，直接跳过
                 boolean reservedPos = ClientMusicPlaybackManager.reservePos(message.getPos());
                 NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Reserved position {} for playback: {}", message.getPos(), reservedPos);
                 if (!reservedPos) {
@@ -120,14 +145,21 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                         if (entityUuidCheck != null) {
                             NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Proceeding to create NetMusicSound for entity {}", entityUuidCheck);
                         } else {
-                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity not found at sound-creation time, aborting");
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Entity not found at sound-creation time, will use UUID-based sound if available");
                             try {
                                 String s = message.getEntityUuidString();
                                 if (s != null && !s.isEmpty()) {
-                                    ClientMusicPlaybackManager.cancelReservationEntity(java.util.UUID.fromString(s));
+                                    // 保持之前的预占，不要取消；设置 entityUuidCheck 以走后续的 uuid 路径创建
+                                    entityUuidCheck = java.util.UUID.fromString(s);
+                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Fallback to UUID-based creation for {}", entityUuidCheck);
+                                } else {
+                                    NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] No UUID provided; cannot create entity-follow sound, aborting");
+                                    return;
                                 }
-                            } catch (Throwable ignored) {}
-                            return;
+                            } catch (Throwable ignored) {
+                                NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Failed to parse entity UUID, aborting: {}", ignored.getMessage());
+                                return;
+                            }
                         }
                     } else {
                         if (ClientMusicPlaybackManager.isPlayingAt(message.getPos())) {
@@ -186,20 +218,53 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                 }, Util.getMainWorkerExecutor());
             };
             
-            // 延迟20 tick（1秒）执行声音创建，确保世界和音频系统准备就绪
-            long delayMs = 1000;
-            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Scheduling delayed sound creation in {}ms for pos {}", delayMs, message.getPos());
+            // 立即尝试创建声音；如果短时间内未成功（SoundManager/注册可能尚未就绪），则在 1s 后重试一次。
+            try {
+                // immediate attempt
+                context.client().execute(createSoundTask);
+            } catch (Exception e) {
+                NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Immediate createSoundTask failed for pos {}: {}", message.getPos(), e.getMessage());
+            }
+
+            // 检测短期内是否注册成功（200ms），若未成功则在 1s 后重试一次
             new java.util.Timer().schedule(new java.util.TimerTask() {
                 @Override
                 public void run() {
                     try {
-                        context.client().execute(createSoundTask);
-                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Delayed task executed for pos {}", message.getPos());
+                        boolean registered = false;
+                        try {
+                            if (message.hasEntity()) {
+                                String s = message.getEntityUuidString();
+                                if (s != null && !s.isEmpty()) {
+                                    java.util.UUID uid = java.util.UUID.fromString(s);
+                                    registered = ClientMusicPlaybackManager.isPlayingForEntity(uid);
+                                }
+                            } else {
+                                registered = ClientMusicPlaybackManager.isPlayingAt(message.getPos());
+                            }
+                        } catch (Throwable ignored) {}
+
+                        if (!registered) {
+                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Immediate play not registered, scheduling 1s retry for pos {}", message.getPos());
+                            new java.util.Timer().schedule(new java.util.TimerTask() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        context.client().execute(createSoundTask);
+                                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retry task executed for pos {}", message.getPos());
+                                    } catch (Exception e) {
+                                        NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error in retry task for pos {}: {}", message.getPos(), e.getMessage());
+                                    }
+                                }
+                            }, 1000);
+                        } else {
+                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Sound registered successfully for pos {}", message.getPos());
+                        }
                     } catch (Exception e) {
-                        NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error in delayed task for pos {}: {}", message.getPos(), e.getMessage());
+                        NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error during registration check for pos {}: {}", message.getPos(), e.getMessage());
                     }
                 }
-            }, delayMs);
+            }, 200);
         });
     }
 }

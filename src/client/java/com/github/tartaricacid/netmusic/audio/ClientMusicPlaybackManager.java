@@ -372,4 +372,21 @@ public class ClientMusicPlaybackManager {
             }
         }
     }
+
+    /**
+     * 通知指定实体已出现在客户端世界中，尝试将已存在的 UUID-based 声音实例绑定到实体。
+     */
+    public static void notifyEntityLoaded(java.util.UUID entityUuid, net.minecraft.entity.Entity entity) {
+        if (entityUuid == null || entity == null) return;
+        String key = "entity:" + entityUuid.toString();
+        SoundInstance inst = soundMap.get(key);
+        if (inst instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+            try {
+                ((com.github.tartaricacid.netmusic.audio.NetMusicSound) inst).bindToEntity(entity);
+                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Notified and bound sound to entity {}", entityUuid);
+            } catch (Throwable t) {
+                com.github.tartaricacid.netmusic.NetMusic.LOGGER.debug("[ClientMusicPlaybackManager] Failed to bind sound to entity {}: {}", entityUuid, t.getMessage());
+            }
+        }
+    }
 }

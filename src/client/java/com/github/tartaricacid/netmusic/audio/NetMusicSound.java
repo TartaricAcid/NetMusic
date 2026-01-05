@@ -168,6 +168,21 @@ public class NetMusicSound extends MovingSoundInstance {
         return entityUuid;
     }
 
+    /**
+     * 事件驱动地将此声音绑定到已解析的实体上（由外部事件触发）。
+     */
+    public void bindToEntity(net.minecraft.entity.Entity ent) {
+        if (ent == null) return;
+        try {
+            this.initialEntity = ent;
+            this.resolveAttempts = 0;
+            this.x = (float) ent.getX();
+            this.y = (float) ent.getY();
+            this.z = (float) ent.getZ();
+            NetMusic.LOGGER.info("[NetMusicSound] bindToEntity: bound sound for {} to entity {} at pos={},{},{}", this.entityUuid, ent.getUuid(), this.x, this.y, this.z);
+        } catch (Throwable ignored) {}
+    }
+
     @Override
     public void tick() {
         ClientWorld world = MinecraftClient.getInstance().world;
@@ -217,16 +232,22 @@ public class NetMusicSound extends MovingSoundInstance {
             // 优先使用在构造时保存的实体引用（如果存在且仍有效）
             net.minecraft.entity.Entity entity = null;
             try {
-                if (this.initialEntity != null) {
+                    if (this.initialEntity != null) {
                     try {
                         if (!this.initialEntity.isRemoved()) {
                             entity = this.initialEntity;
                         } else {
-                            // 实体已被移除，清理引用以便后续回退
-                            this.initialEntity = null;
+                            // 若初始实体被标记为已移除，认为实体已死亡/永久消失，立即停止并清理注册
+                            NetMusic.LOGGER.info("[NetMusicSound] initialEntity {} isRemoved=true, stopping sound and unregistering", this.initialEntity.getUuid());
+                            try {
+                                if (this.entityUuid != null) ClientMusicPlaybackManager.unregisterForEntity(this.entityUuid);
+                            } catch (Throwable ignored) {}
+                            this.setDone();
+                            return;
                         }
                     } catch (Throwable ignored) {
                         this.initialEntity = null;
+                        this.resolveAttempts = 0;
                     }
                 }
                 if (entity == null) {
@@ -257,6 +278,8 @@ public class NetMusicSound extends MovingSoundInstance {
                         if (entObj instanceof net.minecraft.entity.Entity resolved) {
                             entity = resolved;
                             this.initialEntity = resolved;
+                            // 解析成功，重置解析计数以便未来再次丢失时还能重新尝试
+                            this.resolveAttempts = 0;
                             // 立即同步位置到声音实例
                             try {
                                 this.x = (float) resolved.getX();
@@ -274,50 +297,45 @@ public class NetMusicSound extends MovingSoundInstance {
                     NetMusic.LOGGER.debug("[NetMusicSound] Entity {} not currently present (attempts={}), will retry", entityUuid, resolveAttempts);
                 }
             }
-            // 若多次重试仍未找到实体，则停止播放以释放资源
+            // 若多次重试仍未找到实体，则停止播放以释放资源（不再基于短期 localTicks 停止）
             if (entity == null && resolveAttempts >= MAX_RESOLVE_ATTEMPTS) {
-                if (localTicks <= 5) {
-                    NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found but localTicks={} <= 5, deferring stop", entityUuid, localTicks);
-                } else {
-                    NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found after {} attempts, stopping sound", entityUuid, resolveAttempts);
-                    ClientMusicPlaybackManager.unregisterForEntity(entityUuid);
-                    this.setDone();
-                    return;
-                }
+                NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found after {} attempts, stopping sound", entityUuid, resolveAttempts);
+                ClientMusicPlaybackManager.unregisterForEntity(entityUuid);
+                this.setDone();
+                return;
             }
-            // if (entity != null) {
-            //     this.x = (float) entity.getX();
-            //     this.y = (float) entity.getY();
-            //     this.z = (float) entity.getZ();
-            //     // 调试：在前几次 tick 打印实体对比信息，帮助诊断为何后续找不到实体
-            //     if (debugTickLogged < 6) {
-            //         boolean lookupMatches = false;
-            //         try {
-            //             net.minecraft.entity.Entity byId = null;
-            //             try {
-            //                 byId = world.getEntityById(entity.getId());
-            //             } catch (Throwable ignored) {}
-            //             lookupMatches = (byId == entity);
-            //         } catch (Throwable ignored) {}
-            //         NetMusic.LOGGER.info("[NetMusicSound DEBUG] tick={} localTicks={} entity id={} uuid={} isRemoved={} lookupMatches={}", tick, localTicks, entity.getId(), entity.getUuid(), entity.isRemoved(), lookupMatches);
-            //         debugTickLogged++;
-            //     }
-            //     // 可尝试同步歌词到附近的 TileEntity（若存在）
-            //     // BlockPos currentPos = new BlockPos((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
-            //     // BlockEntity be = world.getBlockEntity(currentPos);
-            //     // if (be instanceof TileEntityMusicPlayer musicPlayer) {
-            //     //     musicPlayer.lyricRecord = lyricRecord;
-            //     // }
-            // } else {
-            //     if (localTicks <= 5) {
-            //         NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found but localTicks={} <= 5, deferring stop", entityUuid, localTicks);
-            //     } else {
-            //         NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found, stopping sound", entityUuid);
-            //         ClientMusicPlaybackManager.unregisterForEntity(entityUuid);
-            //         this.setDone();
-            //         return;
-            //     }
-            // }
+            if (entity != null) {
+                // 更新声音坐标以跟随实体
+                try {
+                    this.x = (float) entity.getX();
+                    this.y = (float) entity.getY();
+                    this.z = (float) entity.getZ();
+                } catch (Throwable ignored) {}
+
+                // 在前几次 tick 输出调试信息，帮助诊断为何后续找不到实体
+                if (debugTickLogged < 6) {
+                    boolean lookupMatches = false;
+                    try {
+                        net.minecraft.entity.Entity byId = null;
+                        try {
+                            byId = world.getEntityById(entity.getId());
+                        } catch (Throwable ignored) {}
+                        lookupMatches = (byId == entity);
+                    } catch (Throwable ignored) {}
+                    NetMusic.LOGGER.info("[NetMusicSound DEBUG] tick={} localTicks={} entity id={} uuid={} isRemoved={} lookupMatches={}", tick, localTicks, entity.getId(), entity.getUuid(), entity.isRemoved(), lookupMatches);
+                    debugTickLogged++;
+                }
+
+                // 可尝试同步歌词到附近的 TileEntity（若存在）
+                // BlockPos currentPos = new BlockPos((int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));
+                // BlockEntity be = world.getBlockEntity(currentPos);
+                // if (be instanceof TileEntityMusicPlayer musicPlayer) {
+                //     musicPlayer.lyricRecord = lyricRecord;
+                // }
+            } else {
+                // 实体仍未解析到，但解析次数尚未耗尽；继续重试，不在此处停止
+                NetMusic.LOGGER.debug("[NetMusicSound] Entity {} not found (attempts={}), deferring stop until attempts exhausted", entityUuid, resolveAttempts);
+            }
         }
         
         if (tick > tickTimes + 50) {
