@@ -90,23 +90,20 @@ public class EntityMusicPlayerManager {
             NetMusic.LOGGER.info("[EntityMusicPlayerManager] Registered entity {} to music player at pos {}", 
                     entity.getUuid(), musicPlayer.getPos());
 
-            // 如果注册的实体是在线的玩家，并且在同一世界，立即发送播放消息以减少延迟
-            if (entity instanceof ServerPlayerEntity spe) {
-                try {
+            // 将播放信息持久化为虚拟实体会话，客户端可以在实体加载或重连后从持久化会话恢复播放。
+            try {
+                if (musicPlayer.getWorld() instanceof ServerWorld sw) {
                     var stack = musicPlayer.getItems().getFirst();
                     if (!stack.isEmpty()) {
                         var info = com.github.tartaricacid.netmusic.item.ItemMusicCD.getSongInfo(stack);
                         if (info != null) {
-                            MusicToClientMessage msg = new MusicToClientMessage(musicPlayer.getPos(), info.songUrl, info.songTime, info.songName, musicPlayer.getPlayProgress(), entity.getId(), entity.getUuid().toString());
-                            NetworkHandler.sendToClientPlayer(msg, spe);
-                            musicPlayer.addNotified(entity.getUuid());
-                            NetMusic.LOGGER.info("[EntityMusicPlayerManager] Sent immediate MusicToClientMessage to player {} for entity registration", spe.getName().getString());
+                            // registerVirtualEntitySession 会保存到运行时映射并持久化到磁盘，
+                            // 同时会尝试向周围在线玩家广播播放消息作为即时通知。
+                            registerVirtualEntitySession(sw, entity.getUuid(), new NbtRecord(info.songUrl, info.songTime, info.songName, musicPlayer.getPlayProgress(), musicPlayer.getPlayStartWorldTick()));
                         }
                     }
-                } catch (Exception e) {
-                    NetMusic.LOGGER.error("[EntityMusicPlayerManager] Error sending immediate MusicToClientMessage to player {}", spe.getName().getString(), e);
                 }
-            }
+            } catch (Exception ignored) {}
 
             return true;
         } catch (Exception e) {
@@ -136,15 +133,12 @@ public class EntityMusicPlayerManager {
             if (removed) {
                 NetMusic.LOGGER.info("[EntityMusicPlayerManager] Unregistered entity {} from music player at pos {}", 
                         entity.getUuid(), musicPlayer.getPos());
-                // 如果注销的实体是在线玩家，发送停止消息到该玩家
-                if (entity instanceof ServerPlayerEntity spe) {
-                    try {
-                        StopMusicMessage stop = new StopMusicMessage(musicPlayer.getPos(), entity.getUuid().toString());
-                        NetworkHandler.sendToClientPlayer(stop, spe);
-                    } catch (Exception e) {
-                        NetMusic.LOGGER.error("[EntityMusicPlayerManager] Error sending StopMusicMessage to player {}", spe.getName().getString(), e);
+                // 移除已持久化的虚拟会话（如果存在），并尝试通知附近玩家停止播放
+                try {
+                    if (musicPlayer.getWorld() instanceof ServerWorld sw) {
+                        removeVirtualEntitySession(sw, entity.getUuid());
                     }
-                }
+                } catch (Exception ignored) {}
             }
             return removed;
         } catch (Exception e) {
@@ -233,6 +227,20 @@ public class EntityMusicPlayerManager {
      */
     public static boolean registerVirtualEntitySession(ServerWorld serverWorld, java.util.UUID entityUuid, NbtRecord record) {
         try {
+            // 如果记录显示已到曲终，则不再注册持久会话
+            try {
+                if (record.songTime > 0 && record.playProgress >= record.songTime * 20) {
+                    NetMusic.LOGGER.info("[EntityMusicPlayerManager] Not registering virtual session for entity {} because playProgress >= song length", entityUuid);
+                    // 尝试移除任何已有的会话
+                    try {
+                        var map = runtimeEntitySessions.get(serverWorld.getRegistryKey().getValue().toString());
+                        if (map != null) map.remove(entityUuid);
+                        savePersistentSessions(serverWorld);
+                    } catch (Exception ignored) {}
+                    return false;
+                }
+            } catch (Throwable ignored) {}
+
             String worldId = serverWorld.getRegistryKey().getValue().toString();
             runtimeEntitySessions.computeIfAbsent(worldId, k -> new java.util.concurrent.ConcurrentHashMap<>()).put(entityUuid, record);
             // 持久化到世界保存目录（写入完整会话列表）

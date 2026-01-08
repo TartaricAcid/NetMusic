@@ -1,3 +1,57 @@
+
+# 实体驱动播放（Event-driven / BE-NBT First）说明
+
+目的
+- 说明将实体随身播放行为改为“事件驱动 + BE/区块 NBT 为首要来源”的设计，并记录和块播放器（TileEntityMusicPlayer）协作的行为、回调点与验证步骤。
+
+核心思想
+- 优先从实体/方块实体（BE）持久化的 NBT 恢复播放；在网络消息作为兼容或回退通路存在时，消息会被转为“挂起”并等到实体可用后由客户端触发真正的播放。
+- 事件驱动：客户端通过 BE 更新回调、实体出现事件或定期扫描触发 pending 恢复；不再依赖服务器即时广播作为唯一信源，从而避免在玩家加入/区块延迟时产生的竞态与重复注册问题。
+
+关键行为与触发点
+- 服务端写入持久化虚拟会话：`EntityMusicPlayerManager.registerVirtualEntitySession(...)` 会将播放元数据（`songUrl`、`songTime`、`songName`、`playProgress`、`playStartWorldTick`、`uuid` 等）保存在运行时映射并持久化到世界存档。
+- 服务端广播（兼容）：为了兼容旧客户端或作为即时提示，服务端仍可发送 `MusicToClientMessage`；客户端收到此消息时若检测到实体不可用，会将请求转为 pending（由 `PendingEntityPlaybackManager` 保存）。
+- 客户端触发点：
+  - `NetMusicClient.onBlockEntityPlaybackNbt(...)`：TileEntity 在 NBT 更新时通过反射或事件调用该函数，将数据放入 `pendingPlayback`（或立即尝试创建，如果实体已存在）。
+  - 实体出现事件：`NetMusicClient` 每 20 tick 扫描新出现的实体，并在新实体出现时调用 `PendingEntityPlaybackManager.onEntityLoaded(uuid, entity)`（以及 `ClientMusicPlaybackManager.notifyEntityLoaded`）。
+  - `PendingEntityPlaybackManager`：收到挂起请求并在实体出现时负责预占、获取歌词（可选）、创建绑定 `NetMusicSound` 并交由 `ClientMusicPlaybackManager` 注册。
+
+NBTF 字段与语义（服务端写入）
+- `songUrl` (String)：来源 URL
+- `songTime` (int)：歌曲时长（秒）或 0 表示未知
+- `songName` (String)
+- `playProgress` (int)：以 tick 为单位的已播放进度
+- `playStartWorldTick` (long)：写入时的世界 tick，用于计算客户端到达时的实际进度
+- `uuid` (String)：所属实体 UUID（若为随身播放）
+
+客户端预占与注册语义
+- 预占（`ClientMusicPlaybackManager.reserveEntity` / `reservePos`）：在开始异步创建音频前占位以避免重复路径。
+- 原子注册（`registerIfAbsentEntity` / `registerIfAbsentPos`）：创建完成后尝试原子注册，如注册失败会回滚并释放预占。
+- 陈旧清理（`cleanupStaleEntityRegistration`）：如果预占或残留注册超过阈值会被清理以允许重试。
+
+对旧消息通路的兼容处理
+- `MusicToClientMessageReceiver` 仍然存在，但在实体不可用时将消息加入 `PendingEntityPlaybackManager` 而非直接以 UUID 构建立即播放。
+
+验证与调试要点
+- 在客户端日志中关注：
+  - `[PendingEntityPlaybackManager] Added pending playback for entity ...`（消息被挂起）
+  - `[PendingEntityPlaybackManager] Reserving entity ... on load: true/false`（预占结果）
+  - `[ClientMusicPlaybackManager] Notified and bound sound to entity ...`（绑定成功）
+  - `Cancelled reservation` / `Failed to create bound sound` 等错误；必要时检查 `NetMusicSound` 的构造异常。
+- 场景测试：复现“客户端A播放 → 客户端B加入”并观察客户端B是否先收到 pending，再在实体出现（或 BE 更新）时创建绑定声音。
+
+迁移建议（实践）
+1. 保持服务端写入 NBT 为首要行为并持久化（已实现）。
+2. 保持消息通路仅做兼容与即时提示，确保消息接收端不会在实体不可用时直接创建 UUID 播放（已改为 pending）。
+3. 将 `PendingEntityPlaybackManager` 的触发点完整接线到客户端的 BE 回调与实体出现事件（已接入 `NetMusicClient` 的实体扫描回调）。
+4. 通过多客户端 + 服务器重启测试验证在常见场景下无重复注册或阻塞。
+
+文件参考
+- 代码：`TileEntityMusicPlayer`、`EntityMusicPlayerManager`、`NetMusicClient`、`PendingEntityPlaybackManager`、`ClientMusicPlaybackManager`、`NetMusicSound`。
+
+作者与版本
+- 更新：2026-01-08（事件驱动及 pending 行为）
+
 ## 实体跟随播放（follow-sound） — 技术说明（已更新）
 
 目的：总结已实现的改动与运行时语义，说明客户端与服务端之间的消息路径、原子注册逻辑、以及新的网络广播策略。
@@ -48,16 +102,7 @@
 - `src/main/java/com/github/tartaricacid/netmusic/sound/NetMusicSound.java` — 确保在未注册或注册失败时正确释放音频资源，避免流泄漏。
 - `src/main/java/com/github/tartaricacid/netmusic/tileentity/TileEntityMusicPlayer.java` — 只在必要时更新持久化字段；保留对旧字段（如 `CURRENT_TIME`）的兼容读取但不再写入，以便平滑迁移。
 
-**测试要点与方案**
-- 本地 `runClient` 测试场景：
-  - 在有玩家附近的 BE 上触发 `playfollow`，验证附近客户端立即收到并播放（通过 `sendToNearby` 或 BE 同步）。
-  - 重连/重载世界后（单人转服务端重启），验证 BE 驱动的恢复路径能恢复播放且客户端不会重复创建播放实例。
-  - 多客户端同时触发通知，验证仅有一个 `SoundInstance` 被注册（无重复播放）。
-- 日志关注：注册成功/失败、重复检测、音频流创建与销毁。
-
 **迁移与兼容性注意**
 - 移除持久化字段（如 `CURRENT_TIME`）前保留兼容读取逻辑：读取旧字段但不再写入，确保老存档平滑过渡。
 
 ---
-
-如需我把本次重写提交到仓库并运行一次 `gradlew build -x test` 以验证构建，请告诉我，我可以继续执行。也可以把文档进一步精简成英文版或加入示例代码片段。 

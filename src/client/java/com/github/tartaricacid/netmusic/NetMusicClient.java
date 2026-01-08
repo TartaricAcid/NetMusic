@@ -151,6 +151,10 @@ public class NetMusicClient implements ClientModInitializer {
                         if (!known.contains(uid)) {
                             // 新出现的实体，通知播放管理器尝试绑定
                             com.github.tartaricacid.netmusic.audio.ClientMusicPlaybackManager.notifyEntityLoaded(uid, e);
+                            // 同时通知 PendingEntityPlaybackManager 以触发任何挂起的实体绑定播放请求
+                            try {
+                                com.github.tartaricacid.netmusic.receiver.PendingEntityPlaybackManager.onEntityLoaded(uid, e);
+                            } catch (Throwable ignored) {}
                         }
                     } catch (Throwable ignored) {}
                 }

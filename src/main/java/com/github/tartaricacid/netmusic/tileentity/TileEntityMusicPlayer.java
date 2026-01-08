@@ -41,7 +41,6 @@ import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISA
 public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv {
     public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder.create(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER).build(null);
     private static final String IS_PLAY_TAG = "IsPlay";
-    private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
     private static final String PLAY_PROGRESS_TAG = "PlayProgress";
     private static final String PLAY_START_WORLD_TICK_TAG = "PlayStartWorldTick";
@@ -213,6 +212,13 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
 
     public int getPlayProgress() {
         return playProgress;
+    }
+
+    /**
+     * 返回记录的播放起始世界 tick（用于计算从持久化会话恢复时的进度偏移）
+     */
+    public long getPlayStartWorldTick() {
+        return playStartWorldTick;
     }
 
     // notifiedPlayers 访问器，用于外部事件处理器安全操作
@@ -462,7 +468,6 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
         super.readNbt(nbt, registryLookup);
         Inventories.readNbt(nbt, items, registryLookup);
         isPlay = nbt.getBoolean(IS_PLAY_TAG);
-        currentTime = nbt.getInt(CURRENT_TIME_TAG);
         hasSignal = nbt.getBoolean(SIGNAL_TAG);
         playProgress = nbt.getInt(PLAY_PROGRESS_TAG);
         playStartWorldTick = nbt.getLong(PLAY_START_WORLD_TICK_TAG);
@@ -636,7 +641,6 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
         Inventories.writeNbt(nbt, items, registryLookup);
         nbt.putBoolean(IS_PLAY_TAG, isPlay);
-        nbt.putInt(CURRENT_TIME_TAG, currentTime);
         nbt.putBoolean(SIGNAL_TAG, hasSignal);
         nbt.putInt(PLAY_PROGRESS_TAG, playProgress);
         nbt.putLong(PLAY_START_WORLD_TICK_TAG, playStartWorldTick);

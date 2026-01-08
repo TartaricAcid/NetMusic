@@ -384,6 +384,11 @@ public class ClientMusicPlaybackManager {
             try {
                 ((com.github.tartaricacid.netmusic.audio.NetMusicSound) inst).bindToEntity(entity);
                 com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Notified and bound sound to entity {}", entityUuid);
+                // 当先前以 UUID 路径创建的声音在实体加载后被绑定时，确保同时注册 pos key，
+                // 这样基于位置的检查/注销能正确生效。
+                try {
+                    registerSoundForEntity(entityUuid, inst);
+                } catch (Throwable ignored) {}
             } catch (Throwable t) {
                 com.github.tartaricacid.netmusic.NetMusic.LOGGER.debug("[ClientMusicPlaybackManager] Failed to bind sound to entity {}: {}", entityUuid, t.getMessage());
             }

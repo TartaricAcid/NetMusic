@@ -237,8 +237,12 @@ public class NetMusicSound extends MovingSoundInstance {
                         if (!this.initialEntity.isRemoved()) {
                             entity = this.initialEntity;
                         } else {
-                            // 若初始实体被标记为已移除，认为实体已死亡/永久消失，立即停止并清理注册
-                            NetMusic.LOGGER.info("[NetMusicSound] initialEntity {} isRemoved=true, stopping sound and unregistering", this.initialEntity.getUuid());
+                            // 若初始实体被标记为已移除，认为实体已死亡/永久消失或被临时卸载，先将播放请求加入 pending 以便重新加载时恢复
+                            NetMusic.LOGGER.info("[NetMusicSound] initialEntity {} isRemoved=true, scheduling pending resume and stopping sound", this.initialEntity.getUuid());
+                            try {
+                                int timeSecond = tickTimes / 20;
+                                com.github.tartaricacid.netmusic.receiver.PendingEntityPlaybackManager.addPending(this.entityUuid, this.songUrl, "", timeSecond, this.tick);
+                            } catch (Throwable ignored) {}
                             try {
                                 if (this.entityUuid != null) ClientMusicPlaybackManager.unregisterForEntity(this.entityUuid);
                             } catch (Throwable ignored) {}
@@ -300,6 +304,12 @@ public class NetMusicSound extends MovingSoundInstance {
             // 若多次重试仍未找到实体，则停止播放以释放资源（不再基于短期 localTicks 停止）
             if (entity == null && resolveAttempts >= MAX_RESOLVE_ATTEMPTS) {
                 NetMusic.LOGGER.warn("[NetMusicSound] Entity {} not found after {} attempts, stopping sound", entityUuid, resolveAttempts);
+                // 在停止前将播放请求加入 pending，以便实体再次出现在客户端时能够恢复播放
+                try {
+                    int timeSecond = tickTimes / 20;
+                    com.github.tartaricacid.netmusic.receiver.PendingEntityPlaybackManager.addPending(entityUuid, this.songUrl, "", timeSecond, this.tick);
+                    NetMusic.LOGGER.debug("[NetMusicSound] Added pending resume for entity {} before stopping", entityUuid);
+                } catch (Throwable ignored) {}
                 ClientMusicPlaybackManager.unregisterForEntity(entityUuid);
                 this.setDone();
                 return;

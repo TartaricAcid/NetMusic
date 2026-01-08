@@ -132,32 +132,27 @@ public class ServerEventHandler {
                 // 检查是否存在虚拟实体会话（持久化）的记录，并发送给该玩家（玩家自己的实体会话）
                 try {
                     var vr = com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.getVirtualEntitySession(world, player.getUuid());
-                        if (vr != null) {
-                            // 计算基于记录的实时进度：记录的 playProgress + (当前世界 tick - playStartWorldTick)
-                            int effectiveProgress = vr.playProgress;
-                            try {
-                                if (vr.playStartWorldTick > 0) {
-                                    long delta = 0L;
-                                    if (world != null) delta = world.getTime() - vr.playStartWorldTick;
-                                    if (delta > 0L) {
-                                        effectiveProgress = Math.toIntExact(Math.max(0L, Math.min((long) Integer.MAX_VALUE, (long) effectiveProgress + delta)));
-                                    }
+                    if (vr != null) {
+                        // 计算基于记录的实时进度：记录的 playProgress + (当前世界 tick - playStartWorldTick)
+                        int effectiveProgress = vr.playProgress;
+                        try {
+                            if (vr.playStartWorldTick > 0 && world != null) {
+                                long delta = world.getTime() - vr.playStartWorldTick;
+                                if (delta > 0L) {
+                                    effectiveProgress = Math.toIntExact(Math.max(0L, Math.min((long) Integer.MAX_VALUE, (long) effectiveProgress + delta)));
                                 }
-                                // 不超过歌曲总时长（秒->tick）
-                                if (vr.songTime > 0 && effectiveProgress > vr.songTime * 20) {
-                                    effectiveProgress = vr.songTime * 20;
-                                }
-                            } catch (Exception ignored) {}
-                            MusicToClientMessage vmsg = new MusicToClientMessage(player.getBlockPos(), vr.songUrl, vr.songTime, vr.songName, effectiveProgress, player.getId(), player.getUuid().toString());
-                            NetworkHandler.sendToClientPlayer(vmsg, player);
-                            // 也向附近玩家广播此虚拟会话，确保其他玩家也能听到（限半径）
-                                NetworkHandler.sendToNearby(world, player.getX(), player.getY(), player.getZ(), vmsg, 48.0);
-                                NetMusic.LOGGER.info("[ServerEventHandler] ✅ Sent MusicToClientMessage to player {} for virtual entity session (persisted)", player.getName().getString());
                             }
-                        } catch (Exception e) {
-                            NetMusic.LOGGER.error("[ServerEventHandler] Error while sending virtual entity session to player {}: {}", player.getName().getString(), e.getMessage());
-                        }
-                            NetMusic.LOGGER.info("[ServerEventHandler] ✅ Sent MusicToClientMessage to player {} for virtual entity session (persisted)", player.getName().getString());
+                            if (vr.songTime > 0 && effectiveProgress > vr.songTime * 20) {
+                                effectiveProgress = vr.songTime * 20;
+                            }
+                        } catch (Exception ignored) {}
+
+                        MusicToClientMessage vmsg = new MusicToClientMessage(player.getBlockPos(), vr.songUrl, vr.songTime, vr.songName, effectiveProgress, player.getId(), player.getUuid().toString());
+                        NetworkHandler.sendToClientPlayer(vmsg, player);
+                        // 同时向附近玩家广播一次，保证附近玩家也能听到该虚拟会话（限半径）
+                        NetworkHandler.sendToNearby(world, player.getX(), player.getY(), player.getZ(), vmsg, 48.0);
+                        NetMusic.LOGGER.info("[ServerEventHandler] ✅ Sent MusicToClientMessage to player {} for virtual entity session (persisted)", player.getName().getString());
+                    }
                 } catch (Exception e) {
                     NetMusic.LOGGER.error("[ServerEventHandler] Error while sending virtual entity session to player {}: {}", player.getName().getString(), e.getMessage());
                 }
@@ -207,6 +202,9 @@ public class ServerEventHandler {
                 } catch (Exception e) {
                     NetMusic.LOGGER.error("[ServerEventHandler] Error while sending other virtual sessions to joining player {}: {}", player.getName().getString(), e.getMessage());
                 }
+            } catch (Exception e) {
+                NetMusic.LOGGER.error("[ServerEventHandler] ❌ Error during JOIN handling for player {}", player.getName().getString(), e);
+            }
             // 在单机或特殊加载顺序下，TE 可能在 JOIN 时尚未完全准备，延迟多次重试以确保续播
             try {
                 pendingJoinRecovery.put(player.getUuid(), 200); // 200 server ticks (~10s)

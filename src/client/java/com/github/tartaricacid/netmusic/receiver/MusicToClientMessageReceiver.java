@@ -66,26 +66,33 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                 } catch (Exception ignored) {}
 
                 if (!found) {
-                    // 当实体 id 在本地未找到时，尝试回退到 UUID 路径：使用消息中的 UUID 预占并创建基于 UUID 的声音
+                    // 实体在本地尚未加载：改为将播放请求加入 pending，等实体加载事件触发后再创建绑定声音。
                     try {
                         String s = message.getEntityUuidString();
                         if (s != null && !s.isEmpty()) {
                             java.util.UUID uid = java.util.UUID.fromString(s);
+                            // 预占实体 key，防止并发重复创建；若预占失败则尝试清理陈旧注册
                             boolean reservedUuid = ClientMusicPlaybackManager.reserveEntity(uid);
-                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Entity id {} not found, reserved by UUID {}: {}", entityId, uid, reservedUuid);
                             if (!reservedUuid) {
                                 boolean cleaned = ClientMusicPlaybackManager.cleanupStaleEntityRegistration(uid, 5000L);
-                                if (cleaned) {
-                                    reservedUuid = ClientMusicPlaybackManager.reserveEntity(uid);
-                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retried reservation for UUID {} after cleanup: {}", uid, reservedUuid);
-                                }
+                                if (cleaned) reservedUuid = ClientMusicPlaybackManager.reserveEntity(uid);
                             }
                             if (!reservedUuid) {
-                                NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] UUID {} already reserved, skipping playback", uid);
+                                if (ClientMusicPlaybackManager.shouldLogSkipForEntity(uid)) {
+                                    NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Skipping playback for entity {} because reservation failed", uid);
+                                }
                                 return;
                             }
-                            // 标记为使用 UUID 路径创建
-                            found = true; // allow creation to continue using UUID constructor
+                            // 将播放请求加入 pending，由 PendingEntityPlaybackManager 在实体加载时完成创建
+                            try {
+                                java.net.URL u = new java.net.URL(message.getUrl());
+                                PendingEntityPlaybackManager.addPending(uid, u, message.getSongName(), message.getTimeSecond(), message.getPlayProgress());
+                                NetMusic.LOGGER.debug("[MusicToClientMessageReceiver] Added pending playback for UUID {}", uid);
+                            } catch (Exception ex) {
+                                NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Failed to add pending playback for UUID {}: {}", uid, ex.getMessage());
+                                ClientMusicPlaybackManager.cancelReservationEntity(uid);
+                            }
+                            return;
                         } else {
                             NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Entity with id {} not found and no UUID provided, skipping playback", entityId);
                             return;
