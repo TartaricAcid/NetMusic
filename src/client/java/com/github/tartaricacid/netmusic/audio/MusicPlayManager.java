@@ -101,13 +101,13 @@ public class MusicPlayManager {
                                     now = MinecraftClient.getInstance().world.getTime();
                                 }
                             } catch (Throwable ignored) {}
-                            // 约 350ms ≈ 7 ticks
-                            // 如果当时 world 不可用，scheduleHealthCheck 会使用 sentinel(-1)
-                            if (now < 0L) {
-                                scheduleHealthCheck(ns, -1L);
-                            } else {
-                                scheduleHealthCheck(ns, now + INITIAL_HEALTHCHECK_DELAY_TICKS);
-                            }
+                                            // 约 600ms ≈ 12 ticks（增大以避免与音频线程就绪发生竞态）
+                                            // 如果当时 world 不可用，scheduleHealthCheck 会使用 sentinel(-1)
+                                            if (now < 0L) {
+                                                scheduleHealthCheck(ns, -1L);
+                                            } else {
+                                                scheduleHealthCheck(ns, now + INITIAL_HEALTHCHECK_DELAY_TICKS);
+                                            }
                         }
                     } catch (Throwable ignored) {}
                     setNowPlaying(Text.literal(songName));
@@ -126,7 +126,7 @@ public class MusicPlayManager {
     private record HealthCheck(NetMusicSound sound, long dueTick, int attempts) {}
 
     private static final int MAX_HEALTHCHECK_RESCHEDULES = 20; // 最大重试次数（当区块/实体尚未加载时可以重试）
-    private static final int INITIAL_HEALTHCHECK_DELAY_TICKS = 7; // 初始延迟（若 world 可用则使用）
+    private static final int INITIAL_HEALTHCHECK_DELAY_TICKS = 12; // 初始延迟（若 world 可用则使用）
 
     public static void scheduleHealthCheck(NetMusicSound sound, long dueTick) {
         if (sound == null) return;
@@ -157,7 +157,7 @@ public class MusicPlayManager {
                             boolean postponed = false;
                             try {
                                 // 如果声音刚刚开始（localTicks 很小），先给它一点时间完成异步解码/seek
-                                if (ns.getLocalTicks() <= 2) {
+                                if (ns.getLocalTicks() <= 6) {
                                     postponed = true;
                                 }
                             } catch (Throwable ignored) {}
