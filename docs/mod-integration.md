@@ -104,6 +104,12 @@ NetworkHandler.sendToClientPlayer(msg, player);
 
 - 在少数网络或解码错误场景下，客户端创建声音可能失败。客户端已实现由主线程 tick 驱动的短延迟健康检查并在失败时回滚注册（取消 reservation/unregister 并停止声音），同时将请求重新加入 pending 以便后续重试。通常不需要第三方模组介入；若需要人工干预，请在服务端重写 TE NBT 或重新调用注册 API 以触发客户端恢复。
 
+补充：健康检查调度实现细节
+
+- 为避免在客户端加入或世界加载早期因 `world`/区块/实体尚不可用而导致的误判，健康检查采用了一个延迟初始化策略：如果在调度时检测到 `world` 不可用，调度器会将健康检查的 `dueTick` 设为 sentinel（-1）。主线程 tick 处理队列时会把 sentinel 初始化为 `currentWorldTime + INITIAL_HEALTHCHECK_DELAY_TICKS`（约 7 tick），以确保首次检查发生在世界可用后。
+- 因此第三方模组通常无需修改健康检查逻辑；但请不要移除客户端对区块/BE/实体就绪的检查，因为这些检查能避免在加载过程中误回滚并减少重复播放。
+- 如果集成场景仍遇到重复恢复或回滚抖动，建议（按需要）在服务端重写 TE NBT 推送或调整 `INITIAL_HEALTHCHECK_DELAY_TICKS` 的值以增加容错时间。
+
 七、示例工作流程（完整）
 
 1. 玩家 A 在方块上插入 CD，服务端在 TE 中调用 `setPlayToClient(info)`。TE 写入 NBT 并 markDirty。 
