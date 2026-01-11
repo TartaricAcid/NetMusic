@@ -427,4 +427,9 @@ public class NetMusicSound extends MovingSoundInstance {
     public boolean isAudioReady() {
         return this.audioReady;
     }
+
+    // Expose local tick counter for external health checks to avoid premature rollback
+    public int getLocalTicks() {
+        return this.localTicks;
+    }
 }

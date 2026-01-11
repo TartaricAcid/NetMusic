@@ -152,9 +152,15 @@ public class MusicPlayManager {
                     it.remove();
                     NetMusicSound ns = hc.sound;
                     try {
-                        // 如果声音基于方块位置但区块或 BE 尚未就绪，则延迟重试（最多重试 MAX_HEALTHCHECK_RESCHEDULES 次）
+                        // 如果声音基于方块位置但区块或 BE 尚未就绪，或本地 tick 过短（音频可能仍在初始化），则延迟重试
                         if (!ns.isAudioReady()) {
                             boolean postponed = false;
+                            try {
+                                // 如果声音刚刚开始（localTicks 很小），先给它一点时间完成异步解码/seek
+                                if (ns.getLocalTicks() <= 2) {
+                                    postponed = true;
+                                }
+                            } catch (Throwable ignored) {}
                             try {
                                 net.minecraft.client.MinecraftClient mc = MinecraftClient.getInstance();
                                 net.minecraft.client.world.ClientWorld world = mc == null ? null : mc.world;
