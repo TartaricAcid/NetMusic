@@ -422,4 +422,9 @@ public class NetMusicSound extends MovingSoundInstance {
             return null;
         }, Util.getMainWorkerExecutor());
     }
+
+    // Expose audio readiness for health-checks
+    public boolean isAudioReady() {
+        return this.audioReady;
+    }
 }

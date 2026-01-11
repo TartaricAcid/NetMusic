@@ -49,6 +49,28 @@ EntityMusicPlayerManager.unregisterEntityFromMusicPlayer(entity, te); // 推荐
 te.unregisterActiveEntity((ServerWorld) world, entity.getUuid(), "your-mod:detach-reason");
 ```
 
+扩展：直接通过歌曲 ID 在实体上播放
+
+如果你只知道歌曲在网易云的 ID（例如通过外部接口或命令），可以直接调用 `EntityMusicPlayerManager.playEntityBySongId`，该方法会尝试通过内置的网易云 API 获取歌曲信息并为实体注册一个虚拟播放会话（持久化），使实体在重连或世界重载后仍可恢复播放。
+
+示例：在服务端命令或事件中调用
+
+```java
+// 假设在服务端上下文 (ServerWorld world)
+Entity target = ...; // 目标实体
+long songId = 123456L; // 网易云歌曲ID
+boolean started = EntityMusicPlayerManager.playEntityBySongId(target, songId);
+if (started) {
+    // 可选：记录日志或给玩家反馈
+}
+```
+
+行为说明：
+- **前提**: 只能在服务端调用；如果实体不在 `ServerWorld` 上会返回 `false`。
+- **持久化**: 成功时会将会话保存为虚拟实体会话（写入 `netmusic_entity_players.dat`），并在实体在线时向附近玩家广播播放消息。
+- **恢复**: 客户端重连或实体重载时会尝试从持久化会话恢复播放。
+
+
 三、服务端：持久化虚拟会话（跨重启恢复）
 
 如果你希望随身播放在服务器重启后依然可恢复，请使用 `EntityMusicPlayerManager.registerVirtualEntitySession(ServerWorld, UUID, NbtRecord)`。
@@ -77,6 +99,10 @@ NetworkHandler.sendToClientPlayer(msg, player);
 六、调试与日志
 
 - 如需调试交互：在服务端调用 API 后，检查服务端日志是否有 `Registered virtual session` / `Registered entity` 等信息；客户端应在 BE 更新时输出 `Added pending playback` 或 `Reserved entity` 等日志。
+
+注意：播放创建失败的处理
+
+- 在少数网络或解码错误场景下，客户端创建声音可能失败。客户端已实现由主线程 tick 驱动的短延迟健康检查并在失败时回滚注册（取消 reservation/unregister 并停止声音），同时将请求重新加入 pending 以便后续重试。通常不需要第三方模组介入；若需要人工干预，请在服务端重写 TE NBT 或重新调用注册 API 以触发客户端恢复。
 
 七、示例工作流程（完整）
 

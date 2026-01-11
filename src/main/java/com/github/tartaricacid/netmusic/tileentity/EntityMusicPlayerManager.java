@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
 import java.util.UUID;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
+import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 
 /**
  * 实体音乐播放器管理器
@@ -337,6 +339,40 @@ public class EntityMusicPlayerManager {
             return true;
         } catch (Exception e) {
             NetMusic.LOGGER.error("[EntityMusicPlayerManager] Error removing virtual session for entity {}: {}", entityUuid, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 根据网易云歌曲 ID（163）在实体上播放音乐。该方法会尝试通过 NetEase API 获取歌曲信息，
+     * 并注册一个持久化的虚拟会话，使实体在重连/重载后仍可恢复播放。
+     *
+     * @param entity 要播放的实体（必须在服务端）
+     * @param songId 网易云歌曲 ID
+     * @return 成功返回 true，失败返回 false
+     */
+    public static boolean playEntityBySongId(Entity entity, long songId) {
+        if (!(entity.getWorld() instanceof ServerWorld)) {
+            NetMusic.LOGGER.warn("[EntityMusicPlayerManager] Attempted to play song for entity {} on non-server world", entity.getUuid());
+            return false;
+        }
+
+        ServerWorld serverWorld = (ServerWorld) entity.getWorld();
+        try {
+            ItemMusicCD.SongInfo info = MusicListManage.get163Song(songId);
+            if (info == null || info.songUrl == null || info.songUrl.isEmpty()) {
+                NetMusic.LOGGER.warn("[EntityMusicPlayerManager] Failed to resolve song info for id {}", songId);
+                return false;
+            }
+
+            NbtRecord record = new NbtRecord(info.songUrl, info.songTime, info.songName, 0, serverWorld.getTime());
+            boolean ok = registerVirtualEntitySession(serverWorld, entity.getUuid(), record);
+            if (ok) {
+                NetMusic.LOGGER.info("[EntityMusicPlayerManager] Started playing song id {} for entity {}", songId, entity.getUuid());
+            }
+            return ok;
+        } catch (Exception e) {
+            NetMusic.LOGGER.error("[EntityMusicPlayerManager] Error playing song id {} for entity {}: {}", entity.getUuid(), songId, e.getMessage());
             return false;
         }
     }

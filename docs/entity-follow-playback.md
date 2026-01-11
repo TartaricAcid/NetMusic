@@ -40,6 +40,16 @@ NBTF 字段与语义（服务端写入）
   - `Cancelled reservation` / `Failed to create bound sound` 等错误；必要时检查 `NetMusicSound` 的构造异常。
 - 场景测试：复现“客户端A播放 → 客户端B加入”并观察客户端B是否先收到 pending，再在实体出现（或 BE 更新）时创建绑定声音。
 
+播放失败处理与健康检查
+
+- 预占与已注册分离：客户端在尝试创建播放时会先对目标（entity/pos）做 `reserve`，仅在 `SoundInstance` 创建并原子注册成功后才将其标记为 `playing`（并在内部 `soundMap` 中保存实例）。这避免了在创建失败或注册失败时出现“假阳性”播放标记。
+- 延迟健康检查：`MusicPlayManager` 在调用 `SoundManager.play()` 后会启动短延迟（约 350ms）的健康检查，若 `NetMusicSound` 在短时间内未能完成音频流就绪（`isAudioReady()==false`），客户端会回滚注册（`unregister`）并停止该声音，必要时将请求重新放回 `pending` 以便后续重试。
+- 延迟健康检查：`MusicPlayManager` 在调用 `SoundManager.play()` 后会计划由客户端主线程 tick 驱动的短延迟（约 350ms）健康检查，若 `NetMusicSound` 在短时间内未能完成音频流就绪（`isAudioReady()==false`），客户端会回滚注册（`unregister`）并停止该声音，必要时将请求重新放回 `pending` 以便后续重试。
+- 异常回退与重试：在音频流创建抛出异常时，上层会取消预占并将请求重新加入 `pendingPlayback`（或 `PendingEntityPlaybackManager`），并对重试次数实施退避以避免无限重试。
+- 日志与限频：关键失败/回滚日志使用限频策略，既能定位问题又不会在高频失败时刷屏。
+
+这些机制一同保证：即使网络/解码或实体解析在短期内失败，客户端也不会长期误把目标标记为正在播放，同时会在后续实体可用或 BE 更新时继续恢复播放。
+
 迁移建议（实践）
 1. 保持服务端写入 NBT 为首要行为并持久化（已实现）。
 2. 保持消息通路仅做兼容与即时提示，确保消息接收端不会在实体不可用时直接创建 UUID 播放（已改为 pending）。

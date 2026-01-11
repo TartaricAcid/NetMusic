@@ -15,6 +15,8 @@ public class ClientMusicPlaybackManager {
     // 使用 BlockPos.toString() 作为 key
     private static final Map<String, Long> playing = new ConcurrentHashMap<>();
     private static final Map<String, SoundInstance> soundMap = new ConcurrentHashMap<>();
+    // 预占集合：在实际创建 SoundInstance 之前记录占位，避免将预占视为已播放
+    private static final Map<String, Long> reserved = new ConcurrentHashMap<>();
 
     // 最短重复保护时间（毫秒），避免短时间内重复创建。2秒。
     private static final long DEDUP_WINDOW_MS = 2000L;
@@ -22,9 +24,9 @@ public class ClientMusicPlaybackManager {
     public static boolean isPlayingAt(BlockPos pos) {
         if (pos == null) return false;
         String key = pos.toString();
+        // 仅把已注册（playing）视为正在播放；预占（reserved）不算
         Long ts = playing.get(key);
         if (ts == null) return false;
-        // 如果记录存在且在窗口内，视为正在播放
         return System.currentTimeMillis() - ts < DEDUP_WINDOW_MS;
     }
 
@@ -50,6 +52,8 @@ public class ClientMusicPlaybackManager {
     public static void registerSound(BlockPos pos, SoundInstance inst) {
         if (pos == null || inst == null) return;
         String key = pos.toString();
+        // 注册成功后清除预占并记录为已播放
+        reserved.remove(key);
         soundMap.put(key, inst);
         playing.put(key, System.currentTimeMillis());
     }
@@ -57,6 +61,8 @@ public class ClientMusicPlaybackManager {
     public static void registerSoundForEntity(java.util.UUID entityUuid, SoundInstance inst) {
         if (entityUuid == null || inst == null) return;
         String key = "entity:" + entityUuid.toString();
+        // 注册成功后清除预占并记录为已播放
+        reserved.remove(key);
         soundMap.put(key, inst);
         playing.put(key, System.currentTimeMillis());
         // 如果该 SoundInstance 同时具有方块位置（NetMusicSound），也在 pos key 下注册同一实例，避免 pos-based 重复播放
@@ -66,6 +72,7 @@ public class ClientMusicPlaybackManager {
                 BlockPos p = ns.getPos();
                 if (p != null) {
                     String posKey = p.toString();
+                    reserved.remove(posKey);
                     soundMap.put(posKey, inst);
                     playing.put(posKey, System.currentTimeMillis());
                 }
@@ -83,6 +90,8 @@ public class ClientMusicPlaybackManager {
         if (prev != null) {
             return false;
         }
+        // 成功注册，清理预占并记录为已播放
+        reserved.remove(key);
         playing.put(key, System.currentTimeMillis());
         return true;
     }
@@ -113,6 +122,9 @@ public class ClientMusicPlaybackManager {
                         return false;
                     }
                     // 成功注册 pos key
+                    // 清理预占并记录为已播放
+                    reserved.remove(eKey);
+                    reserved.remove(posKey);
                     long now = System.currentTimeMillis();
                     playing.put(eKey, now);
                     playing.put(posKey, now);
@@ -122,6 +134,7 @@ public class ClientMusicPlaybackManager {
         } catch (Throwable ignored) {}
 
         // 无 pos 情况，实体 key 注册成功
+        reserved.remove(eKey);
         playing.put(eKey, System.currentTimeMillis());
         return true;
     }
@@ -133,12 +146,12 @@ public class ClientMusicPlaybackManager {
     public static boolean reservePos(BlockPos pos) {
         if (pos == null) return false;
         String key = pos.toString();
-        Long prev = playing.putIfAbsent(key, System.currentTimeMillis());
+        Long prev = reserved.putIfAbsent(key, System.currentTimeMillis());
         if (prev == null) return true;
-        // 如果 playing 中存在记录但没有实际的 SoundInstance（可能是残留的预占/过期记录），允许清理并重试一次
+        // 如果 reserved 中存在记录但没有实际的 SoundInstance（可能是残留的预占/过期记录），允许清理并重试一次
         if (!soundMap.containsKey(key)) {
-            playing.remove(key);
-            Long prev2 = playing.putIfAbsent(key, System.currentTimeMillis());
+            reserved.remove(key);
+            Long prev2 = reserved.putIfAbsent(key, System.currentTimeMillis());
             return prev2 == null;
         }
         return false;
@@ -150,12 +163,12 @@ public class ClientMusicPlaybackManager {
     public static boolean reserveEntity(java.util.UUID entityUuid) {
         if (entityUuid == null) return false;
         String key = "entity:" + entityUuid.toString();
-        Long prev = playing.putIfAbsent(key, System.currentTimeMillis());
+        Long prev = reserved.putIfAbsent(key, System.currentTimeMillis());
         if (prev == null) return true;
-        // 如果 playing 中存在记录但没有实际的 SoundInstance（可能是残留的预占/过期记录），允许清理并重试一次
+        // 如果 reserved 中存在记录但没有实际的 SoundInstance（可能是残留的预占/过期记录），允许清理并重试一次
         if (!soundMap.containsKey(key)) {
-            playing.remove(key);
-            Long prev2 = playing.putIfAbsent(key, System.currentTimeMillis());
+            reserved.remove(key);
+            Long prev2 = reserved.putIfAbsent(key, System.currentTimeMillis());
             return prev2 == null;
         }
         return false;
@@ -168,7 +181,7 @@ public class ClientMusicPlaybackManager {
         if (pos == null) return;
         String key = pos.toString();
         if (!soundMap.containsKey(key)) {
-            playing.remove(key);
+            reserved.remove(key);
             com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cancelled reservation for pos {}", pos);
         }
     }
@@ -180,7 +193,7 @@ public class ClientMusicPlaybackManager {
         if (entityUuid == null) return;
         String key = "entity:" + entityUuid.toString();
         if (!soundMap.containsKey(key)) {
-            playing.remove(key);
+            reserved.remove(key);
             com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cancelled reservation for entity {}", entityUuid);
         }
     }
@@ -259,6 +272,7 @@ public class ClientMusicPlaybackManager {
     public static void clear() {
         playing.clear();
         soundMap.clear();
+        reserved.clear();
     }
 
     // 跳过日志限频：避免在高频重复跳过时刷屏
@@ -296,9 +310,18 @@ public class ClientMusicPlaybackManager {
     public static boolean cleanupStaleEntityRegistration(java.util.UUID entityUuid, long thresholdMs) {
         if (entityUuid == null) return false;
         String key = "entity:" + entityUuid.toString();
+        // 检查预占或已注册的陈旧情况
+        Long rts = reserved.get(key);
+        long now = System.currentTimeMillis();
+        if (rts != null && now - rts > thresholdMs) {
+            reserved.remove(key);
+            com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cleaned up stale entity reservation for {}", entityUuid);
+            return true;
+        }
+
         Long ts = playing.get(key);
         if (ts == null) return false;
-        if (System.currentTimeMillis() - ts > thresholdMs) {
+        if (now - ts > thresholdMs) {
             SoundInstance inst = soundMap.remove(key);
             playing.remove(key);
             if (inst != null) {
