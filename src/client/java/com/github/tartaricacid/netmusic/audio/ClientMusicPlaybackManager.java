@@ -88,6 +88,26 @@ public class ClientMusicPlaybackManager {
         String key = pos.toString();
         SoundInstance prev = soundMap.putIfAbsent(key, inst);
         if (prev != null) {
+            // Diagnostic: log existing instance and reservation state to help debug cross-mod calls
+                try {
+                    boolean reservedPresent = reserved.containsKey(key);
+                    com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] registerIfAbsentPos failed: pos {} already has instance {} (reserved={})", pos, prev, reservedPresent);
+                } catch (Throwable ignored) {}
+
+            // Attempt one-time cleanup if the existing registration appears stale, then retry once.
+            try {
+                boolean cleaned = cleanupStalePosRegistration(pos, DEDUP_WINDOW_MS * 2);
+                if (cleaned) {
+                    SoundInstance prev2 = soundMap.putIfAbsent(key, inst);
+                    if (prev2 == null) {
+                        // succeeded after cleanup
+                        reserved.remove(key);
+                        playing.put(key, System.currentTimeMillis());
+                        return true;
+                    }
+                }
+            } catch (Throwable ignored) {}
+
             return false;
         }
         // 成功注册，清理预占并记录为已播放
@@ -343,6 +363,38 @@ public class ClientMusicPlaybackManager {
                 } catch (Throwable ignored) {}
             }
             com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cleaned up stale entity registration for {}", entityUuid);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 清理超过阈值的残留位置注册（用于修复在某些竞态/异常路径下留下的旧注册）
+     * 如果已清理则返回 true，表示可以重试预占。
+     */
+    public static boolean cleanupStalePosRegistration(BlockPos pos, long thresholdMs) {
+        if (pos == null) return false;
+        String key = pos.toString();
+        long now = System.currentTimeMillis();
+        Long rts = reserved.get(key);
+        if (rts != null && now - rts > thresholdMs) {
+            reserved.remove(key);
+            com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cleaned up stale pos reservation for {}", pos);
+            return true;
+        }
+
+        Long ts = playing.get(key);
+        if (ts == null) return false;
+        if (now - ts > thresholdMs) {
+            SoundInstance inst = soundMap.remove(key);
+            playing.remove(key);
+            if (inst != null) {
+                try {
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null) mc.getSoundManager().stop(inst);
+                } catch (Throwable ignored) {}
+            }
+            com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Cleaned up stale pos registration for {}", pos);
             return true;
         }
         return false;

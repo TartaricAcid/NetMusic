@@ -366,6 +366,11 @@ public class EntityMusicPlayerManager {
             }
 
             NbtRecord record = new NbtRecord(info.songUrl, info.songTime, info.songName, 0, serverWorld.getTime());
+            // 在注册新的虚拟会话前，始终执行与 `stopfollow` 相同的清理逻辑，
+            // 以确保任何残留的虚拟会话、TE 绑定或已通知的播放都被移除/停止。
+            try {
+                com.github.tartaricacid.netmusic.command.NetMusicCommand.stopFollowForEntity(entity);
+            } catch (Throwable ignored) {}
             boolean ok = registerVirtualEntitySession(serverWorld, entity.getUuid(), record);
             if (ok) {
                 NetMusic.LOGGER.info("[EntityMusicPlayerManager] Started playing song id {} for entity {}", songId, entity.getUuid());

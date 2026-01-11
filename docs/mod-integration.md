@@ -119,3 +119,44 @@ NetworkHandler.sendToClientPlayer(msg, player);
 八、兼容性与版本注意
 
 - 本指南基于 NetMusic `1.21-fabric` 分支的实现；API 名称与行为在未来可能变化，请以源码为准。
+
+十、如何停止实体播放器的播放（第三方模组指南）
+
+推荐做法（持久且广播）：
+- 在服务端调用 `EntityMusicPlayerManager.unregisterEntityFromMusicPlayer(entity, te)`。此方法由框架层处理持久化会话的移除并广播必要的更新，客户端在收到更新（或在后续的 TE NBT 同步）时会停止对应的随身播放。
+
+低层/显式立即停止（当你直接控制 `TileEntityMusicPlayer` 时）：
+- 在服务器线程上执行：
+
+```java
+// 假设在 ServerWorld world, BlockPos pos, Entity entity 的上下文
+TileEntityMusicPlayer te = (TileEntityMusicPlayer) world.getBlockEntity(pos);
+if (te != null) {
+    // 解除绑定/注销实体播放（低层 API）
+    te.unregisterActiveEntity((ServerWorld) world, entity.getUuid(), "your-mod:stop-reason");
+    // 持久化并通知追踪该区块的客户端
+    te.markDirty();
+    world.updateListeners(pos, te.getCachedState(), te.getCachedState(), 3);
+}
+```
+
+说明：上述低层调用会马上将 TE 的播放关联移除并通过区块更新通知附近客户端；这能在多数情况下实现立即停止播放。
+
+即时单个玩家停止（点对点）：
+- 如果你只希望通知某个玩家立即停止（不修改全局持久化会话），可以向该玩家发送适当的客户端消息或更新 TE NBT 的快照数据并通过 `NetworkHandler.sendToClientPlayer(...)` 发送（以便仅该玩家接收并停止）。通常推荐使用服务端的 `unregisterEntityFromMusicPlayer`，因为它会维护持久性与广播一致性。
+
+注意与建议：
+- 优先使用高层 `EntityMusicPlayerManager` API，因为它会做必要的持久化与广播，避免客户端/服务端状态不同步导致的重复恢复或残留注册。
+- 如果你的模组在短时间内频繁注册/注销实体播放，请确保在调用注册/注销前后的世界线程同步（在 `ServerWorld` 的上下文中），并在需要时调用 `markDirty()` + `updateListeners(...)` 以立刻推送 TE 状态。
+- 避免在客户端直接实例化 `NetMusicSound` 来停止或控制其它模组的播放；这可能与 NetMusic 的注册/去重逻辑冲突。始终通过服务端 API 或 TE NBT 通路完成播放生命周期的控制。
+
+示例场景：强制停止并清理持久会话
+
+如果你需要同时清理持久化虚拟会话文件并通知所有在线玩家，使用高层 API：
+
+```java
+// 推荐：高层 API（负责持久化和广播）
+EntityMusicPlayerManager.unregisterEntityFromMusicPlayer(entity, te);
+```
+
+该调用会确保服务端会话从存储中移除，并在必要时将停止事件广播给附近或相关玩家，从而触发客户端停止并清理相关注册。

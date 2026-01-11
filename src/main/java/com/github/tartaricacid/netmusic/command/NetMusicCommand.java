@@ -104,19 +104,7 @@ public class NetMusicCommand {
             try {
                 if (player.getWorld() instanceof ServerWorld sw) {
                     // 移除持久化的虚拟会话
-                    com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.removeVirtualEntitySession(sw, player.getUuid());
-                    // 如果该实体当前与某个 TE 关联，注销关联以停止播放
-                    var te = com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.getMusicPlayerForEntity(player);
-                    if (te != null) {
-                        com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.unregisterEntityFromMusicPlayer(player, te);
-                    }
-                    // 广播停止消息到附近玩家，确保其他客户端停止播放虚拟会话
-                    try {
-                        var ent = sw.getEntity(player.getUuid());
-                        if (ent != null) {
-                            com.github.tartaricacid.netmusic.networking.NetworkHandler.sendToNearby(sw, ent.getX(), ent.getY(), ent.getZ(), stop, 48.0);
-                        }
-                    } catch (Exception ignored) {}
+                    com.github.tartaricacid.netmusic.command.NetMusicCommand.stopFollowForEntity(player);
                 }
             } catch (Exception ignored) {}
             context.getSource().sendFeedback(() -> net.minecraft.text.Text.of("Sent stopfollow to player."), false);
@@ -125,6 +113,49 @@ public class NetMusicCommand {
             context.getSource().sendError(net.minecraft.text.Text.of("stopfollow failed."));
         }
         return Command.SINGLE_SUCCESS;
+    }
+
+    /**
+     * 公共方法：对指定实体执行 stopfollow 的清理逻辑（用于程序化调用）。
+     */
+    public static void stopFollowForEntity(net.minecraft.entity.Entity entity) {
+        if (entity == null) return;
+        try {
+            if (!(entity.getWorld() instanceof ServerWorld)) return;
+            ServerWorld sw = (ServerWorld) entity.getWorld();
+            try {
+                // 若目标为玩家，发送点对点的 Stop 消息
+                    if (entity instanceof ServerPlayerEntity spe) {
+                        net.minecraft.util.math.BlockPos pos = spe.getBlockPos();
+                        com.github.tartaricacid.netmusic.networking.message.StopMusicMessage stop = new com.github.tartaricacid.netmusic.networking.message.StopMusicMessage(pos, entity.getUuid().toString());
+                        NetworkHandler.sendToClientPlayer(stop, spe);
+                    }
+            } catch (Throwable ignored) {}
+
+            try {
+                // 移除持久化会话
+                com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.removeVirtualEntitySession(sw, entity.getUuid());
+            } catch (Throwable ignored) {}
+
+            try {
+                // 注销与 TE 的绑定（若存在）
+                var te = com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.getMusicPlayerForEntity(entity);
+                if (te != null) {
+                    com.github.tartaricacid.netmusic.tileentity.EntityMusicPlayerManager.unregisterEntityFromMusicPlayer(entity, te);
+                }
+            } catch (Throwable ignored) {}
+
+            try {
+                // 广播停止消息到附近玩家，确保其他客户端停止播放虚拟会话
+                var ent = sw.getEntity(entity.getUuid());
+                if (ent != null) {
+                    com.github.tartaricacid.netmusic.networking.message.StopMusicMessage stop = new com.github.tartaricacid.netmusic.networking.message.StopMusicMessage(ent.getBlockPos(), entity.getUuid().toString());
+                    com.github.tartaricacid.netmusic.networking.NetworkHandler.sendToNearby(sw, ent.getX(), ent.getY(), ent.getZ(), stop, 48.0);
+                }
+            } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
     public static int getSong(CommandContext<ServerCommandSource> context) {
