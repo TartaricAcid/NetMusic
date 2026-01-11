@@ -233,45 +233,7 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                 NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Immediate createSoundTask failed for pos {}: {}", message.getPos(), e.getMessage());
             }
 
-            // 检测短期内是否注册成功（200ms），若未成功则在 1s 后重试一次
-            new java.util.Timer().schedule(new java.util.TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        boolean registered = false;
-                        try {
-                            if (message.hasEntity()) {
-                                String s = message.getEntityUuidString();
-                                if (s != null && !s.isEmpty()) {
-                                    java.util.UUID uid = java.util.UUID.fromString(s);
-                                    registered = ClientMusicPlaybackManager.isPlayingForEntity(uid);
-                                }
-                            } else {
-                                registered = ClientMusicPlaybackManager.isPlayingAt(message.getPos());
-                            }
-                        } catch (Throwable ignored) {}
-
-                        if (!registered) {
-                            NetMusic.LOGGER.warn("[MusicToClientMessageReceiver] Immediate play not registered, scheduling 1s retry for pos {}", message.getPos());
-                            new java.util.Timer().schedule(new java.util.TimerTask() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        context.client().execute(createSoundTask);
-                                        NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Retry task executed for pos {}", message.getPos());
-                                    } catch (Exception e) {
-                                        NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error in retry task for pos {}: {}", message.getPos(), e.getMessage());
-                                    }
-                                }
-                            }, 1000);
-                        } else {
-                            NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Sound registered successfully for pos {}", message.getPos());
-                        }
-                    } catch (Exception e) {
-                        NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Error during registration check for pos {}: {}", message.getPos(), e.getMessage());
-                    }
-                }
-            }, 200);
+            // 不做自动二次重试：若首次创建未注册成功，后续由 BE/实体 NBT 驱动的恢复路径（pending）或健康检查回滚逻辑处理。
         });
     }
 }
