@@ -84,7 +84,7 @@ public class MusicPlayManager {
     private static final java.util.Map<String, Boolean> audioAvailableCache = new java.util.concurrent.ConcurrentHashMap<>();
 
     // Audio system preflight state (detect whether local audio pipeline is ready)
-    private static volatile boolean audioSystemReady = true;
+    private static volatile boolean audioSystemReady = false;
     private static volatile long audioSystemLastChecked = 0L;
     private static volatile boolean audioPreflightInProgress = false;
     private static final ScheduledExecutorService PREFLIGHT_SCHED = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -96,6 +96,19 @@ public class MusicPlayManager {
     private static final java.util.Map<String, Boolean> audioProbeInProgress = new java.util.concurrent.ConcurrentHashMap<>();
     private static final AtomicInteger audioSystemPreflightAttempts = new AtomicInteger(0);
     private static volatile boolean audioPreflightPersistentStarted = false;
+    private static volatile boolean voicechatPresent = false;
+    private static volatile boolean voicechatConnected = false;
+    private static volatile boolean voicechatListenerRegistered = false;
+    // If voicechat is present and not yet connected, defer probes until it is ready
+    private static final java.util.Set<String> deferredProbeUrls = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+    private static volatile boolean deferredAudioPreflightPending = false;
+
+    static {
+        // Try to register voicechat events if voicechat mod is present (use reflection to avoid hard dependency)
+        try {
+            registerVoicechatListeners();
+        } catch (Throwable ignored) {}
+    }
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
         // 全局URL级别的去重：防止同一 URL 在 2 秒内被多次创建
@@ -618,6 +631,12 @@ public class MusicPlayManager {
 
     private static void startAudioProbe(String resolvedUrl) {
         if (resolvedUrl == null) return;
+        // If voicechat present but not yet connected, defer probe until voicechat finishes init
+        if (voicechatPresent && !voicechatConnected) {
+            NetMusic.LOGGER.info("[MusicPlayManager] Deferring audio probe for {} until voicechat connects", resolvedUrl);
+            deferredProbeUrls.add(resolvedUrl);
+            return;
+        }
         // If already known available, nothing to do
         Boolean cached = audioAvailableCache.get(resolvedUrl);
         if (cached != null && cached) {
@@ -718,6 +737,11 @@ public class MusicPlayManager {
     private static boolean ensureAudioSystemReady() {
         try {
             if (GeneralConfig.AUDIO_PREFLIGHT_ENABLED == null || !GeneralConfig.AUDIO_PREFLIGHT_ENABLED) return true;
+            // If voicechat is present but not yet connected, treat audio as not ready to force enqueue
+            if (voicechatPresent && !voicechatConnected) {
+                NetMusic.LOGGER.info("[MusicPlayManager] Voicechat present but not connected; treating audio system as not ready");
+                return false;
+            }
             // If audio already known ready, return immediately
             if (audioSystemReady) return true;
             // Start persistent preflight if not already started
@@ -731,6 +755,12 @@ public class MusicPlayManager {
 
     private static void startAudioSystemPreflight() {
         if (audioPreflightPersistentStarted) return;
+        // If voicechat present but not yet connected, defer preflight start
+        if (voicechatPresent && !voicechatConnected) {
+            NetMusic.LOGGER.info("[MusicPlayManager] Deferring audio system preflight until voicechat connects");
+            deferredAudioPreflightPending = true;
+            return;
+        }
         audioPreflightPersistentStarted = true;
         audioSystemPreflightAttempts.set(0);
         // schedule first attempt immediately
@@ -785,6 +815,53 @@ public class MusicPlayManager {
             audioPreflightPersistentStarted = false;
             audioPreflightInProgress = false;
             NetMusic.LOGGER.debug("[MusicPlayManager] Failed to schedule audio preflight attempt: {}", t.getMessage());
+        }
+    }
+    // Fuck SimpleVoicechat
+    private static void registerVoicechatListeners() {
+        if (voicechatListenerRegistered) return;
+        try {
+            Class<?> eventsClass = Class.forName("de.maxhenkel.voicechat.events.ClientVoiceChatEvents");
+            java.lang.reflect.Field connectedField = eventsClass.getField("VOICECHAT_CONNECTED");
+            Object connectedEvent = connectedField.get(null);
+            java.lang.reflect.Method registerMethod = connectedEvent.getClass().getMethod("register", Object.class);
+            // Consumer<ClientVoicechatConnection> -> use Consumer<Object> to avoid type issues
+            java.util.function.Consumer<Object> connectedListener = (obj) -> {
+                try {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Detected voicechat connected event");
+                    voicechatPresent = true;
+                    voicechatConnected = true;
+                    MinecraftClient mc = MinecraftClient.getInstance();
+                    if (mc != null) {
+                        mc.submit(() -> {
+                            try {
+                                long worldTime = mc.world == null ? 0L : mc.world.getTime();
+                                tickPendingCreations(worldTime);
+                            } catch (Throwable ignored) {}
+                        });
+                    }
+                } catch (Throwable ignored) {}
+            };
+            registerMethod.invoke(connectedEvent, connectedListener);
+
+            java.lang.reflect.Field disconnectedField = eventsClass.getField("VOICECHAT_DISCONNECTED");
+            Object disconnectedEvent = disconnectedField.get(null);
+            java.lang.reflect.Method registerMethod2 = disconnectedEvent.getClass().getMethod("register", Object.class);
+            Runnable disconnectedListener = () -> {
+                try {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Detected voicechat disconnected event");
+                    voicechatConnected = false;
+                } catch (Throwable ignored) {}
+            };
+            registerMethod2.invoke(disconnectedEvent, disconnectedListener);
+
+            voicechatListenerRegistered = true;
+            NetMusic.LOGGER.info("[MusicPlayManager] Registered voicechat listeners via reflection");
+        } catch (ClassNotFoundException cnf) {
+            // voicechat not present
+            voicechatPresent = false;
+        } catch (Throwable t) {
+            NetMusic.LOGGER.debug("[MusicPlayManager] Failed to register voicechat listeners: {}", t.getMessage());
         }
     }
 
