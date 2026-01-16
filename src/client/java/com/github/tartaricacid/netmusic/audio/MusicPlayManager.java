@@ -448,6 +448,8 @@ public class MusicPlayManager {
 
     // Health-check queue for tick-driven verification of audio readiness
     private static final java.util.Queue<HealthCheck> healthChecks = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    // track sound manager to detect pipeline reloads
+    private static volatile Object lastSeenSoundManager = null;
 
     private record HealthCheck(NetMusicSound sound, long dueTick, int attempts) {}
 
@@ -462,6 +464,32 @@ public class MusicPlayManager {
 
     // Called from client tick to process scheduled health checks
     public static void tickHealthChecks(long currentWorldTime) {
+        try {
+            // detect sound manager / pipeline replacement (can be triggered by voicechat or dimension reload) / fuck voicechat
+            try {
+                MinecraftClient mc0 = MinecraftClient.getInstance();
+                if (mc0 != null) {
+                    Object sm = mc0.getSoundManager();
+                    if (lastSeenSoundManager == null) lastSeenSoundManager = sm;
+                    else if (sm != lastSeenSoundManager) {
+                        lastSeenSoundManager = sm;
+                        NetMusic.LOGGER.info("[MusicPlayManager] Detected SoundManager/pipeline replacement, marking audio not ready and rescheduling probes");
+                        audioSystemReady = false;
+                        // invalidate audioAvailableCache and reschedule probes for URLs
+                        try {
+                            java.util.Set<String> urls = new java.util.HashSet<>(audioAvailableCache.keySet());
+                            for (String u : urls) {
+                                audioAvailableCache.put(u, Boolean.FALSE);
+                                // if voicechat not present/connected then probe will be deferred inside startAudioProbe
+                                startAudioProbe(u);
+                            }
+                        } catch (Throwable ignored) {}
+                        // also restart audio system preflight unless deferred by voicechat
+                        try { startAudioSystemPreflight(); } catch (Throwable ignored) {}
+                    }
+                }
+            } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {}
         try {
             java.util.Iterator<HealthCheck> it = healthChecks.iterator();
             while (it.hasNext()) {
