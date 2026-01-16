@@ -89,10 +89,72 @@ public class ClientMusicPlaybackManager {
         SoundInstance prev = soundMap.putIfAbsent(key, inst);
         if (prev != null) {
             // Diagnostic: log existing instance and reservation state to help debug cross-mod calls
-                try {
-                    boolean reservedPresent = reserved.containsKey(key);
+            try {
+                boolean reservedPresent = reserved.containsKey(key);
+                if (prev instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound pns = (com.github.tartaricacid.netmusic.audio.NetMusicSound) prev;
+                    com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] registerIfAbsentPos failed: pos {} already has NetMusicSound (song={}, startProgress={}, audioReady={}, localTicks={}, reserved={})", pos,
+                            safeUrl(pns), pns.getStartProgress(), pns.isAudioReady(), pns.getLocalTicks(), reservedPresent);
+                } else {
                     com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] registerIfAbsentPos failed: pos {} already has instance {} (reserved={})", pos, prev, reservedPresent);
-                } catch (Throwable ignored) {}
+                }
+            } catch (Throwable ignored) {}
+
+            // If the existing instance appears to be an unfinished NetMusicSound (audio not ready),
+            // attempt an atomic replace to allow the freshly-created instance to take over.
+            try {
+                if (prev instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound && inst instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound prevNs = (com.github.tartaricacid.netmusic.audio.NetMusicSound) prev;
+                    // If previous sound hasn't finished audio init and is still within a very short local tick window,
+                    // it's likely a transient artifact from an earlier create; replace it.
+                    try {
+                        if (!prevNs.isAudioReady() && prevNs.getLocalTicks() <= 6) {
+                            boolean replaced = soundMap.replace(key, prev, inst);
+                            if (replaced) {
+                                // Do NOT stop the old instance immediately in this thread;
+                                // it may still be initializing in a worker thread (skipTo).
+                                // Instead, defer the stop via the SoundManager's next tick cycle.
+                                try {
+                                    MinecraftClient mc = MinecraftClient.getInstance();
+                                    if (mc != null) {
+                                        // Schedule stop in next render tick to avoid race with worker threads
+                                        mc.execute(() -> {
+                                            try {
+                                                mc.getSoundManager().stop(prev);
+                                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Deferred stop of replaced transient NetMusicSound at pos {}", pos);
+                                            } catch (Throwable ignored) {}
+                                        });
+                                    }
+                                } catch (Throwable ignored) {}
+                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Replaced transient NetMusicSound at pos {} with new instance (will defer stop)", pos);
+                                reserved.remove(key);
+                                playing.put(key, System.currentTimeMillis());
+                                return true;
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            } catch (Throwable ignored) {}
+
+            // If previous is a NetMusicSound and appears to be the same song and close progress, treat as duplicate and skip creating a new one.
+            try {
+                if (prev instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound && inst instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound prevNs2 = (com.github.tartaricacid.netmusic.audio.NetMusicSound) prev;
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound instNs = (com.github.tartaricacid.netmusic.audio.NetMusicSound) inst;
+                    try {
+                        java.net.URL u1 = prevNs2.getSongUrl();
+                        java.net.URL u2 = instNs.getSongUrl();
+                        if (u1 != null && u2 != null && u1.toString().equals(u2.toString())) {
+                            int p1 = prevNs2.getStartProgress();
+                            int p2 = instNs.getStartProgress();
+                            if (Math.abs(p1 - p2) <= 20) { // within 1s
+                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Detected existing identical NetMusicSound at pos {}, skipping new play (startProgress diff={})", pos, Math.abs(p1 - p2));
+                                return false;
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            } catch (Throwable ignored) {}
 
             // Attempt one-time cleanup if the existing registration appears stale, then retry once.
             try {
@@ -125,6 +187,60 @@ public class ClientMusicPlaybackManager {
         String eKey = "entity:" + entityUuid.toString();
         SoundInstance prev = soundMap.putIfAbsent(eKey, inst);
         if (prev != null) {
+            // Diagnostic logging for entity-key collisions
+            try {
+                boolean reservedPresent = reserved.containsKey(eKey);
+                if (prev instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound pns = (com.github.tartaricacid.netmusic.audio.NetMusicSound) prev;
+                    com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] registerIfAbsentEntity failed: entity {} already has NetMusicSound (song={}, startProgress={}, audioReady={}, localTicks={}, reserved={})", entityUuid,
+                            safeUrl(pns), pns.getStartProgress(), pns.isAudioReady(), pns.getLocalTicks(), reservedPresent);
+                } else {
+                    com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] registerIfAbsentEntity failed: entity {} already has instance {} (reserved={})", entityUuid, prev, reservedPresent);
+                }
+            } catch (Throwable ignored) {}
+
+            // Try to replace transient unfinished NetMusicSound as we did for pos keys
+            try {
+                if (prev instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound && inst instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
+                    com.github.tartaricacid.netmusic.audio.NetMusicSound prevNs = (com.github.tartaricacid.netmusic.audio.NetMusicSound) prev;
+                    try {
+                        if (!prevNs.isAudioReady() && prevNs.getLocalTicks() <= 6) {
+                            boolean replaced = soundMap.replace(eKey, prev, inst);
+                            if (replaced) {
+                                // Defer stop to avoid race with worker threads that may be initializing the old instance
+                                try {
+                                    MinecraftClient mc = MinecraftClient.getInstance();
+                                    if (mc != null) {
+                                        mc.execute(() -> {
+                                            try {
+                                                mc.getSoundManager().stop(prev);
+                                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Deferred stop of replaced transient NetMusicSound for entity {}", entityUuid);
+                                            } catch (Throwable ignored) {}
+                                        });
+                                    }
+                                } catch (Throwable ignored) {}
+                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Replaced transient NetMusicSound for entity {} with new instance (will defer stop)", entityUuid);
+                                reserved.remove(eKey);
+                                long now = System.currentTimeMillis();
+                                playing.put(eKey, now);
+                                // Also register pos key if available
+                                try {
+                                    com.github.tartaricacid.netmusic.audio.NetMusicSound ns = (com.github.tartaricacid.netmusic.audio.NetMusicSound) inst;
+                                    BlockPos p = ns.getPos();
+                                    if (p != null) {
+                                        String posKey = p.toString();
+                                        reserved.remove(posKey);
+                                        soundMap.put(posKey, inst);
+                                        playing.put(posKey, now);
+                                    }
+                                } catch (Throwable ignored) {}
+                                return true;
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            } catch (Throwable ignored) {}
+
             return false;
         }
 
@@ -468,5 +584,14 @@ public class ClientMusicPlaybackManager {
                 com.github.tartaricacid.netmusic.NetMusic.LOGGER.debug("[ClientMusicPlaybackManager] Failed to bind sound to entity {}: {}", entityUuid, t.getMessage());
             }
         }
+    }
+
+    // Helper for safe URL string retrieval used in diagnostic logs
+    private static String safeUrl(com.github.tartaricacid.netmusic.audio.NetMusicSound ns) {
+        try {
+            java.net.URL u = ns.getSongUrl();
+            return u == null ? "<null>" : u.toString();
+        } catch (Throwable ignored) {}
+        return "<error>";
     }
 }

@@ -168,6 +168,16 @@ public class NetMusicSound extends MovingSoundInstance {
         return entityUuid;
     }
 
+    // Expose song URL for diagnostics
+    public URL getSongUrl() {
+        return this.songUrl;
+    }
+
+    // Expose start progress for diagnostics
+    public int getStartProgress() {
+        return this.startProgress;
+    }
+
     /**
      * 事件驱动地将此声音绑定到已解析的实体上（由外部事件触发）。
      */

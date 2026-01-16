@@ -10,6 +10,7 @@ import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,10 +90,37 @@ public class MusicPlayManager {
                             return;
                         }
                     }
-                    NetMusic.LOGGER.info("[MusicPlayManager] Calling SoundManager.play() for: {}", inst);
+                    // 立即调用 SoundManager.play()，让 Minecraft 音频系统异步加载音频
+                    // getAudioStream() 会被异步调用，将 audioReady 设置为 true
                     MinecraftClient.getInstance().getSoundManager().play(inst);
-                    NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called successfully");
-                    // 计划一个由客户端主线程 tick 驱动的短延迟健康检查（约 350ms），以便在音频流未就绪时回滚注册并停止声音
+                    NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called immediately: {}", inst);
+                    
+                    // 对于 NetMusicSound，立即在异步线程上预热音频流加载，加快第一次 tick() 中的 getAudioStream() 执行
+                    if (inst instanceof NetMusicSound ns) {
+                        Util.getMainWorkerExecutor().submit(() -> {
+                            try {
+                                // 立即触发 getAudioStream()，但不阻塞等待结果
+                                // 这会让音频加载更早开始，避免在第一次 tick() 时等待加载
+                                ns.getAudioStream(null, ns.getId(), false).thenAccept(stream -> {
+                                    // 异步加载完成后，流已准备好，audioReady 也已设置为 true
+                                    if (stream != null) {
+                                        try {
+                                            stream.close();
+                                        } catch (Throwable ignored) {}
+                                    }
+                                }).exceptionally(e -> {
+                                    // 加载失败时的备用处理
+                                    NetMusic.LOGGER.debug("[MusicPlayManager] Pre-warming audio stream failed: {}", e.getMessage());
+                                    return null;
+                                });
+                            } catch (Throwable e) {
+                                NetMusic.LOGGER.debug("[MusicPlayManager] Failed to pre-warm audio stream: {}", e.getMessage());
+                            }
+                        });
+                        NetMusic.LOGGER.info("[MusicPlayManager] Audio stream pre-warming started for: {}", inst);
+                    }
+                    
+                    // 计划一个由客户端主线程 tick 驱动的健康检查
                     try {
                         if (inst instanceof NetMusicSound ns) {
                             long now = -1L;
@@ -101,7 +129,6 @@ public class MusicPlayManager {
                                     now = MinecraftClient.getInstance().world.getTime();
                                 }
                             } catch (Throwable ignored) {}
-                                            // 约 600ms ≈ 12 ticks（增大以避免与音频线程就绪发生竞态）
                                             // 如果当时 world 不可用，scheduleHealthCheck 会使用 sentinel(-1)
                                             if (now < 0L) {
                                                 scheduleHealthCheck(ns, -1L);
@@ -126,7 +153,7 @@ public class MusicPlayManager {
     private record HealthCheck(NetMusicSound sound, long dueTick, int attempts) {}
 
     private static final int MAX_HEALTHCHECK_RESCHEDULES = 20; // 最大重试次数（当区块/实体尚未加载时可以重试）
-    private static final int INITIAL_HEALTHCHECK_DELAY_TICKS = 12; // 初始延迟（若 world 可用则使用）
+    private static final int INITIAL_HEALTHCHECK_DELAY_TICKS = 40; // 初始延迟（若 world 可用则使用）增加到 40 ticks (~2s) 以确保音频初始化完成
 
     public static void scheduleHealthCheck(NetMusicSound sound, long dueTick) {
         if (sound == null) return;

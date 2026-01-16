@@ -13,6 +13,7 @@ import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,11 +25,38 @@ import static com.github.tartaricacid.netmusic.audio.MusicPlayManager.MUSIC_163_
  */
 public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPayloadHandler<MusicToClientMessage>{
     private static final Pattern PATTERN = Pattern.compile("^.*?\\?id=(\\d+)\\.mp3$");
+    
+    private static final java.util.Map<String, Long> recentMessages = new ConcurrentHashMap<>();
+    private static final long MESSAGE_DEDUP_WINDOW_MS = 2000L; // 2s window for message dedup
+    
+    // Additional lock for stricter dedup during message processing
+    private static final Object DEDUP_LOCK = new Object();
 
     @Override
     public void receive(MusicToClientMessage message, ClientPlayNetworking.Context context) {
         NetMusic.LOGGER.info("[MusicToClientMessageReceiver] RECEIVED MESSAGE: song={}, playProgress={} ticks, pos={}, client world exists={}", 
                 message.getSongName(), message.getPlayProgress(), message.getPos(), context.client().world != null);
+        
+        // Message-level deduplication check with strong locking
+        String target = message.hasEntity() ? message.getEntityUuidString() : message.getPos().toString();
+        String messageSignature = message.getUrl() + "|" + message.getPlayProgress() + "|" + target;
+        long now = System.currentTimeMillis();
+        
+        synchronized (DEDUP_LOCK) {
+            Long lastReceived = recentMessages.get(messageSignature);
+            if (lastReceived != null && (now - lastReceived) < MESSAGE_DEDUP_WINDOW_MS) {
+                NetMusic.LOGGER.info("[MusicToClientMessageReceiver] DUPLICATE MESSAGE DETECTED (dedup-locked): signature={}, skipping (last received {}ms ago)", 
+                        messageSignature, now - lastReceived);
+                return;
+            }
+            
+            // Record this message as recently processed
+            recentMessages.put(messageSignature, now);
+        }
+        
+        // Cleanup old entries from the dedup map (keep only recent ones)
+        recentMessages.entrySet().removeIf(e -> now - e.getValue() > MESSAGE_DEDUP_WINDOW_MS * 2);
+        
         context.client().execute(() -> {
             NetMusic.LOGGER.info("[MusicToClientMessageReceiver] EXECUTING ON CLIENT THREAD: song={}, playProgress={} ticks, pos={}, client={}", 
                     message.getSongName(), message.getPlayProgress(), message.getPos(), context.client() == null ? "null" : "ok");
