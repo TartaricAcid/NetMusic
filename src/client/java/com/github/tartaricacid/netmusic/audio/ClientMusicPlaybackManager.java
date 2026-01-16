@@ -20,6 +20,13 @@ public class ClientMusicPlaybackManager {
 
     // 最短重复保护时间（毫秒），避免短时间内重复创建。2秒。
     private static final long DEDUP_WINDOW_MS = 2000L;
+    // 替换节流：当一次替换刚刚发生时，防止在短时间内再次替换同一位置（毫秒）
+    private static final long REPLACE_DEDUP_MS = 500L;
+    private static final Map<String, Long> lastReplaceTime = new ConcurrentHashMap<>();
+    // 标记已经被提交给 SoundManager.play 的实例，避免替换已开始播放的实例
+    private static final Map<String, Long> startedAt = new ConcurrentHashMap<>();
+    // 创建中标记：当正在异步创建一个 SoundInstance 时，标记该 key，防止并发创建
+    private static final Map<String, Long> creating = new ConcurrentHashMap<>();
 
     public static boolean isPlayingAt(BlockPos pos) {
         if (pos == null) return false;
@@ -36,6 +43,71 @@ public class ClientMusicPlaybackManager {
         Long ts = playing.get(key);
         if (ts == null) return false;
         return System.currentTimeMillis() - ts < DEDUP_WINDOW_MS;
+    }
+
+    /**
+     * 尝试标记位置为“创建中”。如果已存在创建中标记，则返回 false。
+     */
+    public static boolean tryMarkCreatingPos(BlockPos pos) {
+        if (pos == null) return false;
+        String key = pos.toString();
+        Long prev = creating.putIfAbsent(key, System.currentTimeMillis());
+        if (prev == null) return true;
+        // 如果标记存在但没有实际注册，且标记过期，则允许覆盖
+        if (!soundMap.containsKey(key) && System.currentTimeMillis() - prev > DEDUP_WINDOW_MS * 2) {
+            creating.remove(key, prev);
+            Long prev2 = creating.putIfAbsent(key, System.currentTimeMillis());
+            return prev2 == null;
+        }
+        return false;
+    }
+
+    public static void clearCreatingPos(BlockPos pos) {
+        if (pos == null) return;
+        creating.remove(pos.toString());
+    }
+
+    public static boolean tryMarkCreatingEntity(java.util.UUID entityUuid) {
+        if (entityUuid == null) return false;
+        String key = "entity:" + entityUuid.toString();
+        Long prev = creating.putIfAbsent(key, System.currentTimeMillis());
+        if (prev == null) return true;
+        if (!soundMap.containsKey(key) && System.currentTimeMillis() - prev > DEDUP_WINDOW_MS * 2) {
+            creating.remove(key, prev);
+            Long prev2 = creating.putIfAbsent(key, System.currentTimeMillis());
+            return prev2 == null;
+        }
+        return false;
+    }
+
+    public static void clearCreatingEntity(java.util.UUID entityUuid) {
+        if (entityUuid == null) return;
+        creating.remove("entity:" + entityUuid.toString());
+    }
+
+    /**
+     * 标记某位置的实例已提交给 SoundManager.play（已开始播放）。
+     */
+    public static void markStartedPos(BlockPos pos, SoundInstance inst) {
+        if (pos == null || inst == null) return;
+        String key = pos.toString();
+        try {
+            SoundInstance current = soundMap.get(key);
+            if (current == inst) {
+                startedAt.put(key, System.currentTimeMillis());
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public static void markStartedEntity(java.util.UUID entityUuid, SoundInstance inst) {
+        if (entityUuid == null || inst == null) return;
+        String key = "entity:" + entityUuid.toString();
+        try {
+            SoundInstance current = soundMap.get(key);
+            if (current == inst) {
+                startedAt.put(key, System.currentTimeMillis());
+            }
+        } catch (Throwable ignored) {}
     }
 
     public static void register(BlockPos pos) {
@@ -56,6 +128,8 @@ public class ClientMusicPlaybackManager {
         reserved.remove(key);
         soundMap.put(key, inst);
         playing.put(key, System.currentTimeMillis());
+        // 当真正注册到 soundMap 时，清理 startedAt（如果有旧值）
+        startedAt.remove(key);
     }
 
     public static void registerSoundForEntity(java.util.UUID entityUuid, SoundInstance inst) {
@@ -65,6 +139,8 @@ public class ClientMusicPlaybackManager {
         reserved.remove(key);
         soundMap.put(key, inst);
         playing.put(key, System.currentTimeMillis());
+        // 清理 startedAt（如果有旧值）
+        startedAt.remove(key);
         // 如果该 SoundInstance 同时具有方块位置（NetMusicSound），也在 pos key 下注册同一实例，避免 pos-based 重复播放
         try {
             if (inst instanceof com.github.tartaricacid.netmusic.audio.NetMusicSound) {
@@ -75,6 +151,8 @@ public class ClientMusicPlaybackManager {
                     reserved.remove(posKey);
                     soundMap.put(posKey, inst);
                     playing.put(posKey, System.currentTimeMillis());
+                        // 清理 startedAt（如果有旧值）
+                        startedAt.remove(posKey);
                 }
             }
         } catch (Throwable ignored) {}
@@ -108,28 +186,39 @@ public class ClientMusicPlaybackManager {
                     // If previous sound hasn't finished audio init and is still within a very short local tick window,
                     // it's likely a transient artifact from an earlier create; replace it.
                     try {
-                        if (!prevNs.isAudioReady() && prevNs.getLocalTicks() <= 6) {
-                            boolean replaced = soundMap.replace(key, prev, inst);
-                            if (replaced) {
-                                // Do NOT stop the old instance immediately in this thread;
-                                // it may still be initializing in a worker thread (skipTo).
-                                // Instead, defer the stop via the SoundManager's next tick cycle.
-                                try {
-                                    MinecraftClient mc = MinecraftClient.getInstance();
-                                    if (mc != null) {
-                                        // Schedule stop in next render tick to avoid race with worker threads
-                                        mc.execute(() -> {
+                        // only allow replacement if previous is not ready and within initial ticks
+                        if (startedAt.containsKey(key)) {
+                            com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Skipping replace: existing instance at pos {} already started", pos);
+                        } else if (!prevNs.isAudioReady() && prevNs.getLocalTicks() <= 6) {
+                            long now = System.currentTimeMillis();
+                            Long last = lastReplaceTime.get(key);
+                            if (last != null && (now - last) < REPLACE_DEDUP_MS) {
+                                // Too soon since last replace, skip replacing to avoid rapid churn
+                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Skipping rapid replace at pos {} ({}ms since last)", pos, now - last);
+                            } else {
+                                boolean replaced = soundMap.replace(key, prev, inst);
+                                if (replaced) {
+                                    // record replace time to throttle further replaces
+                                    lastReplaceTime.put(key, now);
+                                    // Do NOT stop the old instance immediately in this thread;
+                                    // it may still be initializing in a worker thread (skipTo).
+                                    // Instead, defer the stop via the SoundManager's next tick cycle.
+                                    try {
+                                        MinecraftClient mc = MinecraftClient.getInstance();
+                                        if (mc != null) {
                                             try {
                                                 mc.getSoundManager().stop(prev);
-                                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Deferred stop of replaced transient NetMusicSound at pos {}", pos);
+                                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Immediately stopped replaced transient NetMusicSound at pos {}", pos);
                                             } catch (Throwable ignored) {}
-                                        });
-                                    }
-                                } catch (Throwable ignored) {}
-                                com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Replaced transient NetMusicSound at pos {} with new instance (will defer stop)", pos);
-                                reserved.remove(key);
-                                playing.put(key, System.currentTimeMillis());
-                                return true;
+                                        }
+                                    } catch (Throwable ignored) {}
+                                    com.github.tartaricacid.netmusic.NetMusic.LOGGER.info("[ClientMusicPlaybackManager] Replaced transient NetMusicSound at pos {} with new instance (will defer stop)", pos);
+                                    reserved.remove(key);
+                                        playing.put(key, System.currentTimeMillis());
+                                        // ensure startedAt is cleared for this key when replaced
+                                        startedAt.remove(key);
+                                    return true;
+                                }
                             }
                         }
                     } catch (Throwable ignored) {}
@@ -175,6 +264,8 @@ public class ClientMusicPlaybackManager {
         // 成功注册，清理预占并记录为已播放
         reserved.remove(key);
         playing.put(key, System.currentTimeMillis());
+        // 确保 startedAt 在首次成功注册时处于干净状态
+        startedAt.remove(key);
         return true;
     }
 
@@ -339,6 +430,7 @@ public class ClientMusicPlaybackManager {
         String key = pos.toString();
         playing.remove(key);
         soundMap.remove(key);
+        startedAt.remove(key);
     }
 
     public static void unregisterForEntity(java.util.UUID entityUuid) {
@@ -355,9 +447,11 @@ public class ClientMusicPlaybackManager {
                     String posKey = p.toString();
                     soundMap.remove(posKey);
                     playing.remove(posKey);
+                    startedAt.remove(posKey);
                 }
             }
         } catch (Throwable ignored) {}
+        startedAt.remove(key);
     }
 
     public static void stopAndUnregister(BlockPos pos) {
@@ -376,9 +470,11 @@ public class ClientMusicPlaybackManager {
                         String eKey = "entity:" + eu.toString();
                         soundMap.remove(eKey);
                         playing.remove(eKey);
+                        startedAt.remove(eKey);
                     }
                 }
             } catch (Throwable ignored) {}
+            startedAt.remove(key);
         }
     }
 
@@ -593,5 +689,24 @@ public class ClientMusicPlaybackManager {
             return u == null ? "<null>" : u.toString();
         } catch (Throwable ignored) {}
         return "<error>";
+    }
+
+    /**
+     * Check if a given key (either a pos string or "entity:UUID") is already occupied
+     * by a reservation/registration/playing instance. This lets callers avoid constructing
+     * expensive SoundInstance objects when another path has already claimed the key.
+     */
+    public static boolean isKeyOccupied(String key) {
+        if (key == null) return false;
+        try {
+            if (key.startsWith("entity:")) {
+                String eKey = key;
+                return reserved.containsKey(eKey) || soundMap.containsKey(eKey) || playing.containsKey(eKey);
+            } else {
+                return reserved.containsKey(key) || soundMap.containsKey(key) || playing.containsKey(key);
+            }
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 }

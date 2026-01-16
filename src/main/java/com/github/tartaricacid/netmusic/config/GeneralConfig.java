@@ -30,6 +30,9 @@ public class GeneralConfig {
     @SerialEntry(value = "EnableAutoStopOnEnd", comment = "Whether the server should auto-stop and reset progress when a song finishes (forced enabled when net_music_list mod is installed)")
     public static Boolean ENABLE_AUTO_STOP_ON_END = false;
 
+        @SerialEntry(value = "UseLegacyUrlParsing", comment = "Compatibility: use original URL parsing/dedup behavior to avoid breaking addons that depend on original URL strings")
+        public static Boolean USE_LEGACY_URL_PARSING = true;
+
     public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
             .createBuilder(GeneralConfig.class)
             .id(Identifier.of(NetMusic.MOD_ID, "common"))
