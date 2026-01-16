@@ -12,6 +12,11 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,20 +48,29 @@ public class MusicPlayManager {
         final String key;
         final String url;
         final String songName;
-        final Function<URL, SoundInstance> sound;
+        final java.util.function.BiFunction<URL, Integer, SoundInstance> soundFactory;
+        final int originalStartProgress;
+        final long enqueuedAtMs;
         int ticksWaiting;
 
-        PendingCreation(String key, String url, String songName, Function<URL, SoundInstance> sound) {
+        PendingCreation(String key, String url, String songName, java.util.function.BiFunction<URL, Integer, SoundInstance> soundFactory, int originalStartProgress) {
             this.key = key;
             this.url = url;
             this.songName = songName;
-            this.sound = sound;
+            this.soundFactory = soundFactory;
+            this.originalStartProgress = originalStartProgress;
+            this.enqueuedAtMs = System.currentTimeMillis();
             this.ticksWaiting = 0;
         }
     }
 
     // Cache for async audio availability probes (url -> available)
     private static final java.util.Map<String, Boolean> audioAvailableCache = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // Audio system preflight state (detect whether local audio pipeline is ready)
+    private static volatile boolean audioSystemReady = true;
+    private static volatile long audioSystemLastChecked = 0L;
+    private static volatile boolean audioPreflightInProgress = false;
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
         // 全局URL级别的去重：防止同一 URL 在 2 秒内被多次创建
@@ -98,10 +112,10 @@ public class MusicPlayManager {
     /**
      * 提供按 key 的序列化创建：key 通常为 pos.toString() 或 entity:UUID
      */
-    public static void playWithKey(String key, String url, String songName, Function<URL, SoundInstance> sound) {
+    public static void playWithKey(String key, String url, String songName, java.util.function.BiFunction<URL, Integer, SoundInstance> soundFactory, int originalStartProgress) {
         if (key == null) {
             // fallback to normal play if no key provided
-            play(url, songName, sound);
+            play(url, songName, u -> soundFactory.apply(u, originalStartProgress));
             return;
         }
         // 获取或创建序列化执行器
@@ -114,7 +128,8 @@ public class MusicPlayManager {
         // 在序列化执行器内完成重定向解析与 URL 去重，避免并发解析导致的重复创建
         final String originalUrl = url;
         final String songNameFinal = songName;
-        final Function<URL, SoundInstance> soundFinal = sound;
+        final java.util.function.BiFunction<URL, Integer, SoundInstance> soundFinal = soundFactory;
+        final int startProgressCaptured = originalStartProgress;
         try {
             exec.submit(() -> {
                 String resolved = originalUrl;
@@ -177,12 +192,41 @@ public class MusicPlayManager {
                 // 清理旧的记录，防止内存泄漏
                 recentCreations.entrySet().removeIf(e -> now - e.getValue() > CREATE_DEDUP_WINDOW_MS * 2);
 
-                // 现在安全地调用 playMusic（创建实例逻辑仍在主线程提交）
+                    // 现在安全地调用 playMusic（创建实例逻辑仍在主线程提交）
                 try {
                     // If the target location/entity is not yet ready, enqueue as pending
                     boolean ready = isReadyForKey(key, resolved);
+                    // Ensure local audio pipeline is available before creating real SoundInstances
                     if (ready) {
-                        playMusic(resolved, songNameFinal, soundFinal);
+                        boolean audioOk = ensureAudioSystemReady();
+                        if (!audioOk) {
+                            NetMusic.LOGGER.info("[MusicPlayManager] Audio system not ready, enqueueing pending creation for key {}", key);
+                            // reserve key if possible
+                            try {
+                                if (key.startsWith("entity:")) {
+                                    String uuidStr = key.substring("entity:".length());
+                                    try {
+                                        java.util.UUID uuid = java.util.UUID.fromString(uuidStr);
+                                        ClientMusicPlaybackManager.reserveEntity(uuid);
+                                    } catch (Throwable ignored) {}
+                                } else {
+                                    try {
+                                        net.minecraft.util.math.BlockPos p = parsePosKey(key);
+                                        if (p != null) ClientMusicPlaybackManager.reservePos(p);
+                                    } catch (Throwable ignored) {}
+                                }
+                            } catch (Throwable ignored) {}
+                            PendingCreation pc = new PendingCreation(key, resolved, songNameFinal, soundFinal, startProgressCaptured);
+                            pendingCreations.put(key, pc);
+                            // kick off network/audio probe as well
+                            startAudioProbe(resolved);
+                            return;
+                        }
+                    }
+                    if (ready) {
+                        // Use current start progress (captured) for immediate creation
+                        final int sp = startProgressCaptured;
+                        playMusic(resolved, songNameFinal, u -> soundFinal.apply(u, sp));
                     } else {
                         // reserve key if possible to prevent other creators
                         try {
@@ -200,7 +244,7 @@ public class MusicPlayManager {
                                 } catch (Throwable ignored) {}
                             }
                         } catch (Throwable ignored) {}
-                        PendingCreation pc = new PendingCreation(key, resolved, songNameFinal, soundFinal);
+                        PendingCreation pc = new PendingCreation(key, resolved, songNameFinal, soundFinal, startProgressCaptured);
                         pendingCreations.put(key, pc);
                         NetMusic.LOGGER.info("[MusicPlayManager] Enqueued pending creation for key {} (waiting for readiness)", key);
                         // start async probe for audio availability
@@ -411,7 +455,12 @@ public class MusicPlayManager {
                     it.remove();
                     NetMusic.LOGGER.info("[MusicPlayManager] Pending creation ready for key {}, creating now", pc.key);
                     try {
-                        playMusic(pc.url, pc.songName, pc.sound);
+                        // Compute elapsed ticks since enqueued and adjust start progress
+                        long nowMs = System.currentTimeMillis();
+                        int elapsedTicks = (int) ((nowMs - pc.enqueuedAtMs) / 50L);
+                        int adjustedStart = pc.originalStartProgress + elapsedTicks;
+                        final int finalStart = Math.max(0, adjustedStart);
+                        playMusic(pc.url, pc.songName, u -> pc.soundFactory.apply(u, finalStart));
                     } finally {
                         // ensure creating marker is cleared in case pending was enqueued after a reservation
                         try {
@@ -436,7 +485,9 @@ public class MusicPlayManager {
                     // fallback: create anyway to avoid permanent drop
                     it.remove();
                     NetMusic.LOGGER.warn("[MusicPlayManager] Pending creation for key {} timed out after {} ticks, creating anyway", pc.key, pc.ticksWaiting);
-                    playMusic(pc.url, pc.songName, pc.sound);
+                    // Use original start progress if elapsed info isn't relevant here
+                    int finalStart = pc.originalStartProgress;
+                    playMusic(pc.url, pc.songName, u -> pc.soundFactory.apply(u, finalStart));
                 }
             }
         } catch (Throwable ignored) {}
@@ -537,6 +588,66 @@ public class MusicPlayManager {
                 NetMusic.LOGGER.info("[MusicPlayManager] Audio probe for {} -> {}", resolvedUrl, ok);
             }, Util.getMainWorkerExecutor());
         } catch (Throwable ignored) {}
+    }
+
+    // Ensure the local audio system (OS mixers / Java Sound) is available for playback.
+    private static boolean ensureAudioSystemReady() {
+        try {
+            if (GeneralConfig.AUDIO_PREFLIGHT_ENABLED == null || !GeneralConfig.AUDIO_PREFLIGHT_ENABLED) return true;
+            long now = System.currentTimeMillis();
+            int timeout = GeneralConfig.AUDIO_PREFLIGHT_TIMEOUT_MS == null ? 2000 : GeneralConfig.AUDIO_PREFLIGHT_TIMEOUT_MS;
+            if (audioSystemLastChecked > 0 && (now - audioSystemLastChecked) < timeout) {
+                return audioSystemReady;
+            }
+            // Kick off an async preflight if not in progress
+            if (!audioPreflightInProgress) startAudioSystemPreflight();
+            // Return current cached state (may be false until async probe completes)
+            return audioSystemReady;
+        } catch (Throwable ignored) {}
+        return true;
+    }
+
+    private static void startAudioSystemPreflight() {
+        if (audioPreflightInProgress) return;
+        audioPreflightInProgress = true;
+        try {
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                boolean ok = false;
+                try {
+                    ok = tryOpenAudioLine();
+                } catch (Throwable ignored) { ok = false; }
+                audioSystemReady = ok;
+                audioSystemLastChecked = System.currentTimeMillis();
+                audioPreflightInProgress = false;
+                NetMusic.LOGGER.info("[MusicPlayManager] Audio system preflight -> {}", ok);
+            }, Util.getMainWorkerExecutor());
+        } catch (Throwable ignored) { audioPreflightInProgress = false; }
+    }
+
+    private static boolean tryOpenAudioLine() {
+        try {
+            AudioFormat format = new AudioFormat(44100f, 16, 1, true, false);
+            DataLine.Info info = new DataLine.Info(SourceDataLine.class, format);
+            if (!AudioSystem.isLineSupported(info)) return false;
+            SourceDataLine line = null;
+            try {
+                line = (SourceDataLine) AudioSystem.getLine(info);
+                line.open(format, 1024);
+                line.start();
+                // write a very short silent buffer
+                byte[] silence = new byte[128];
+                line.write(silence, 0, silence.length);
+                line.drain();
+                line.stop();
+                return true;
+            } catch (LineUnavailableException e) {
+                return false;
+            } finally {
+                try { if (line != null) line.close(); } catch (Throwable ignored) {}
+            }
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     private static net.minecraft.util.math.BlockPos parsePosKey(String key) {

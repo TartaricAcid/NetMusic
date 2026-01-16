@@ -259,23 +259,26 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                                 MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(),
                                     message.getUrl(),
                                     message.getSongName(),
-                                    url -> new NetMusicSound(ent, url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                                    (url, start) -> new NetMusicSound(ent, url, message.getTimeSecond(), record[0], start),
+                                    message.getPlayProgress()
                                 );
                             } else {
                                 // 回退到 uuid 构造（兼容旧逻辑），虽然不理想，但保证不会崩溃
                                 MusicPlayManager.playWithKey("entity:" + finalEntityUuid.toString(),
                                     message.getUrl(),
                                     message.getSongName(),
-                                    url -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                                    (url, start) -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], start),
+                                    message.getPlayProgress()
                                 );
                             }
                         } catch (Exception ex) {
-                            NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Failed to create entity-based NetMusicSound using entity instance, falling back to uuid constructor: {}", ex.getMessage());
-                            MusicPlayManager.play(
+                                NetMusic.LOGGER.error("[MusicToClientMessageReceiver] Failed to create entity-based NetMusicSound using entity instance, falling back to uuid constructor: {}", ex.getMessage());
+                                MusicPlayManager.playWithKey("entity:" + finalEntityUuid.toString(),
                                     message.getUrl(),
                                     message.getSongName(),
-                                    url -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], message.getPlayProgress())
-                            );
+                                    (url, start) -> new NetMusicSound(finalEntityUuid, url, message.getTimeSecond(), record[0], start),
+                                    message.getPlayProgress()
+                                );
                         }
                     } else {
                         // 最终检查：如果该位置已有声音在播放或注册，则跳过创建
@@ -287,7 +290,8 @@ public class MusicToClientMessageReceiver implements ClientPlayNetworking.PlayPa
                         MusicPlayManager.playWithKey(message.getPos().toString(),
                             message.getUrl(),
                             message.getSongName(),
-                            url -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], message.getPlayProgress())
+                            (url, start) -> new NetMusicSound(message.getPos(), url, message.getTimeSecond(), record[0], start),
+                            message.getPlayProgress()
                         );
                     }
                     NetMusic.LOGGER.info("[MusicToClientMessageReceiver] Successfully called MusicPlayManager.play for pos {}", message.getPos());

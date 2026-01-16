@@ -85,7 +85,7 @@ public class NetMusicClient implements ClientModInitializer {
                                     NetMusic.LOGGER.debug("[NetMusicClient] Reserved entity {} for BE-driven playback: {}", ent.getUuid(), reserved);
                                     if (reserved) {
                                         try {
-                                            MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond, finalRecord, p.playProgress));
+                                            MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), p.url, p.songName, (url, start) -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond, finalRecord, start), p.playProgress);
                                             created = true;
                                         } catch (Throwable ex) {
                                             ClientMusicPlaybackManager.cancelReservationEntity(ent.getUuid());
@@ -110,7 +110,7 @@ public class NetMusicClient implements ClientModInitializer {
                                 return;
                             }
                             try {
-                                MusicPlayManager.playWithKey(p.pos.toString(), p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(p.pos, url, p.timeSecond, finalRecord, p.playProgress));
+                                MusicPlayManager.playWithKey(p.pos.toString(), p.url, p.songName, (url, start) -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(p.pos, url, p.timeSecond, finalRecord, start), p.playProgress);
                             } catch (Exception ex) {
                                 ClientMusicPlaybackManager.cancelReservationPos(p.pos);
                                 NetMusic.LOGGER.error("[NetMusicClient] Failed to play pending BE sound at {}: {}", p.pos, ex.getMessage());
@@ -234,7 +234,7 @@ public class NetMusicClient implements ClientModInitializer {
                             }
                             final LyricRecord finalRecord = record;
                             try {
-                                MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, u, timeSecond, finalRecord, playProgress));
+                                MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), url, songName, (u, start) -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, u, timeSecond, finalRecord, start), playProgress);
                             } catch (Throwable ex) {
                                 ClientMusicPlaybackManager.cancelReservationEntity(ent.getUuid());
                                 pendingPlayback.put(pos, new Pending(pos, url, timeSecond, songName, playProgress, ownerUuid == null ? "" : ownerUuid));
@@ -267,7 +267,7 @@ public class NetMusicClient implements ClientModInitializer {
                 }
                 final LyricRecord finalRecord = record;
                 try {
-                                MusicPlayManager.playWithKey(pos.toString(), url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(pos, u, timeSecond, finalRecord, playProgress));
+                                MusicPlayManager.playWithKey(pos.toString(), url, songName, (u, start) -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(pos, u, timeSecond, finalRecord, start), playProgress);
                 } catch (Throwable ex) {
                     ClientMusicPlaybackManager.cancelReservationPos(pos);
                     pendingPlayback.put(pos, new Pending(pos, url, timeSecond, songName, playProgress, ownerUuid == null ? "" : ownerUuid));

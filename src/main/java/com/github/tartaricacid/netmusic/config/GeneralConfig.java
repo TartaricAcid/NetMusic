@@ -33,6 +33,15 @@ public class GeneralConfig {
         @SerialEntry(value = "UseLegacyUrlParsing", comment = "Compatibility: use original URL parsing/dedup behavior to avoid breaking addons that depend on original URL strings")
         public static Boolean USE_LEGACY_URL_PARSING = true;
 
+        @SerialEntry(value = "AudioPreflightEnabled", comment = "Enable audio preflight probe to ensure audio pipeline is ready before first playback")
+        public static Boolean AUDIO_PREFLIGHT_ENABLED = true;
+
+        @SerialEntry(value = "AudioPreflightTimeoutMs", comment = "How long to cache the audio preflight result (milliseconds)")
+        public static Integer AUDIO_PREFLIGHT_TIMEOUT_MS = 2000;
+
+        @SerialEntry(value = "AudioPreflightMode", comment = "Preflight mode: 'silent' (write silent buffer) or 'none' to disable extra checks")
+        public static String AUDIO_PREFLIGHT_MODE = "silent";
+
     public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
             .createBuilder(GeneralConfig.class)
             .id(Identifier.of(NetMusic.MOD_ID, "common"))
