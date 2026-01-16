@@ -130,9 +130,26 @@ public class MusicPlayManager {
                 }
 
                 if (resolved == null) return;
-                // 快速检查：如果该 key 已被占用（reservation/registration/playing），则跳过昂贵的构造
+                // 尝试标记为“创建中”，以便持有预占(reserved)的调用者能够继续完成创建。
+                // 如果无法标记（其它创建正在进行），则在检测到已被占用时放弃创建。
+                boolean claimedCreating = false;
                 try {
-                    if (ClientMusicPlaybackManager.isKeyOccupied(key)) {
+                    if (key.startsWith("entity:")) {
+                        String uuidStr = key.substring("entity:".length());
+                        try {
+                            java.util.UUID uuid = java.util.UUID.fromString(uuidStr);
+                            claimedCreating = ClientMusicPlaybackManager.tryMarkCreatingEntity(uuid);
+                        } catch (Throwable ignored) {}
+                    } else {
+                        try {
+                            net.minecraft.util.math.BlockPos p = parsePosKey(key);
+                            if (p != null) claimedCreating = ClientMusicPlaybackManager.tryMarkCreatingPos(p);
+                        } catch (Throwable ignored) {}
+                    }
+                } catch (Throwable ignored) {}
+
+                try {
+                    if (!claimedCreating && ClientMusicPlaybackManager.isKeyOccupied(key)) {
                         NetMusic.LOGGER.info("[MusicPlayManager] Serialized skip: key {} already occupied, skipping creation", key);
                         return;
                     }
@@ -220,18 +237,30 @@ public class MusicPlayManager {
                     if (inst instanceof NetMusicSound) {
                         NetMusicSound ns = (NetMusicSound) inst;
                         boolean registered = true;
-                        if (ns.getPos() != null) {
-                            registered = ClientMusicPlaybackManager.registerIfAbsentPos(ns.getPos(), inst);
-                            NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentPos returned {} for pos {}", registered, ns.getPos());
-                        } else if (ns.getEntityUuid() != null) {
-                            registered = ClientMusicPlaybackManager.registerIfAbsentEntity(ns.getEntityUuid(), inst);
-                            NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentEntity returned {} for entity {}", registered, ns.getEntityUuid());
-                        }
+                        boolean hasPos = false;
+                        try {
+                            if (ns.getPos() != null) {
+                                hasPos = true;
+                                registered = ClientMusicPlaybackManager.registerIfAbsentPos(ns.getPos(), inst);
+                                NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentPos returned {} for pos {}", registered, ns.getPos());
+                            } else if (ns.getEntityUuid() != null) {
+                                registered = ClientMusicPlaybackManager.registerIfAbsentEntity(ns.getEntityUuid(), inst);
+                                NetMusic.LOGGER.info("[MusicPlayManager] registerIfAbsentEntity returned {} for entity {}", registered, ns.getEntityUuid());
+                            }
+                        } catch (Throwable ignored) {}
                         if (!registered) {
                             NetMusic.LOGGER.info("[MusicPlayManager] Registration failed (duplicate), aborting play for {}", inst);
-                            // 不进行注销清理：已存在的注册属于其它播放实例，注销可能会停止它们。
+                            try {
+                                if (hasPos) ClientMusicPlaybackManager.clearCreatingPos(ns.getPos());
+                                else if (ns.getEntityUuid() != null) ClientMusicPlaybackManager.clearCreatingEntity(ns.getEntityUuid());
+                            } catch (Throwable ignored) {}
                             return;
                         }
+                        // 成功注册后，也应清理 creating 标记
+                        try {
+                            if (hasPos) ClientMusicPlaybackManager.clearCreatingPos(ns.getPos());
+                            else if (ns.getEntityUuid() != null) ClientMusicPlaybackManager.clearCreatingEntity(ns.getEntityUuid());
+                        } catch (Throwable ignored) {}
                     }
                     // 在真正播放前标记已开始，以避免并发替换已开始的实例
                     try {
@@ -378,7 +407,25 @@ public class MusicPlayManager {
                     // remove from pending and invoke creation on main thread
                     it.remove();
                     NetMusic.LOGGER.info("[MusicPlayManager] Pending creation ready for key {}, creating now", pc.key);
-                    playMusic(pc.url, pc.songName, pc.sound);
+                    try {
+                        playMusic(pc.url, pc.songName, pc.sound);
+                    } finally {
+                        // ensure creating marker is cleared in case pending was enqueued after a reservation
+                        try {
+                            if (pc.key != null && pc.key.startsWith("entity:")) {
+                                String uuidStr = pc.key.substring("entity:".length());
+                                try {
+                                    java.util.UUID uuid = java.util.UUID.fromString(uuidStr);
+                                    ClientMusicPlaybackManager.clearCreatingEntity(uuid);
+                                } catch (Throwable ignored) {}
+                            } else {
+                                try {
+                                    net.minecraft.util.math.BlockPos p = parsePosKey(pc.key);
+                                    if (p != null) ClientMusicPlaybackManager.clearCreatingPos(p);
+                                } catch (Throwable ignored) {}
+                            }
+                        } catch (Throwable ignored) {}
+                    }
                     continue;
                 }
                 pc.ticksWaiting++;
