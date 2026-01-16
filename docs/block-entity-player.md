@@ -34,5 +34,11 @@ NBT 与同步（客户端/服务端交互）
 参考文件
 - 代码：`TileEntityMusicPlayer`、`EntityMusicPlayerManager`、`NetMusicClient`、`PendingEntityPlaybackManager`、`ClientMusicPlaybackManager`。
 
+集成注意：Voice Chat 与音频预检
+- 若系统检测到 `voicechat` 模组存在，客户端会延迟执行本地音频 preflight（探针）与网络探测，直到 `voicechat` 完成初始化并触发连接回调。这样可以避免在 voicechat 握手/重建音频管线期间产生的无声或竞态。
+	- `GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT`：是否对本地 preflight 使用持久重试（默认 true）。
+	- `GeneralConfig.AUDIO_PREFLIGHT_RETRY_INITIAL_MS` / `AUDIO_PREFLIGHT_RETRY_MAX_MS`：重试回退参数。
+	- 当 voicechat 存在但未连接时，客户端会把播放请求优先入队（pending），并在 voicechat 连接后触发延迟的探针与 pending 恢复。
+
 作者与版本
 - 更新：2026-01-08

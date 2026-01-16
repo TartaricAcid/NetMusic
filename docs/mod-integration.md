@@ -96,6 +96,14 @@ NetworkHandler.sendToClientPlayer(msg, player);
 - 如果你在客户端需要检测播放状态或为 GUI 显示歌词/进度，建议通过读取 TE 的 NBT（`toInitialChunkDataNbt` / `BlockEntityUpdateS2CPacket`）或监听 `NetMusicClient` 提供的回调点；避免直接实例化 `NetMusicSound`。
 - 若你的模组创建/移动实体并希望音乐随身，请在服务端更新实体与 TE 的关联（调用 `registerActiveEntity`），并确保在世界上下文（ServerWorld）执行。
 
+整合注意：Voice Chat 与音频预检
+- NetMusic 在客户端实现了本地音频 preflight 与网络探针以保证首次播放的可靠性。为避免与像 `voicechat` 这样的模组在音频管线初始化期间发生竞态，客户端将：
+    - 在检测到 `voicechat` 存在但尚未完成连接时，延迟执行本地 preflight 与网络探针，并把收到的播放请求优先放入 `pending`；
+    - 使用反射弱引用注册 `VOICECHAT_CONNECTED` / `VOICECHAT_DISCONNECTED` 事件（不会在编译时产生命名依赖），在 `VOICECHAT_CONNECTED` 时触发延迟探针并恢复 pending 播放；
+    - 通过 `GeneralConfig` 暴露重试与行为开关：`AUDIO_PREFLIGHT_PERSISTENT`, `AUDIO_PREFLIGHT_RETRY_INITIAL_MS`, `AUDIO_PREFLIGHT_RETRY_MAX_MS`。
+
+建议：如果你的模组也会操纵底层音频（例如做全局静音/独占），请考虑在合适时机触发或协助 NetMusic 的 pending 恢复（例如通过在你的 mod 连接/初始化完成后向玩家发送一个小的 NetMusic BE 更新或触发一次 `VOICECHAT_CONNECTED` 等价事件），这样能减少首次加入时的无声现象。
+
 六、调试与日志
 
 - 如需调试交互：在服务端调用 API 后，检查服务端日志是否有 `Registered virtual session` / `Registered entity` 等信息；客户端应在 BE 更新时输出 `Added pending playback` 或 `Reserved entity` 等日志。

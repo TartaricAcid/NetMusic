@@ -16,6 +16,13 @@
   - 实体出现事件：`NetMusicClient` 每 20 tick 扫描新出现的实体，并在新实体出现时调用 `PendingEntityPlaybackManager.onEntityLoaded(uuid, entity)`（以及 `ClientMusicPlaybackManager.notifyEntityLoaded`）。
   - `PendingEntityPlaybackManager`：收到挂起请求并在实体出现时负责预占、获取歌词（可选）、创建绑定 `NetMusicSound` 并交由 `ClientMusicPlaybackManager` 注册。
 
+  集成注意：Voice Chat 与音频预检
+  - 客户端在启动或玩家加入时会对本地音频管线做 preflight（音频探针）与网络音频可用性检查。为避免与第三方模组（如 voicechat）在音频管线初始化期间发生竞态，客户端已实现以下策略：
+    - 若检测到 `voicechat` 模组存在且尚未完成连接/初始化，客户端会延迟执行本地 preflight 与网络探测，并将播放请求优先放入 `pending`。
+    - 一旦 `VOICECHAT_CONNECTED` 事件触发，客户端会开始所有被延迟的探针并在主线程触发 `tickPendingCreations(...)` 以尽快恢复挂起的播放请求。
+    - 可通过配置调整重试策略：`GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT`、`AUDIO_PREFLIGHT_RETRY_INITIAL_MS`、`AUDIO_PREFLIGHT_RETRY_MAX_MS`。
+
+
 NBTF 字段与语义（服务端写入）
 - `songUrl` (String)：来源 URL
 - `songTime` (int)：歌曲时长（秒）或 0 表示未知
