@@ -27,6 +27,30 @@ public class GeneralConfig {
     @SerialEntry(value = "EnablePlayerLyrics", comment = "Whether to enable lyrics display in the music player")
     public static Boolean ENABLE_PLAYER_LYRICS = true;
 
+    @SerialEntry(value = "EnableAutoStopOnEnd", comment = "Whether the server should auto-stop and reset progress when a song finishes (forced enabled when net_music_list mod is installed)")
+    public static Boolean ENABLE_AUTO_STOP_ON_END = false;
+
+        @SerialEntry(value = "UseLegacyUrlParsing", comment = "Compatibility: use original URL parsing/dedup behavior to avoid breaking addons that depend on original URL strings")
+        public static Boolean USE_LEGACY_URL_PARSING = true;
+
+        @SerialEntry(value = "AudioPreflightEnabled", comment = "Enable audio preflight probe to ensure audio pipeline is ready before first playback")
+        public static Boolean AUDIO_PREFLIGHT_ENABLED = true;
+
+        @SerialEntry(value = "AudioPreflightTimeoutMs", comment = "How long to cache the audio preflight result (milliseconds)")
+        public static Integer AUDIO_PREFLIGHT_TIMEOUT_MS = 2000;
+
+        @SerialEntry(value = "AudioPreflightMode", comment = "Preflight mode: 'silent' (write silent buffer) or 'none' to disable extra checks")
+        public static String AUDIO_PREFLIGHT_MODE = "silent";
+
+        @SerialEntry(value = "AudioPreflightPersistent", comment = "When true, keep retrying audio preflight until success instead of giving up")
+        public static Boolean AUDIO_PREFLIGHT_PERSISTENT = true;
+
+        @SerialEntry(value = "AudioPreflightRetryInitialMs", comment = "Initial retry delay (ms) for persistent preflight")
+        public static Integer AUDIO_PREFLIGHT_RETRY_INITIAL_MS = 500;
+
+        @SerialEntry(value = "AudioPreflightRetryMaxMs", comment = "Maximum retry delay (ms) for persistent preflight")
+        public static Integer AUDIO_PREFLIGHT_RETRY_MAX_MS = 10000;
+
     public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
             .createBuilder(GeneralConfig.class)
             .id(Identifier.of(NetMusic.MOD_ID, "common"))

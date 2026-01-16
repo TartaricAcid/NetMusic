@@ -56,6 +56,8 @@
   "config.netmusic.general.proxy_address.tooltip": "Proxy Address, such as 127.0.0.1:1080, empty is no proxy",
   "config.netmusic.general.enable_player_lyrics": "Enable Player Lyrics",
   "config.netmusic.general.enable_player_lyrics.tooltip": "Whether to enable lyrics display in the music player",
+  "config.netmusic.general.enable_auto_stop_on_end": "Enable Auto-Stop On Song End",
+  "config.netmusic.general.enable_auto_stop_on_end.tooltip": "Automatically stop playback and reset progress when a song finishes (forced enabled when net_music_list mod is installed)",
   "config.netmusic.general.enable_maid_lyrics": "Enable Maid Lyrics",
   "config.netmusic.general.enable_maid_lyrics.tooltip": "Whether to enable lyrics display for the maid",
   "jei.netmusic.altar_craft.item_craft.result": "Craft Item",
