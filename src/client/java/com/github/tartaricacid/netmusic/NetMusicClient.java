@@ -169,11 +169,13 @@ public class NetMusicClient implements ClientModInitializer {
             } catch (Throwable ignored) {}
         });
 
-        // 处理由 MusicPlayManager 调度的主线程健康检查（用于确认音频流是否成功创建）
+        // 处理由 MusicPlayManager 调度的主线程健康检查与 pending 创建（用于确认音频流是否成功创建并触发挂起项）
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
                 if (client.world == null) return;
-                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickHealthChecks(client.world.getTime());
+                long t = client.world.getTime();
+                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickHealthChecks(t);
+                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickPendingCreations(t);
             } catch (Throwable ignored) {}
         });
     }
