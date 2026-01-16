@@ -709,4 +709,21 @@ public class ClientMusicPlaybackManager {
             return false;
         }
     }
+
+    /**
+     * Check if the given key is only reserved (no actual SoundInstance registered or playing).
+     * Returns true if a reservation exists but there is no soundMap/playing entry for the key.
+     */
+    public static boolean isKeyOnlyReserved(String key) {
+        if (key == null) return false;
+        try {
+            if (key.startsWith("entity:")) {
+                return reserved.containsKey(key) && !soundMap.containsKey(key) && !playing.containsKey(key);
+            } else {
+                return reserved.containsKey(key) && !soundMap.containsKey(key) && !playing.containsKey(key);
+            }
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
 }

@@ -149,9 +149,12 @@ public class MusicPlayManager {
                 } catch (Throwable ignored) {}
 
                 try {
-                    if (!claimedCreating && ClientMusicPlaybackManager.isKeyOccupied(key)) {
-                        NetMusic.LOGGER.info("[MusicPlayManager] Serialized skip: key {} already occupied, skipping creation", key);
-                        return;
+                    // Allow callers that hold only a reservation to proceed (avoid treating reserved-only as occupied)
+                    if (!claimedCreating) {
+                        if (ClientMusicPlaybackManager.isKeyOccupied(key) && !ClientMusicPlaybackManager.isKeyOnlyReserved(key)) {
+                            NetMusic.LOGGER.info("[MusicPlayManager] Serialized skip: key {} already occupied, skipping creation", key);
+                            return;
+                        }
                     }
                 } catch (Throwable ignored) {}
                 if (resolved.equals(ERROR_404)) {
