@@ -68,7 +68,7 @@ public class PendingEntityPlaybackManager {
             } catch (Throwable ignored) {}
 
             try {
-                MusicPlayManager.play(p.url().toString(), p.songName(), url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond(), recordRef.get(), p.playProgress()));
+                MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), p.url().toString(), p.songName(), url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond(), recordRef.get(), p.playProgress()));
             } catch (Throwable ex) {
                 NetMusic.LOGGER.error("[PendingEntityPlaybackManager] Failed to create bound sound for entity {}: {}", entityUuid, ex.getMessage());
                 ClientMusicPlaybackManager.cancelReservationEntity(entityUuid);

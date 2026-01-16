@@ -38,7 +38,11 @@ public class NetMusicClient implements ClientModInitializer {
                 if (client.player == null) return;
                 // 以较低频率处理（每 10 ticks）
                 if (client.world.getTime() % 10L != 0L) return;
-                for (Map.Entry<net.minecraft.util.math.BlockPos, Pending> e : pendingPlayback.entrySet()) {
+                // 创建待播放列表的快照，避免在遍历时修改导致的并发问题
+                java.util.List<Map.Entry<net.minecraft.util.math.BlockPos, Pending>> pendingList = 
+                    new java.util.ArrayList<>(pendingPlayback.entrySet());
+                
+                for (Map.Entry<net.minecraft.util.math.BlockPos, Pending> e : pendingList) {
                     Pending p = e.getValue();
                     // 防止重复播放
                     if (ClientMusicPlaybackManager.isPlayingAt(p.pos)) {
@@ -81,7 +85,7 @@ public class NetMusicClient implements ClientModInitializer {
                                     NetMusic.LOGGER.debug("[NetMusicClient] Reserved entity {} for BE-driven playback: {}", ent.getUuid(), reserved);
                                     if (reserved) {
                                         try {
-                                            MusicPlayManager.play(p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond, finalRecord, p.playProgress));
+                                            MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, url, p.timeSecond, finalRecord, p.playProgress));
                                             created = true;
                                         } catch (Throwable ex) {
                                             ClientMusicPlaybackManager.cancelReservationEntity(ent.getUuid());
@@ -106,13 +110,14 @@ public class NetMusicClient implements ClientModInitializer {
                                 return;
                             }
                             try {
-                                MusicPlayManager.play(p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(p.pos, url, p.timeSecond, finalRecord, p.playProgress));
+                                MusicPlayManager.playWithKey(p.pos.toString(), p.url, p.songName, url -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(p.pos, url, p.timeSecond, finalRecord, p.playProgress));
                             } catch (Exception ex) {
                                 ClientMusicPlaybackManager.cancelReservationPos(p.pos);
                                 NetMusic.LOGGER.error("[NetMusicClient] Failed to play pending BE sound at {}: {}", p.pos, ex.getMessage());
                             }
                         }
                     }, Util.getMainWorkerExecutor());
+                    // 立即从待播放列表中移除该条目，防止重复创建（即使异步任务还在执行）
                     pendingPlayback.remove(p.pos);
                 }
             } catch (Exception ignored) {}
@@ -164,11 +169,13 @@ public class NetMusicClient implements ClientModInitializer {
             } catch (Throwable ignored) {}
         });
 
-        // 处理由 MusicPlayManager 调度的主线程健康检查（用于确认音频流是否成功创建）
+        // 处理由 MusicPlayManager 调度的主线程健康检查与 pending 创建（用于确认音频流是否成功创建并触发挂起项）
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             try {
                 if (client.world == null) return;
-                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickHealthChecks(client.world.getTime());
+                long t = client.world.getTime();
+                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickHealthChecks(t);
+                com.github.tartaricacid.netmusic.audio.MusicPlayManager.tickPendingCreations(t);
             } catch (Throwable ignored) {}
         });
     }
@@ -227,7 +234,7 @@ public class NetMusicClient implements ClientModInitializer {
                             }
                             final LyricRecord finalRecord = record;
                             try {
-                                MusicPlayManager.play(url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, u, timeSecond, finalRecord, playProgress));
+                                MusicPlayManager.playWithKey("entity:" + ent.getUuid().toString(), url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(ent, u, timeSecond, finalRecord, playProgress));
                             } catch (Throwable ex) {
                                 ClientMusicPlaybackManager.cancelReservationEntity(ent.getUuid());
                                 pendingPlayback.put(pos, new Pending(pos, url, timeSecond, songName, playProgress, ownerUuid == null ? "" : ownerUuid));
@@ -260,7 +267,7 @@ public class NetMusicClient implements ClientModInitializer {
                 }
                 final LyricRecord finalRecord = record;
                 try {
-                    MusicPlayManager.play(url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(pos, u, timeSecond, finalRecord, playProgress));
+                                MusicPlayManager.playWithKey(pos.toString(), url, songName, u -> new com.github.tartaricacid.netmusic.audio.NetMusicSound(pos, u, timeSecond, finalRecord, playProgress));
                 } catch (Throwable ex) {
                     ClientMusicPlaybackManager.cancelReservationPos(pos);
                     pendingPlayback.put(pos, new Pending(pos, url, timeSecond, songName, playProgress, ownerUuid == null ? "" : ownerUuid));
