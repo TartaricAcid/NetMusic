@@ -42,6 +42,15 @@ public class GeneralConfig {
         @SerialEntry(value = "AudioPreflightMode", comment = "Preflight mode: 'silent' (write silent buffer) or 'none' to disable extra checks")
         public static String AUDIO_PREFLIGHT_MODE = "silent";
 
+        @SerialEntry(value = "AudioPreflightPersistent", comment = "When true, keep retrying audio preflight until success instead of giving up")
+        public static Boolean AUDIO_PREFLIGHT_PERSISTENT = true;
+
+        @SerialEntry(value = "AudioPreflightRetryInitialMs", comment = "Initial retry delay (ms) for persistent preflight")
+        public static Integer AUDIO_PREFLIGHT_RETRY_INITIAL_MS = 500;
+
+        @SerialEntry(value = "AudioPreflightRetryMaxMs", comment = "Maximum retry delay (ms) for persistent preflight")
+        public static Integer AUDIO_PREFLIGHT_RETRY_MAX_MS = 10000;
+
     public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
             .createBuilder(GeneralConfig.class)
             .id(Identifier.of(NetMusic.MOD_ID, "common"))

@@ -24,6 +24,11 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.function.Function;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author : IMG
@@ -67,6 +72,10 @@ public class MusicPlayManager {
                     this.enqueuedWorldTick = MinecraftClient.getInstance().world.getTime();
                 }
             } catch (Throwable ignored) {}
+            try {
+                NetMusic.LOGGER.info("[MusicPlayManager] PendingCreation enqueued: key={}, url={}, enqueuedAtMs={}, enqueuedWorldTick={}",
+                        key, url, this.enqueuedAtMs, this.enqueuedWorldTick);
+            } catch (Throwable ignored) {}
             this.ticksWaiting = 0;
         }
     }
@@ -78,6 +87,15 @@ public class MusicPlayManager {
     private static volatile boolean audioSystemReady = true;
     private static volatile long audioSystemLastChecked = 0L;
     private static volatile boolean audioPreflightInProgress = false;
+    private static final ScheduledExecutorService PREFLIGHT_SCHED = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "NetMusic-prefetch-sched");
+        t.setDaemon(true);
+        return t;
+    });
+    // persistent preflight control
+    private static final java.util.Map<String, Boolean> audioProbeInProgress = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final AtomicInteger audioSystemPreflightAttempts = new AtomicInteger(0);
+    private static volatile boolean audioPreflightPersistentStarted = false;
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
         // 全局URL级别的去重：防止同一 URL 在 2 秒内被多次创建
@@ -205,6 +223,11 @@ public class MusicPlayManager {
                     boolean ready = isReadyForKey(key, resolved);
                     // Ensure local audio pipeline is available before creating real SoundInstances
                     if (ready) {
+                        // If a pending creation is already present for this key, skip enqueuing another
+                        if (pendingCreations.containsKey(key)) {
+                            NetMusic.LOGGER.info("[MusicPlayManager] Skip enqueue: pending creation already exists for key {}", key);
+                            return;
+                        }
                         boolean audioOk = ensureAudioSystemReady();
                         if (!audioOk) {
                             NetMusic.LOGGER.info("[MusicPlayManager] Audio system not ready, enqueueing pending creation for key {}", key);
@@ -251,11 +274,16 @@ public class MusicPlayManager {
                                 } catch (Throwable ignored) {}
                             }
                         } catch (Throwable ignored) {}
-                        PendingCreation pc = new PendingCreation(key, resolved, songNameFinal, soundFinal, startProgressCaptured);
-                        pendingCreations.put(key, pc);
-                        NetMusic.LOGGER.info("[MusicPlayManager] Enqueued pending creation for key {} (waiting for readiness)", key);
-                        // start async probe for audio availability
-                        startAudioProbe(resolved);
+                        // Prevent duplicate pending entries
+                        if (pendingCreations.containsKey(key)) {
+                            NetMusic.LOGGER.info("[MusicPlayManager] Skip enqueue: pending creation already exists for key {}", key);
+                        } else {
+                            PendingCreation pc = new PendingCreation(key, resolved, songNameFinal, soundFinal, startProgressCaptured);
+                            pendingCreations.put(key, pc);
+                            NetMusic.LOGGER.info("[MusicPlayManager] Enqueued pending creation for key {} (waiting for readiness)", key);
+                            // start async probe for audio availability
+                            startAudioProbe(resolved);
+                        }
                     }
                 } catch (Throwable t) {
                     NetMusic.LOGGER.error("[MusicPlayManager] Serialized play task failed for key {}: {}", key, t.getMessage());
@@ -324,24 +352,42 @@ public class MusicPlayManager {
                             ClientMusicPlaybackManager.markStartedEntity(ns2.getEntityUuid(), inst);
                         }
                     } catch (Throwable ignored) {}
-                    // 立即调用 SoundManager.play()，让 Minecraft 音频系统异步加载音頻
-                    MinecraftClient.getInstance().getSoundManager().play(inst);
-                    NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called immediately: {}", inst);
-                    
-                    // 对于 NetMusicSound，立即在异步线程上预热音频流加载，加快第一次 tick() 中的 getAudioStream() 执行
+                    // 对于 NetMusicSound：先异步预热（创建音频流），预热完成后在主线程调用 SoundManager.play()
                     if (inst instanceof NetMusicSound ns) {
-                        Util.getMainWorkerExecutor().submit(() -> {
-                            try {
-                                ns.getAudioStream(null, ns.getId(), false).thenAccept(stream -> {
+                        NetMusic.LOGGER.info("[MusicPlayManager] Starting audio pre-warm before play for: {}", inst);
+                        try {
+                            ns.getAudioStream(null, ns.getId(), false).thenAccept(stream -> {
+                                try {
                                     if (stream != null) {
                                         try { stream.close(); } catch (Throwable ignored) {}
                                     }
-                                }).exceptionally(e -> { NetMusic.LOGGER.debug("[MusicPlayManager] Pre-warming audio stream failed: {}", e.getMessage()); return null; });
-                            } catch (Throwable e) {
-                                NetMusic.LOGGER.debug("[MusicPlayManager] Failed to pre-warm audio stream: {}", e.getMessage());
-                            }
-                        });
-                        NetMusic.LOGGER.info("[MusicPlayManager] Audio stream pre-warming started for: {}", inst);
+                                } catch (Throwable ignored) {}
+                                try {
+                                    MinecraftClient mc = MinecraftClient.getInstance();
+                                    if (mc != null) {
+                                        mc.submit(() -> {
+                                            try {
+                                                NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called after pre-warm: {}", inst);
+                                                mc.getSoundManager().play(inst);
+                                            } catch (Throwable e) {
+                                                NetMusic.LOGGER.error("[MusicPlayManager] Failed to play sound after pre-warm: {}", e.getMessage());
+                                            }
+                                        });
+                                    }
+                                } catch (Throwable ignored) {}
+                            }).exceptionally(e -> { NetMusic.LOGGER.debug("[MusicPlayManager] Pre-warming audio stream failed: {}", e.getMessage()); return null; });
+                        } catch (Throwable e) {
+                            NetMusic.LOGGER.debug("[MusicPlayManager] Failed to start pre-warm for {}: {}", inst, e.getMessage());
+                            // 回退到立即播放以避免完全静音场景
+                            try {
+                                MinecraftClient.getInstance().getSoundManager().play(inst);
+                            } catch (Throwable ignored) {}
+                        }
+                        NetMusic.LOGGER.info("[MusicPlayManager] Audio stream pre-warming scheduled for: {}", inst);
+                    } else {
+                        // 非 NetMusicSound 立即播放
+                        MinecraftClient.getInstance().getSoundManager().play(inst);
+                        NetMusic.LOGGER.info("[MusicPlayManager] SoundManager.play() called immediately: {}", inst);
                     }
                     
                     // 计划一个由客户端主线程 tick 驱动的健康检查
@@ -361,6 +407,23 @@ public class MusicPlayManager {
                         }
                     } catch (Throwable ignored) {}
                     setNowPlaying(Text.literal(songName));
+                    // 强制应用服务器保存的进度（修正由于 pending/探针导致的延迟创建引起的歌词不同步）
+                    try {
+                        if (inst instanceof NetMusicSound ns && ns.getPos() != null) {
+                            try {
+                                net.minecraft.client.MinecraftClient mc2 = MinecraftClient.getInstance();
+                                if (mc2 != null && mc2.world != null) {
+                                    net.minecraft.block.entity.BlockEntity be = mc2.world.getBlockEntity(ns.getPos());
+                                    if (be instanceof com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer) {
+                                        com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer te = (com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer) be;
+                                        int serverProgress = te.getPlayProgress();
+                                        ClientMusicPlaybackManager.applyProgressToPos(ns.getPos(), serverProgress);
+                                        NetMusic.LOGGER.info("[MusicPlayManager] Applied server progress {} to created sound at {}", serverProgress, ns.getPos());
+                                    }
+                                }
+                            } catch (Throwable ignored) {}
+                        }
+                    } catch (Throwable ignored) {}
                 } catch (Exception e) {
                     NetMusic.LOGGER.error("[MusicPlayManager] Failed to create/play sound instance: {}", e.getMessage(), e);
                 }
@@ -555,17 +618,33 @@ public class MusicPlayManager {
 
     private static void startAudioProbe(String resolvedUrl) {
         if (resolvedUrl == null) return;
-        // If already probed recently, skip
-        if (audioAvailableCache.containsKey(resolvedUrl)) return;
-        audioAvailableCache.put(resolvedUrl, Boolean.FALSE); // pessimistic default until probe finishes
+        // If already known available, nothing to do
+        Boolean cached = audioAvailableCache.get(resolvedUrl);
+        if (cached != null && cached) {
+            NetMusic.LOGGER.info("[MusicPlayManager] startAudioProbe: already available cached for {}", resolvedUrl);
+            return;
+        }
+        // If probe already scheduled, skip
+        if (audioProbeInProgress.putIfAbsent(resolvedUrl, Boolean.TRUE) != null) {
+            NetMusic.LOGGER.info("[MusicPlayManager] startAudioProbe: probe already in progress for {}", resolvedUrl);
+            return;
+        }
+        NetMusic.LOGGER.info("[MusicPlayManager] startAudioProbe scheduling persistent probe for {}", resolvedUrl);
+        audioAvailableCache.put(resolvedUrl, Boolean.FALSE);
+        // schedule first attempt immediately
+        scheduleProbeAttempt(resolvedUrl, 0L, 0);
+    }
+
+    private static void scheduleProbeAttempt(String resolvedUrl, long delayMs, int attempt) {
         try {
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
+            PREFLIGHT_SCHED.schedule(() -> {
                 boolean ok = false;
                 try {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Audio probe attempt #{} for {}", attempt, resolvedUrl);
                     URL u = new URL(resolvedUrl);
                     java.net.URLConnection conn = u.openConnection();
-                    conn.setConnectTimeout(1000);
-                    conn.setReadTimeout(1000);
+                    conn.setConnectTimeout(2000);
+                    conn.setReadTimeout(2000);
                     if (conn instanceof java.net.HttpURLConnection) {
                         java.net.HttpURLConnection http = (java.net.HttpURLConnection) conn;
                         http.setRequestMethod("HEAD");
@@ -574,66 +653,139 @@ public class MusicPlayManager {
                         if (code >= 200 && code < 400) {
                             ok = true;
                         } else {
-                            // try a ranged GET for first byte as fallback
                             try {
                                 http.disconnect();
                                 java.net.HttpURLConnection http2 = (java.net.HttpURLConnection) u.openConnection();
-                                http2.setConnectTimeout(1000);
-                                http2.setReadTimeout(1000);
+                                http2.setConnectTimeout(2000);
+                                http2.setReadTimeout(2000);
                                 http2.setRequestProperty("Range", "bytes=0-0");
                                 http2.connect();
                                 int c2 = http2.getResponseCode();
                                 if (c2 >= 200 && c2 < 400) ok = true;
                                 try { http2.disconnect(); } catch (Throwable ignored) {}
-                            } catch (Throwable ignored) {}
+                            } catch (Throwable probeEx) {
+                                NetMusic.LOGGER.debug("[MusicPlayManager] Audio ranged GET probe failed for {}: {}", resolvedUrl, probeEx.getMessage());
+                            }
                         }
                         try { http.disconnect(); } catch (Throwable ignored) {}
                     } else {
-                        // non-http (file, etc.) treat as available if connection succeeds
                         conn.connect();
                         ok = true;
                     }
-                } catch (Throwable ignored) {
+                } catch (Throwable probeExc) {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Audio probe exception for {}: {}", resolvedUrl, probeExc.getMessage());
                     ok = false;
                 }
                 audioAvailableCache.put(resolvedUrl, Boolean.valueOf(ok));
-                NetMusic.LOGGER.info("[MusicPlayManager] Audio probe for {} -> {}", resolvedUrl, ok);
-            }, Util.getMainWorkerExecutor());
-        } catch (Throwable ignored) {}
+                NetMusic.LOGGER.info("[MusicPlayManager] Audio probe for {} -> {} (attempt #{})", resolvedUrl, ok, attempt);
+                if (ok) {
+                    audioProbeInProgress.remove(resolvedUrl);
+                    // trigger pending processing on main thread
+                    try {
+                        MinecraftClient mc = MinecraftClient.getInstance();
+                        if (mc != null) {
+                            mc.submit(() -> {
+                                try {
+                                    long worldTime = -1L;
+                                    try { if (mc.world != null) worldTime = mc.world.getTime(); } catch (Throwable ignored) {}
+                                    tickPendingCreations(worldTime < 0L ? 0L : worldTime);
+                                } catch (Throwable ignored) {}
+                            });
+                        }
+                    } catch (Throwable ignored) {}
+                } else {
+                    // schedule next attempt if persistent
+                    int nextAttempt = attempt + 1;
+                    int initial = GeneralConfig.AUDIO_PREFLIGHT_RETRY_INITIAL_MS == null ? 500 : GeneralConfig.AUDIO_PREFLIGHT_RETRY_INITIAL_MS;
+                    int max = GeneralConfig.AUDIO_PREFLIGHT_RETRY_MAX_MS == null ? 10000 : GeneralConfig.AUDIO_PREFLIGHT_RETRY_MAX_MS;
+                    long nextDelay = Math.min(max, (long) initial * (1L << Math.min(nextAttempt, 10)));
+                    boolean persistent = GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT == null || GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT;
+                    if (persistent) {
+                        NetMusic.LOGGER.info("[MusicPlayManager] Scheduling next audio probe for {} in {}ms (attempt #{})", resolvedUrl, nextDelay, nextAttempt);
+                        scheduleProbeAttempt(resolvedUrl, nextDelay, nextAttempt);
+                    } else {
+                        audioProbeInProgress.remove(resolvedUrl);
+                    }
+                }
+            }, delayMs, TimeUnit.MILLISECONDS);
+        } catch (Throwable t) {
+            audioProbeInProgress.remove(resolvedUrl);
+            NetMusic.LOGGER.debug("[MusicPlayManager] Failed to schedule probe attempt for {}: {}", resolvedUrl, t.getMessage());
+        }
     }
 
     // Ensure the local audio system (OS mixers / Java Sound) is available for playback.
     private static boolean ensureAudioSystemReady() {
         try {
             if (GeneralConfig.AUDIO_PREFLIGHT_ENABLED == null || !GeneralConfig.AUDIO_PREFLIGHT_ENABLED) return true;
-            long now = System.currentTimeMillis();
-            int timeout = GeneralConfig.AUDIO_PREFLIGHT_TIMEOUT_MS == null ? 2000 : GeneralConfig.AUDIO_PREFLIGHT_TIMEOUT_MS;
-            if (audioSystemLastChecked > 0 && (now - audioSystemLastChecked) < timeout) {
-                return audioSystemReady;
-            }
-            // Kick off an async preflight if not in progress
-            if (!audioPreflightInProgress) startAudioSystemPreflight();
-            // Return current cached state (may be false until async probe completes)
+            // If audio already known ready, return immediately
+            if (audioSystemReady) return true;
+            // Start persistent preflight if not already started
+            if (!audioPreflightPersistentStarted) startAudioSystemPreflight();
+            // Do not block here; return current cached state. Pending creations will be triggered
+            // by the persistent preflight when it becomes ready.
             return audioSystemReady;
         } catch (Throwable ignored) {}
         return true;
     }
 
     private static void startAudioSystemPreflight() {
-        if (audioPreflightInProgress) return;
-        audioPreflightInProgress = true;
+        if (audioPreflightPersistentStarted) return;
+        audioPreflightPersistentStarted = true;
+        audioSystemPreflightAttempts.set(0);
+        // schedule first attempt immediately
+        scheduleAudioSystemPreflightAttempt(0L, 0);
+    }
+
+    private static void scheduleAudioSystemPreflightAttempt(long delayMs, int attempt) {
         try {
-            java.util.concurrent.CompletableFuture.runAsync(() -> {
+            PREFLIGHT_SCHED.schedule(() -> {
                 boolean ok = false;
                 try {
+                    NetMusic.LOGGER.info("[MusicPlayManager] Audio system preflight attempt #{}", attempt);
                     ok = tryOpenAudioLine();
                 } catch (Throwable ignored) { ok = false; }
                 audioSystemReady = ok;
                 audioSystemLastChecked = System.currentTimeMillis();
-                audioPreflightInProgress = false;
-                NetMusic.LOGGER.info("[MusicPlayManager] Audio system preflight -> {}", ok);
-            }, Util.getMainWorkerExecutor());
-        } catch (Throwable ignored) { audioPreflightInProgress = false; }
+                if (ok) {
+                    audioPreflightPersistentStarted = false;
+                    audioPreflightInProgress = false;
+                    NetMusic.LOGGER.info("[MusicPlayManager] Audio system preflight succeeded on attempt #{}", attempt);
+                    // trigger pending creations on main thread
+                    try {
+                        MinecraftClient mc = MinecraftClient.getInstance();
+                        if (mc != null) {
+                            mc.submit(() -> {
+                                try {
+                                    long worldTime = -1L;
+                                    try { if (mc.world != null) worldTime = mc.world.getTime(); } catch (Throwable ignored) {}
+                                    tickPendingCreations(worldTime < 0L ? 0L : worldTime);
+                                } catch (Throwable ignored) {}
+                            });
+                        }
+                    } catch (Throwable ignored) {}
+                } else {
+                    audioPreflightInProgress = false;
+                    int nextAttempt = attempt + 1;
+                    int initial = GeneralConfig.AUDIO_PREFLIGHT_RETRY_INITIAL_MS == null ? 500 : GeneralConfig.AUDIO_PREFLIGHT_RETRY_INITIAL_MS;
+                    int max = GeneralConfig.AUDIO_PREFLIGHT_RETRY_MAX_MS == null ? 10000 : GeneralConfig.AUDIO_PREFLIGHT_RETRY_MAX_MS;
+                    long nextDelay = Math.min(max, (long) initial * (1L << Math.min(nextAttempt, 10)));
+                    boolean persistent = GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT == null || GeneralConfig.AUDIO_PREFLIGHT_PERSISTENT;
+                    if (persistent) {
+                        NetMusic.LOGGER.info("[MusicPlayManager] Audio preflight failed, scheduling retry in {}ms (attempt #{})", nextDelay, nextAttempt);
+                        audioSystemPreflightAttempts.set(nextAttempt);
+                        scheduleAudioSystemPreflightAttempt(nextDelay, nextAttempt);
+                    } else {
+                        audioPreflightPersistentStarted = false;
+                        NetMusic.LOGGER.info("[MusicPlayManager] Audio preflight failed and persistent retry disabled");
+                    }
+                }
+            }, delayMs, TimeUnit.MILLISECONDS);
+        } catch (Throwable t) {
+            audioPreflightPersistentStarted = false;
+            audioPreflightInProgress = false;
+            NetMusic.LOGGER.debug("[MusicPlayManager] Failed to schedule audio preflight attempt: {}", t.getMessage());
+        }
     }
 
     private static boolean tryOpenAudioLine() {

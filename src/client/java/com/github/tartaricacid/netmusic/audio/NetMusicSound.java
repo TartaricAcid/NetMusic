@@ -403,16 +403,17 @@ public class NetMusicSound extends MovingSoundInstance {
                 NetMusicAudioStream audioStream = new NetMusicAudioStream(this.songUrl, this.preferStereo);
                 NetMusic.LOGGER.debug("[NetMusicSound] NetMusicAudioStream created successfully");
                 
-                // 如果需要从进度中间开始播放，跳过前面的音频数据
-                if (startProgress > 0) {
-                    NetMusic.LOGGER.debug("[NetMusicSound] About to skip to progress: {} ticks", startProgress);
-                    NetMusic.LOGGER.info("[NetMusicSound] Attempting to skip to progress: {} ticks ({}s)", startProgress, startProgress / 20);
-                    audioStream.skipToProgress(startProgress);
-                    NetMusic.LOGGER.debug("[NetMusicSound] Skip completed");
-                    NetMusic.LOGGER.info("[NetMusicSound] Successfully skipped to progress: {} ticks", startProgress);
+                // 使用当前实例的 `tick` 值作为跳转目标（允许外部通过反射或 applyProgress 更新该值）
+                int skipTarget = Math.max(0, this.tick);
+                if (skipTarget > 0) {
+                    NetMusic.LOGGER.debug("[NetMusicSound] About to skip to progress: {} ticks (using tick field)", skipTarget);
+                    NetMusic.LOGGER.info("[NetMusicSound] Attempting to skip to progress: {} ticks ({}s)", skipTarget, skipTarget / 20);
+                    audioStream.skipToProgress(skipTarget);
+                    NetMusic.LOGGER.debug("[NetMusicSound] Skip completed to {} ticks", skipTarget);
+                    NetMusic.LOGGER.info("[NetMusicSound] Successfully skipped to progress: {} ticks", skipTarget);
                 } else {
-                    NetMusic.LOGGER.debug("[NetMusicSound] Starting from beginning (startProgress=0)");
-                    NetMusic.LOGGER.info("[NetMusicSound] Starting from beginning (startProgress=0)");
+                    NetMusic.LOGGER.debug("[NetMusicSound] Starting from beginning (tick=0)");
+                    NetMusic.LOGGER.info("[NetMusicSound] Starting from beginning (tick=0)");
                 }
                 
                 // 标记音频已准备就绪（此处在音频线程中设置，tick() 会看到此变更并开始持续更新歌词）
