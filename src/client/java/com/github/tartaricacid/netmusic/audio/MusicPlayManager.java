@@ -50,7 +50,8 @@ public class MusicPlayManager {
         final String songName;
         final java.util.function.BiFunction<URL, Integer, SoundInstance> soundFactory;
         final int originalStartProgress;
-        final long enqueuedAtMs;
+        long enqueuedAtMs;
+        long enqueuedWorldTick;
         int ticksWaiting;
 
         PendingCreation(String key, String url, String songName, java.util.function.BiFunction<URL, Integer, SoundInstance> soundFactory, int originalStartProgress) {
@@ -60,6 +61,12 @@ public class MusicPlayManager {
             this.soundFactory = soundFactory;
             this.originalStartProgress = originalStartProgress;
             this.enqueuedAtMs = System.currentTimeMillis();
+            this.enqueuedWorldTick = -1L;
+            try {
+                if (MinecraftClient.getInstance() != null && MinecraftClient.getInstance().world != null) {
+                    this.enqueuedWorldTick = MinecraftClient.getInstance().world.getTime();
+                }
+            } catch (Throwable ignored) {}
             this.ticksWaiting = 0;
         }
     }
@@ -456,9 +463,14 @@ public class MusicPlayManager {
                     NetMusic.LOGGER.info("[MusicPlayManager] Pending creation ready for key {}, creating now", pc.key);
                     try {
                         // Compute elapsed ticks since enqueued and adjust start progress
-                        long nowMs = System.currentTimeMillis();
-                        int elapsedTicks = (int) ((nowMs - pc.enqueuedAtMs) / 50L);
-                        int adjustedStart = pc.originalStartProgress + elapsedTicks;
+                        int elapsedTicks;
+                        if (pc.enqueuedWorldTick >= 0) {
+                            elapsedTicks = (int) (currentWorldTime - pc.enqueuedWorldTick);
+                        } else {
+                            long nowMs = System.currentTimeMillis();
+                            elapsedTicks = (int) ((nowMs - pc.enqueuedAtMs) / 50L);
+                        }
+                        int adjustedStart = pc.originalStartProgress + Math.max(0, elapsedTicks);
                         final int finalStart = Math.max(0, adjustedStart);
                         playMusic(pc.url, pc.songName, u -> pc.soundFactory.apply(u, finalStart));
                     } finally {
