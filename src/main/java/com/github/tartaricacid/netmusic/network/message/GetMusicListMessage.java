@@ -1,13 +1,15 @@
 package com.github.tartaricacid.netmusic.network.message;
 
-import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 public class GetMusicListMessage {
@@ -29,7 +31,7 @@ public class GetMusicListMessage {
     public static void handle(GetMusicListMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
         NetworkEvent.Context context = contextSupplier.get();
         if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> {
+            context.enqueueWork(() -> CompletableFuture.runAsync(() -> {
                 LocalPlayer player = Minecraft.getInstance().player;
                 try {
                     if (message.musicListId == RELOAD_MESSAGE) {
@@ -49,7 +51,7 @@ public class GetMusicListMessage {
                     }
                     e.printStackTrace();
                 }
-            });
+            }, Util.backgroundExecutor()));
         }
         context.setPacketHandled(true);
     }

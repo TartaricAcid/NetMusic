@@ -2,17 +2,17 @@ package com.github.tartaricacid.netmusic;
 
 import com.github.tartaricacid.netmusic.api.NetEaseMusic;
 import com.github.tartaricacid.netmusic.api.WebApi;
+import com.github.tartaricacid.netmusic.compat.sbackpack.SBackpackCompat;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
-import com.github.tartaricacid.netmusic.init.InitBlocks;
-import com.github.tartaricacid.netmusic.init.InitContainer;
-import com.github.tartaricacid.netmusic.init.InitItems;
-import com.github.tartaricacid.netmusic.init.InitSounds;
+import com.github.tartaricacid.netmusic.init.*;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 @Mod(NetMusic.MOD_ID)
 public class NetMusic {
@@ -29,5 +29,15 @@ public class NetMusic {
         InitSounds.SOUND_EVENTS.register(FMLJavaModLoadingContext.get().getModEventBus());
         InitContainer.CONTAINER_TYPE.register(FMLJavaModLoadingContext.get().getModEventBus());
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, GeneralConfig.init());
+        registerSBackpacksCompat();
+    }
+
+    private void registerSBackpacksCompat() {
+        ModList.get().getModContainerById(CompatRegistry.SC).ifPresent(modContainer -> {
+            ArtifactVersion version = modContainer.getModInfo().getVersion();
+            if (CompatRegistry.SC_VERSION_RANGE.containsVersion(version)) {
+                SBackpackCompat.register();
+            }
+        });
     }
 }

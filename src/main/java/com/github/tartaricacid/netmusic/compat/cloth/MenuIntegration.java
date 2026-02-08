@@ -60,5 +60,19 @@ public class MenuIntegration {
                 .setDefaultValue(GeneralConfig.ENABLE_MAID_LYRICS.getDefault())
                 .setSaveConsumer(GeneralConfig.ENABLE_MAID_LYRICS::set)
                 .build());
+
+        ConfigCategory sBackpack = root.getOrCreateCategory(Component.translatable("config.netmusic.sophisticatedbackpacks"));
+
+        sBackpack.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_netmusic_cd_generation"), GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.get())
+                .setTooltip(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_netmusic_cd_generation.tooltip"))
+                .setDefaultValue(GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.getDefault())
+                .setSaveConsumer(GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION::set)
+                .build());
+
+        sBackpack.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_vip_netmusic_cd_generation"), GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.get())
+                .setTooltip(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_vip_netmusic_cd_generation.tooltip"))
+                .setDefaultValue(GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.getDefault())
+                .setSaveConsumer(GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION::set)
+                .build());
     }
 }
