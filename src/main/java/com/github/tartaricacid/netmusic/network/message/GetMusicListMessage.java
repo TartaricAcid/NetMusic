@@ -1,9 +1,10 @@
 package com.github.tartaricacid.netmusic.network.message;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -14,6 +15,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+
+import java.util.concurrent.CompletableFuture;
 
 public class GetMusicListMessage implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<GetMusicListMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "get_music_list"));
@@ -27,7 +30,7 @@ public class GetMusicListMessage implements CustomPacketPayload {
 
     public static void handle(GetMusicListMessage message, IPayloadContext context) {
         if (context.flow().isClientbound()) {
-            context.enqueueWork(() -> addMusicList(message));
+            context.enqueueWork(() -> CompletableFuture.runAsync(() -> addMusicList(message), Util.backgroundExecutor()));
         }
     }
 

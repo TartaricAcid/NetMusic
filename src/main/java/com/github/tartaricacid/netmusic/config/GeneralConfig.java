@@ -12,6 +12,9 @@ public class GeneralConfig {
     public static ModConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
     public static ModConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
 
+    public static ModConfigSpec.BooleanValue ENABLE_NETMUSIC_CD_GENERATION;
+    public static ModConfigSpec.BooleanValue ENABLE_VIP_NETMUSIC_CD_GENERATION;
+
     public static ModConfigSpec init() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         builder.push("general");
@@ -30,6 +33,15 @@ public class GeneralConfig {
 
         builder.comment("Whether to enable lyrics display for the maid");
         ENABLE_MAID_LYRICS = builder.define("EnableMaidLyrics", true);
+
+        builder.pop();
+        builder.push("sophisticatedbackpacks");
+
+        builder.comment("Whether NetMusic CDs can generate inside mob backpacks");
+        ENABLE_NETMUSIC_CD_GENERATION = builder.define("EnableNetMusicCDGeneration", false);
+
+        builder.comment("Whether VIP NetMusic CDs can generate inside mob backpacks");
+        ENABLE_VIP_NETMUSIC_CD_GENERATION = builder.define("EnableVIPNetMusicCDGeneration", false);
 
         builder.pop();
         return builder.build();

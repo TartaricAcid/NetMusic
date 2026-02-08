@@ -2,15 +2,18 @@ package com.github.tartaricacid.netmusic;
 
 import com.github.tartaricacid.netmusic.api.NetEaseMusic;
 import com.github.tartaricacid.netmusic.api.WebApi;
+import com.github.tartaricacid.netmusic.compat.sbackpack.SBackpackCompat;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.init.*;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 @Mod(NetMusic.MOD_ID)
 public class NetMusic {
@@ -32,5 +35,16 @@ public class NetMusic {
         modEventBus.addListener(InitCapabilities::registerGenericItemHandlers);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, GeneralConfig.init());
+
+        registerSBackpacksCompat();
+    }
+
+    private void registerSBackpacksCompat() {
+        ModList.get().getModContainerById(CompatRegistry.SC).ifPresent(modContainer -> {
+            ArtifactVersion version = modContainer.getModInfo().getVersion();
+            if (CompatRegistry.SC_VERSION_RANGE.containsVersion(version)) {
+                SBackpackCompat.register();
+            }
+        });
     }
 }

@@ -1,4 +1,4 @@
-package com.github.tartaricacid.netmusic.client.config;
+package com.github.tartaricacid.netmusic.config;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.ExtraMusicList;
@@ -14,6 +14,9 @@ import com.google.gson.reflect.TypeToken;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -34,7 +37,12 @@ public class MusicListManage {
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("music.json");
     public static List<ItemMusicCD.SongInfo> SONGS = Lists.newArrayList();
 
+    @OnlyIn(Dist.CLIENT)
     public static void loadConfigSongs() throws IOException {
+        loadConfigSongs(Minecraft.getInstance().getResourceManager());
+    }
+
+    public static void loadConfigSongs(ResourceManager manager) throws IOException {
         if (!Files.isDirectory(CONFIG_DIR)) {
             Files.createDirectories(CONFIG_DIR);
         }
@@ -45,7 +53,7 @@ public class MusicListManage {
             stream = Files.newInputStream(file.toPath());
         } else {
             ResourceLocation res = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music.json");
-            Optional<Resource> optional = Minecraft.getInstance().getResourceManager().getResource(res);
+            Optional<Resource> optional = manager.getResource(res);
             if (optional.isPresent()) {
                 stream = optional.get().open();
             }

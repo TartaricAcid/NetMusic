@@ -1,13 +1,12 @@
 package com.github.tartaricacid.netmusic.api;
 
-import org.apache.commons.codec.binary.Base64;
-
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Random;
 
 /**
@@ -37,7 +36,8 @@ public class EncryptUtils {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivParameterSpec);
         byte[] encrypted = cipher.doFinal(text.getBytes());
-        return Base64.encodeBase64String(encrypted);
+        // commons-codec 在专用服务端不存在, 这里改用 JDK 自带的 Base64
+        return Base64.getEncoder().encodeToString(encrypted);
     }
 
     private static String rsaEncrypt(String text, String pubKey, String modulus) {

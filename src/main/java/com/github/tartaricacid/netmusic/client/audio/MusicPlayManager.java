@@ -13,8 +13,10 @@ import net.neoforged.api.distmarker.OnlyIn;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Optional;
 import java.util.function.Function;
 
 @OnlyIn(Dist.CLIENT)
@@ -24,40 +26,22 @@ public final class MusicPlayManager {
     private static final String LOCAL_FILE_PROTOCOL = "file";
 
     public static void play(String url, String songName, Function<URL, SoundInstance> sound) {
-        String rawUrl = url;
-        if (url.startsWith(MUSIC_163_URL)) {
-            try {
-                url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
-            } catch (IOException e) {
-                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
-                return;
+        Optional<String> finalUrl = getFinalUrl(url);
+
+        if (finalUrl.isPresent()) {
+            playMusic(finalUrl.get(), songName, sound);
+        } else {
+            LocalPlayer player = Minecraft.getInstance().player;
+            if (player != null) {
+                player.sendSystemMessage(Component.translatable("message.netmusic.music_player.404", url).withStyle(ChatFormatting.RED));
             }
-        }
-        if (url != null) {
-            if (url.equals(ERROR_404)) {
-                LocalPlayer player = Minecraft.getInstance().player;
-                if (player != null) {
-                    player.sendSystemMessage(Component.translatable("message.netmusic.music_player.404", rawUrl).withStyle(ChatFormatting.RED));
-                }
-                NetMusic.LOGGER.info("Music not found: {}", rawUrl);
-                return;
-            }
-            playMusic(url, songName, sound);
+            NetMusic.LOGGER.info("Music not found: {}", url);
         }
     }
 
     private static void playMusic(String url, String songName, Function<URL, SoundInstance> sound) {
-        final URL urlFinal;
         try {
-            urlFinal = new URL(url);
-            // 如果是本地文件
-            if (urlFinal.getProtocol().equals(LOCAL_FILE_PROTOCOL)) {
-                File file = new File(urlFinal.toURI());
-                if (!file.exists()) {
-                    NetMusic.LOGGER.info("File not found: {}", url);
-                    return;
-                }
-            }
+            final URL urlFinal = new URI(url).toURL();
             Minecraft.getInstance().submitAsync(() -> {
                 SoundInstance instance = sound.apply(urlFinal);
                 Minecraft.getInstance().getSoundManager().play(instance);
@@ -66,5 +50,37 @@ public final class MusicPlayManager {
         } catch (MalformedURLException | URISyntaxException e) {
             NetMusic.LOGGER.error("Malformed URL: {}", url, e);
         }
+    }
+
+    public static Optional<String> getFinalUrl(String url) {
+        if (url.startsWith(MUSIC_163_URL)) {
+            try {
+                url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
+            } catch (IOException e) {
+                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
+                return Optional.empty();
+            }
+        }
+
+        if (url == null || url.equals(ERROR_404)) {
+            return Optional.empty();
+        }
+
+        try {
+            URL urlFinal = URI.create(url).toURL();
+            // 如果是本地文件
+            if (urlFinal.getProtocol().equals(LOCAL_FILE_PROTOCOL)) {
+                File file = new File(urlFinal.toURI());
+                if (!file.exists()) {
+                    NetMusic.LOGGER.info("File not found: {}", url);
+                    return Optional.empty();
+                }
+            }
+        } catch (URISyntaxException | MalformedURLException e) {
+            NetMusic.LOGGER.error("Malformed URL: {}", url, e);
+            return Optional.empty();
+        }
+
+        return Optional.of(url);
     }
 }
