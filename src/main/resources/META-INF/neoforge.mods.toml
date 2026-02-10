@@ -32,6 +32,6 @@ description='''${mod_description}'''
 [[dependencies.${mod_id}]]
     modId = "touhou_little_maid"
     type = "optional"
-    versionRange = "[1.3.0,)"
+    versionRange = "[1.5.0,)"
     ordering = "AFTER"
     side = "BOTH"
