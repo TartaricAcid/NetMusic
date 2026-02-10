@@ -3,12 +3,12 @@ package com.github.tartaricacid.netmusic.compat.tlm.client.chatbubble;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricParser;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
+import com.github.tartaricacid.netmusic.client.event.ConfigEvent;
 import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidRenderer;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.EntityGraphics;
 import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubble.IChatBubbleRenderer;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -121,8 +121,8 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         MutableComponent transLyric = null;
         int currentLyricWidth = font.width(currentLyric);
         int transLyricWidth = 0;
-        int currentLyricColor = 0xAAAAAA;
-        int transLyricColor = 0x000000;
+        int currentLyricColor = ConfigEvent.MAID_ORIGINAL_COLOR;
+        int transLyricColor = ConfigEvent.MAID_TRANSLATED_COLOR;
         int y = 2;
 
         Int2ObjectSortedMap<String> transLyrics = tmpLyric.getTransLyrics();
@@ -131,7 +131,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
             transLyricWidth = font.width(transLyric);
             y += 12;
         } else {
-            currentLyricColor = 0x000000;
+            currentLyricColor = ConfigEvent.MAID_TRANSLATED_COLOR;
         }
 
         int maxWidth = Math.max(currentLyricWidth, transLyricWidth);
@@ -148,9 +148,9 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
 
     private void renderDefault(EntityGraphics graphics) {
         if (isLoading) {
-            graphics.drawWordWrap(font, WAITING_TEXT, 0, 2, 1000, ChatFormatting.GRAY.getColor());
+            graphics.drawWordWrap(font, WAITING_TEXT, 0, 2, 1000, ConfigEvent.MAID_TRANSLATED_COLOR);
         } else {
-            graphics.drawWordWrap(font, NO_LYRIC_TEXT, 0, 2, 1000, ChatFormatting.GRAY.getColor());
+            graphics.drawWordWrap(font, NO_LYRIC_TEXT, 0, 2, 1000, ConfigEvent.MAID_TRANSLATED_COLOR);
         }
     }
 }

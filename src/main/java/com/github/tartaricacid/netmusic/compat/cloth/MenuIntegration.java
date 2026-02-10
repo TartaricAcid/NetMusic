@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.compat.cloth;
 
+import com.github.tartaricacid.netmusic.client.event.ConfigEvent;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
@@ -24,6 +25,7 @@ public class MenuIntegration {
         root.setGlobalizedExpanded(false);
         ConfigEntryBuilder entryBuilder = root.entryBuilder();
         generalConfig(root, entryBuilder);
+        root.setSavingRunnable(ConfigEvent::reloadColors);
         return root;
     }
 
@@ -59,6 +61,38 @@ public class MenuIntegration {
                 .setTooltip(Component.translatable("config.netmusic.general.enable_maid_lyrics.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_MAID_LYRICS.getDefault())
                 .setSaveConsumer(GeneralConfig.ENABLE_MAID_LYRICS::set)
+                .build());
+
+        general.addEntry(entryBuilder.startAlphaColorField(
+                        Component.translatable("config.netmusic.general.original_player_lyrics_color"),
+                        ConfigEvent.parseColor(GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.get()))
+                .setTooltip(Component.translatable("config.netmusic.general.original_player_lyrics_color.tooltip"))
+                .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.getDefault()))
+                .setSaveConsumer(color -> GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color)))
+                .build());
+
+        general.addEntry(entryBuilder.startAlphaColorField(
+                        Component.translatable("config.netmusic.general.translated_player_lyrics_color"),
+                        ConfigEvent.parseColor(GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.get()))
+                .setTooltip(Component.translatable("config.netmusic.general.translated_player_lyrics_color.tooltip"))
+                .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.getDefault()))
+                .setSaveConsumer(color -> GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color)))
+                .build());
+
+        general.addEntry(entryBuilder.startAlphaColorField(
+                        Component.translatable("config.netmusic.general.original_maid_lyrics_color"),
+                        ConfigEvent.parseColor(GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.get()))
+                .setTooltip(Component.translatable("config.netmusic.general.original_maid_lyrics_color.tooltip"))
+                .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.getDefault()))
+                .setSaveConsumer(color -> GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.set(String.format("#%08X", color)))
+                .build());
+
+        general.addEntry(entryBuilder.startAlphaColorField(
+                        Component.translatable("config.netmusic.general.translated_maid_lyrics_color"),
+                        ConfigEvent.parseColor(GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.get()))
+                .setTooltip(Component.translatable("config.netmusic.general.translated_maid_lyrics_color.tooltip"))
+                .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.getDefault()))
+                .setSaveConsumer(color -> GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.set(String.format("#%08X", color)))
                 .build());
 
         ConfigCategory sBackpack = root.getOrCreateCategory(Component.translatable("config.netmusic.sophisticatedbackpacks"));

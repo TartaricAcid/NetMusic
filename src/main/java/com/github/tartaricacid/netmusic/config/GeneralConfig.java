@@ -12,6 +12,12 @@ public class GeneralConfig {
     public static ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
     public static ForgeConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
 
+    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_PLAYER_LYRICS_COLOR;
+    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_PLAYER_LYRICS_COLOR;
+
+    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_MAID_LYRICS_COLOR;
+    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_MAID_LYRICS_COLOR;
+
     public static ForgeConfigSpec.BooleanValue ENABLE_NETMUSIC_CD_GENERATION;
     public static ForgeConfigSpec.BooleanValue ENABLE_VIP_NETMUSIC_CD_GENERATION;
 
@@ -33,6 +39,18 @@ public class GeneralConfig {
 
         builder.comment("Whether to enable lyrics display for the maid");
         ENABLE_MAID_LYRICS = builder.define("EnableMaidLyrics", true);
+
+        builder.comment("The color of the original lyrics in the music player, in #ARGB format");
+        ORIGINAL_PLAYER_LYRICS_COLOR = builder.define("OriginalPlayerLyricsColor", "#FFAAAAAA");
+
+        builder.comment("The color of the translated lyrics in the music player, in #ARGB format");
+        TRANSLATED_PLAYER_LYRICS_COLOR = builder.define("TranslatedPlayerLyricsColor", "#FFFFFFFF");
+
+        builder.comment("The color of the original lyrics for the maid, in #ARGB format");
+        ORIGINAL_MAID_LYRICS_COLOR = builder.define("OriginalMaidLyricsColor", "#FFAAAAAA");
+
+        builder.comment("The color of the translated lyrics for the maid, in #ARGB format");
+        TRANSLATED_MAID_LYRICS_COLOR = builder.define("TranslatedMaidLyricsColor", "#FF000000");
 
         builder.pop();
         builder.push("sophisticated_backpacks");
