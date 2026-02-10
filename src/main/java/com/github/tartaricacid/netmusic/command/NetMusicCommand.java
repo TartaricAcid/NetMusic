@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.command;
 
-import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
@@ -10,14 +11,19 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 public class NetMusicCommand {
     private static final String ROOT_NAME = "netmusic";
@@ -71,8 +77,8 @@ public class NetMusicCommand {
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.add163cd.success"), false);
         } catch (Exception e) {
-            e.printStackTrace();
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.add163cd.fail"));
+            NetMusic.LOGGER.error(e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -82,8 +88,21 @@ public class NetMusicCommand {
             long listId = LongArgumentType.getLong(context, SONG_LIST_ID);
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             NetworkHandler.sendToClientPlayer(new GetMusicListMessage(listId), serverPlayer);
+
+            // 防止客户端重复获取歌单
+            MinecraftServer server = context.getSource().getServer();
+            if (server.isDedicatedServer()) {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        MusicListManage.add163List(listId);
+                        server.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.success"));
+                    } catch (Exception e) {
+                        NetMusic.LOGGER.error("Failed to get music list from NetEase Cloud Music", e);
+                    }
+                }, Util.backgroundExecutor());
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Failed to execute get song list command", e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -92,8 +111,21 @@ public class NetMusicCommand {
         try {
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             NetworkHandler.sendToClientPlayer(new GetMusicListMessage(GetMusicListMessage.RELOAD_MESSAGE), serverPlayer);
+
+            // 防止客户端重复加载
+            MinecraftServer server = context.getSource().getServer();
+            if (server.isDedicatedServer()) {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        MusicListManage.loadConfigSongs(server.getResourceManager());
+                        server.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success"));
+                    } catch (IOException e) {
+                        NetMusic.LOGGER.error("Failed to reload music list", e);
+                    }
+                }, Util.backgroundExecutor());
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Failed to execute reload command", e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -122,8 +154,8 @@ public class NetMusicCommand {
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.addDJcd.success"), false);
         } catch (Exception e) {
-            e.printStackTrace();
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.addDJcd.fail"));
+            NetMusic.LOGGER.error(e);
         }
         return Command.SINGLE_SUCCESS;
     }

@@ -2,7 +2,7 @@ package com.github.tartaricacid.netmusic.client.event;
 
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -18,7 +18,7 @@ public class ClientEvent {
             try {
                 MusicListManage.loadConfigSongs();
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to load music list config", e);
             }
         });
     }

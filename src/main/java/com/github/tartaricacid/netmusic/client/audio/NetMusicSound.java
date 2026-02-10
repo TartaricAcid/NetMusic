@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
@@ -91,7 +92,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             try {
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);
             }
             return null;
         }, Util.backgroundExecutor());
