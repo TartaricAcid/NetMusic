@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.compat.tlm.client.audio;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.MusicPlayerBackpack;
 import com.github.tartaricacid.netmusic.init.InitSounds;
@@ -77,7 +78,7 @@ public class MaidNetMusicSound extends AbstractTickableSoundInstance {
             try {
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);
             }
             return null;
         }, Util.backgroundExecutor());

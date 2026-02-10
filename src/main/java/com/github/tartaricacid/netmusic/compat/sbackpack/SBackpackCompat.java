@@ -1,14 +1,16 @@
 package com.github.tartaricacid.netmusic.compat.sbackpack;
 
-import net.p3pp3rf1y.sophisticatedcore.network.PacketHandler;
-import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.DiscHandlerRegistry;
+import com.github.tartaricacid.netmusic.init.CompatRegistry;
+import net.minecraftforge.fml.ModList;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 public class SBackpackCompat {
-
     public static void register() {
-        PacketHandler.INSTANCE.registerMessage(PlayNetMusicDiscMessage.class, PlayNetMusicDiscMessage::encode,
-                PlayNetMusicDiscMessage::decode, PlayNetMusicDiscMessage::handle);
-        DiscHandlerRegistry.registerHandler(new NetMusicDiscHandler());
+        ModList.get().getModContainerById(CompatRegistry.SC).ifPresent(modContainer -> {
+            ArtifactVersion version = modContainer.getModInfo().getVersion();
+            if (CompatRegistry.SC_VERSION_RANGE.containsVersion(version)) {
+                SBackpackCompatInner.register();
+            }
+        });
     }
-
 }

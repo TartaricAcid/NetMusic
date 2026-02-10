@@ -130,7 +130,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
                 return;
             } catch (Exception e) {
                 this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
-                e.printStackTrace();
+                NetMusic.LOGGER.error(e);
                 return;
             }
         }
@@ -146,7 +146,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
                 NetworkHandler.CHANNEL.sendToServer(new SetMusicIDMessage(song));
             } catch (Exception e) {
                 this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
-                e.printStackTrace();
+                NetMusic.LOGGER.error(e);
             }
         } else {
             this.tips = Component.translatable("gui.netmusic.cd_burner.music_id_error");

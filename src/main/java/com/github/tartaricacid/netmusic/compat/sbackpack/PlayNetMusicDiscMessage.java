@@ -22,9 +22,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-public record PlayNetMusicDiscMessage(boolean blockStorage, UUID storgeUuid, ItemMusicCD.SongInfo songInfo, int entityId,
-                                  BlockPos pos) {
-
+public record PlayNetMusicDiscMessage(
+        boolean blockStorage, UUID storgeUuid,
+        ItemMusicCD.SongInfo songInfo,
+        int entityId, BlockPos pos
+) {
     public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, BlockPos pos) {
         this(true, storgeUuid, songInfo, 0, pos);
     }
@@ -34,10 +36,19 @@ public record PlayNetMusicDiscMessage(boolean blockStorage, UUID storgeUuid, Ite
     }
 
     public static PlayNetMusicDiscMessage decode(FriendlyByteBuf buf) {
-        if (buf.readBoolean()) {
-            return new PlayNetMusicDiscMessage(buf.readUUID(), new ItemMusicCD.SongInfo(buf.readUtf(), null, buf.readInt(), false), buf.readBlockPos());
+        boolean blockStorage = buf.readBoolean();
+        UUID storgeUuid = buf.readUUID();
+        String songUrl = buf.readUtf();
+        int songTime = buf.readInt();
+        var info = new ItemMusicCD.SongInfo(songUrl, null, songTime, false);
+
+        if (blockStorage) {
+            BlockPos pos = buf.readBlockPos();
+            return new PlayNetMusicDiscMessage(storgeUuid, info, pos);
+        } else {
+            int entityId = buf.readInt();
+            return new PlayNetMusicDiscMessage(storgeUuid, info, entityId);
         }
-        return new PlayNetMusicDiscMessage(buf.readUUID(), new ItemMusicCD.SongInfo(buf.readUtf(), null, buf.readInt(), false), buf.readInt());
     }
 
     public static void encode(PlayNetMusicDiscMessage message, FriendlyByteBuf buf) {

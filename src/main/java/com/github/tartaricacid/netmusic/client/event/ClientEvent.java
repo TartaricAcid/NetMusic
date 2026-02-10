@@ -18,7 +18,7 @@ public class ClientEvent {
             try {
                 MusicListManage.loadConfigSongs();
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to load music list config", e);
             }
         });
     }

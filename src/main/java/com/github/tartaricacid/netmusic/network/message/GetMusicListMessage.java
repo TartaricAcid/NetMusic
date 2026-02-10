@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.network.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
@@ -49,7 +50,7 @@ public class GetMusicListMessage {
                     if (player != null) {
                         player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.fail").withStyle(ChatFormatting.RED));
                     }
-                    e.printStackTrace();
+                    NetMusic.LOGGER.error("Failed to get music list from NetEase Cloud Music", e);
                 }
             }, Util.backgroundExecutor()));
         }

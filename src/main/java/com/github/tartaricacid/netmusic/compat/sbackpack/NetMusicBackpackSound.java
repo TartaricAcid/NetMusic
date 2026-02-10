@@ -77,7 +77,7 @@ public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
             try {
                 return new NetMusicAudioStream(this.songUrl);
             } catch (UnsupportedAudioFileException | IOException e) {
-                NetMusic.LOGGER.error("Failed to play netmusic song from url: " + this.songUrl, e);
+                NetMusic.LOGGER.error("Failed to play netmusic song from url: {}", this.songUrl, e);
                 return null;
             }
         }, Util.backgroundExecutor());
