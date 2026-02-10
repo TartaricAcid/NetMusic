@@ -82,8 +82,8 @@ public class NetMusicCommand {
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.add163cd.success"), false);
         } catch (Exception e) {
-            e.printStackTrace();
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.add163cd.fail"));
+            NetMusic.LOGGER.error(e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -107,7 +107,7 @@ public class NetMusicCommand {
                 }, Util.backgroundExecutor());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Failed to execute get song list command", e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -130,7 +130,7 @@ public class NetMusicCommand {
                 }, Util.backgroundExecutor());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            NetMusic.LOGGER.error("Failed to execute reload command", e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -159,8 +159,8 @@ public class NetMusicCommand {
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.addDJcd.success"), false);
         } catch (Exception e) {
-            e.printStackTrace();
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.addDJcd.fail"));
+            NetMusic.LOGGER.error(e);
         }
         return Command.SINGLE_SUCCESS;
     }

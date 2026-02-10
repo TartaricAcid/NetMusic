@@ -28,18 +28,20 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
     public void playDisc(ServerLevel serverLevel, BlockPos position, UUID storageUuid, ItemStack discItemStack, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
             Vec3 pos = Vec3.atCenterOf(position);
-            PacketDistributor.sendToPlayersNear(serverLevel, null, pos.x, pos.y, pos.z, 128,
-                    new NetMusicDiscPayload(storageUuid, songInfo, position));
-            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, pos, serverLevel.getGameTime() + getMusicLengthInTicks(songInfo));
+            NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, songInfo, position);
+            PacketDistributor.sendToPlayersNear(serverLevel, null, pos.x, pos.y, pos.z, 128, payload);
+            long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
+            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, pos, finishTime);
         });
     }
 
     @Override
     public void playDisc(ServerLevel serverLevel, Vec3 position, UUID storageUuid, ItemStack discItemStack, int entityId, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
-            PacketDistributor.sendToPlayersNear(serverLevel, null, position.x, position.y, position.z, 128,
-                    new NetMusicDiscPayload(storageUuid, songInfo, entityId));
-            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, position, serverLevel.getGameTime() + getMusicLengthInTicks(songInfo));
+            NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, songInfo, entityId);
+            PacketDistributor.sendToPlayersNear(serverLevel, null, position.x, position.y, position.z, 128, payload);
+            long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
+            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, position, finishTime);
         });
     }
 
@@ -59,7 +61,9 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
 
     @Override
     public Optional<ItemStack> getRandomDisc(RandomSource randomSource) {
-        if (!GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.get()) return Optional.empty();
+        if (!GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.get()) {
+            return Optional.empty();
+        }
         List<ItemMusicCD.SongInfo> songs = MusicListManage.SONGS.stream()
                 .filter(songInfo -> GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.get() || !songInfo.vip)
                 .toList();

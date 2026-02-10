@@ -8,12 +8,10 @@ import com.github.tartaricacid.netmusic.init.*;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 @Mod(NetMusic.MOD_ID)
 public class NetMusic {
@@ -23,6 +21,7 @@ public class NetMusic {
 
     public NetMusic(IEventBus modEventBus, ModContainer modContainer) {
         NET_EASE_WEB_API = new NetEaseMusic().getApi();
+
         InitBlocks.BLOCKS.register(modEventBus);
         InitBlocks.TILE_ENTITIES.register(modEventBus);
         InitItems.ITEMS.register(modEventBus);
@@ -36,15 +35,7 @@ public class NetMusic {
 
         modContainer.registerConfig(ModConfig.Type.COMMON, GeneralConfig.init());
 
-        registerSBackpacksCompat();
-    }
-
-    private void registerSBackpacksCompat() {
-        ModList.get().getModContainerById(CompatRegistry.SC).ifPresent(modContainer -> {
-            ArtifactVersion version = modContainer.getModInfo().getVersion();
-            if (CompatRegistry.SC_VERSION_RANGE.containsVersion(version)) {
-                SBackpackCompat.register();
-            }
-        });
+        // 尽可能早的注册精妙背包兼容
+        SBackpackCompat.register();
     }
 }

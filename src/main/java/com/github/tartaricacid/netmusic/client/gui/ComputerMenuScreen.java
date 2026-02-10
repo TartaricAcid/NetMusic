@@ -154,7 +154,7 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
                 NetworkHandler.sendToServer(new SetMusicIDMessage(song));
                 return;
             } catch (MalformedURLException e) {
-                e.fillInStackTrace();
+                NetMusic.LOGGER.error("Failed to convert file path to URL: {}", urlText, e);
             }
         }
         this.tips = Component.translatable("gui.netmusic.computer.url.error");

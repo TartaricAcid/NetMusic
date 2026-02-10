@@ -35,7 +35,7 @@ public class GeneralConfig {
         ENABLE_MAID_LYRICS = builder.define("EnableMaidLyrics", true);
 
         builder.pop();
-        builder.push("sophisticatedbackpacks");
+        builder.push("sophisticated_backpacks");
 
         builder.comment("Whether NetMusic CDs can generate inside mob backpacks");
         ENABLE_NETMUSIC_CD_GENERATION = builder.define("EnableNetMusicCDGeneration", false);

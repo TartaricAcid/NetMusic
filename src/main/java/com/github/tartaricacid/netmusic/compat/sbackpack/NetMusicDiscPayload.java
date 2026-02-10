@@ -26,8 +26,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public record NetMusicDiscPayload(boolean blockStorage, UUID storgeUuid, ItemMusicCD.SongInfo songInfo, int entityId,
-                                  BlockPos pos) implements CustomPacketPayload {
+public record NetMusicDiscPayload(
+        boolean blockStorage, UUID storgeUuid,
+        ItemMusicCD.SongInfo songInfo,
+        int entityId, BlockPos pos
+) implements CustomPacketPayload {
     public static final Type<NetMusicDiscPayload> TYPE = new Type<>(SophisticatedCore.getRL("play_netmusic_disc"));
     public static final StreamCodec<RegistryFriendlyByteBuf, NetMusicDiscPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
