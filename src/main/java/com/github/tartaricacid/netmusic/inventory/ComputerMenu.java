@@ -1,48 +1,40 @@
 package com.github.tartaricacid.netmusic.inventory;
 
-import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.slot.Slot;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
-/**
- * @author : IMG
- * @create : 2024/10/11
- */
-public class ComputerMenu extends ScreenHandler {
-    public final Slot input = new Slot(new SimpleInventory(1), 0, 147, 14) {
+public class ComputerMenu extends AbstractContainerMenu {
+    public static final MenuType<ComputerMenu> TYPE = new MenuType<>(ComputerMenu::new, FeatureFlags.VANILLA_SET);
+    private final Slot input = new Slot(new SimpleContainer(1), 0, 147, 14) {
         @Override
-        public boolean canInsert(ItemStack stack) {
+        public boolean mayPlace(ItemStack stack) {
             return stack.getItem() == InitItems.MUSIC_CD;
         }
     };
-
-    public final Slot output = new Slot(new SimpleInventory(1), 0, 147, 79) {
+    private final Slot output = new Slot(new SimpleContainer(1), 0, 147, 79) {
         @Override
-        public boolean canInsert(ItemStack stack) {
+        public boolean mayPlace(ItemStack stack) {
             return false;
         }
 
         @Override
-        public int getMaxItemCount() {
+        public int getMaxStackSize() {
             return 1;
         }
     };
 
     private ItemMusicCD.SongInfo songInfo;
 
-    public ComputerMenu(int syncId, PlayerInventory playerInventory, Inventory inventory) {
-        super(NetMusic.COMPUTER_MENU_SCREEN_HANDLER_TYPE, syncId);
-    }
-
-    public ComputerMenu(int syncId, PlayerInventory inventory) {
-        this(syncId, inventory, null);
+    public ComputerMenu(int id, Inventory inventory) {
+        this(id, inventory, null);
 
         this.addSlot(input);
         this.addSlot(output);
@@ -58,64 +50,69 @@ public class ComputerMenu extends ScreenHandler {
         }
     }
 
+    public ComputerMenu(int id, Inventory playerInventory, Inventory inventory) {
+        super(TYPE, id);
+    }
+
     @Override
-    public ItemStack quickMove(PlayerEntity player, int slot) {
+    public ItemStack quickMoveStack(Player player, int index) {
         ItemStack itemStack = ItemStack.EMPTY;
-        Slot slotByIndex = this.slots.get(slot);
-        if (slotByIndex != null && slotByIndex.hasStack()) {
-            ItemStack slotItem = slotByIndex.getStack();
+        Slot slot = this.slots.get(index);
+        if (slot != null && slot.hasItem()) {
+            ItemStack slotItem = slot.getItem();
             itemStack = slotItem.copy();
-            if (slot < 2) {
-                if (!this.insertItem(slotItem, 2, this.slots.size(), false)) {
+            if (index < 2) {
+                if (!this.moveItemStackTo(slotItem, 2, this.slots.size(), false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.insertItem(slotItem, 0, 2, true)) {
+            } else if (!this.moveItemStackTo(slotItem, 0, 2, true)) {
                 return ItemStack.EMPTY;
             }
 
             if (slotItem.isEmpty()) {
-                slotByIndex.setStack(ItemStack.EMPTY);
+                slot.setByPlayer(ItemStack.EMPTY);
             } else {
-                slotByIndex.markDirty();
+                slot.setChanged();
             }
         }
+
         return itemStack;
     }
 
     @Override
-    public void onClosed(PlayerEntity player) {
-        super.onClosed(player);
-        giveItemToPlayer(player, input.getStack(), 0);
-        giveItemToPlayer(player, output.getStack(), 1);
+    public boolean stillValid(Player player) {
+        return true;
     }
 
-    private static void giveItemToPlayer(PlayerEntity player, ItemStack stack, int preferredSlot) {
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        giveItemToPlayer(player, input.getItem(), 0);
+        giveItemToPlayer(player, output.getItem(), 1);
+    }
+
+    private static void giveItemToPlayer(Player player, ItemStack stack, int preferredSlot) {
         if (!stack.isEmpty()) {
-            if (!player.getInventory().insertStack(stack)) {
-                player.dropItem(stack, false);
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
             }
         }
     }
 
-    public void setSongInfo(ItemMusicCD.SongInfo songInfo) {
-        this.songInfo = songInfo;
-        if (!input.getStack().isEmpty() && output.getStack().isEmpty()) {
-            ItemStack itemStack = this.input.getStack().copyWithCount(1);
-            this.input.getStack().decrement(1);
+    public void setSongInfo(ItemMusicCD.SongInfo setSongInfo) {
+        this.songInfo = setSongInfo;
+        if (!this.input.getItem().isEmpty() && this.output.getItem().isEmpty()) {
+            ItemStack itemStack = this.input.getItem().copyWithCount(1);
+            this.input.getItem().shrink(1);
             ItemMusicCD.SongInfo rawSongInfo = ItemMusicCD.getSongInfo(itemStack);
             if (rawSongInfo == null || !rawSongInfo.readOnly) {
                 ItemMusicCD.setSongInfo(this.songInfo, itemStack);
             }
-            this.output.setStack(itemStack);
+            this.output.setByPlayer(itemStack);
         }
     }
 
     public Slot getInput() {
         return input;
-    }
-
-    @Override
-    public boolean canUse(PlayerEntity player) {
-        return true;
     }
 }

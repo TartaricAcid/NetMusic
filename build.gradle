@@ -1,5 +1,6 @@
 plugins {
     id 'fabric-loom' version '1.8-SNAPSHOT'
+    id 'com.gradleup.shadow' version '8.3.1'
 }
 
 version = project.mod_version
@@ -55,48 +56,123 @@ repositories {
             includeGroup "me.shedaniel.cloth"
         }
     }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+    maven {
+        name = 'Ladysnake Mods'
+        url = 'https://maven.ladysnake.org/releases'
+    }
+    maven {
+        url "https://maven.jamieswhiteshirt.com/libs-release"
+        content {
+            includeGroup "com.jamieswhiteshirt"
+        }
+    }
+    maven {
+        url = "https://mvn.devos.one/releases/"
+    }
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
 }
 
 loom {
-    splitEnvironmentSourceSets()
-
     mods {
         "netmusic" {
             sourceSet sourceSets.main
-            sourceSet sourceSets.client
         }
     }
-
+    accessWidenerPath = file("src/main/resources/netmusic.accesswidener")
+    runs {
+        client {
+            programArgs("--username", "_IMG_")
+        }
+    }
+    runConfigs.configureEach {
+        ideConfigGenerated = true
+    }
 }
 
 fabricApi {
     configureDataGeneration()
 }
 
+configurations {
+    mcLib
+    implementation.extendsFrom mcLib
+}
+
 dependencies {
+    // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${project.parchment_minecraft_version}:${project.parchment_mappings_version}@zip")
+    }
+
     // mp3 解码库
-    implementation include("com.googlecode.soundlibs:mp3spi:1.9.5.4")
-    implementation include("com.googlecode.soundlibs:jlayer:1.0.1.4")
-    implementation include("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
+    mcLib("com.googlecode.soundlibs:mp3spi:1.9.5.4")
+    mcLib("com.googlecode.soundlibs:jlayer:1.0.1.4")
+    mcLib("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
     // flac 解码库
-    implementation include("libs:jflac-codec-1.5.3:SNAPSHOT")
+    mcLib("libs:jflac-codec-1.5.3:SNAPSHOT")
+    // Fabric Loader
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    // YACL
-    modImplementation include("dev.isxander:yet-another-config-lib:${project.yacl_version}")
     // Fabric API
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     // JEI
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}-fabric:${jei_version}")
+    modRuntimeOnly("maven.modrinth:jei:${jei_version}")
     // ModMenu
     modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
     // Cloth Config API
     modImplementation("me.shedaniel.cloth:cloth-config-fabric:${project.cloth_config_version}") {
         exclude(group: "net.fabricmc.fabric-api")
     }
+    // IPN
+    runtimeOnly("maven.modrinth:fabric-language-kotlin:${project.fabric_language_kotlin_version}")
+    modImplementation("maven.modrinth:libipn:${project.libipn_version}")
+    modImplementation("maven.modrinth:inventory-profiles-next:${project.inventory_profiles_next_version}")
+    // Forge Config API Port
+    modImplementation("maven.modrinth:forge-config-api-port:${project.forge_config_api_port_version}")
+    modImplementation("com.electronwill.night-config:core:3.8.0")
+    modImplementation("com.electronwill.night-config:toml:3.8.0")
+    // 车万女仆: 织姬
+    modImplementation("maven.modrinth:touhoulittlemaid-orihime:${project.touhoulittlemaid_orihime_version}")
+    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${project.cca_version}")
+    modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${project.cca_version}")
+    modImplementation("org.openjdk.nashorn:nashorn-core:15.4")
 
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
+}
+
+shadowJar {
+    configurations = [project.configurations.mcLib]
+
+    dependencies {
+        exclude(dependency('junit:junit'))
+    }
+
+    archiveClassifier.set("")
+
+    relocationPrefix = "com.github.tartaricacid.netmusic.soundlibs"
+    enableRelocation = true
+
+    // 排除不需要的依赖项和资源
+    exclude 'META-INF/maven/**/*'
+    exclude 'META-INF/versions/**/*'
+    // 这个版权许可都已经手动添加进 licenses 里了
+    exclude 'META-INF/LICENSE'
+
+    mergeServiceFiles()
+}
+
+remapJar {
+    dependsOn(shadowJar)
+    inputFile = shadowJar.archiveFile
+    archiveClassifier.set("all")
 }
 
 processResources {

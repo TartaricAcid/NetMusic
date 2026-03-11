@@ -2,19 +2,15 @@ package com.github.tartaricacid.netmusic;
 
 import com.github.tartaricacid.netmusic.api.NetEaseMusic;
 import com.github.tartaricacid.netmusic.api.WebApi;
+import com.github.tartaricacid.netmusic.client.config.MusicListManage;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
-import com.github.tartaricacid.netmusic.config.MusicListManage;
 import com.github.tartaricacid.netmusic.init.*;
-import com.github.tartaricacid.netmusic.inventory.CDBurnerMenu;
-import com.github.tartaricacid.netmusic.inventory.ComputerMenu;
+import com.github.tartaricacid.netmusic.network.NetworkHandler;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeConfigRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.resource.featuretoggle.FeatureSet;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.util.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.neoforged.fml.config.ModConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,23 +20,23 @@ public class NetMusic implements ModInitializer {
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     public static WebApi NET_EASE_WEB_API;
 
-    public static final ScreenHandlerType<CDBurnerMenu> CD_BURNER_MENU_SCREEN_HANDLER_TYPE = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(MOD_ID, "cd_burner"), new ScreenHandlerType<>(CDBurnerMenu::new, FeatureSet.empty()));
-    public static final ScreenHandlerType<ComputerMenu> COMPUTER_MENU_SCREEN_HANDLER_TYPE = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(MOD_ID, "computer"), new ScreenHandlerType<>(ComputerMenu::new, FeatureSet.empty()));
-
     @Override
     public void onInitialize() {
         NET_EASE_WEB_API = new NetEaseMusic().getApi();
 
         // 加载 resource 中的歌曲列表
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new MusicListManage());
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new MusicListManage());
 
         InitBlocks.init();
         InitItems.init();
         InitBlockEntity.init();
         InitDataComponent.init();
         InitSounds.init();
+        InitContainer.init();
+        InitEvents.init();
         CommandRegistry.registryCommand();
-        ReceiverRegistry.register();
-        GeneralConfig.INSTANCE.load();
+        NetworkHandler.init();
+        ServerReceiverRegistry.register();
+        NeoForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.COMMON, GeneralConfig.init());
     }
 }

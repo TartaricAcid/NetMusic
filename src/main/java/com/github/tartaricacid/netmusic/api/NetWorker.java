@@ -2,8 +2,8 @@ package com.github.tartaricacid.netmusic.api;
 
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -93,8 +93,8 @@ public class NetWorker {
     }
 
     public static Proxy getProxyFromConfig() {
-        Proxy.Type proxyType = GeneralConfig.PROXY_TYPE;
-        String proxyAddress = GeneralConfig.PROXY_ADDRESS;
+        Proxy.Type proxyType = GeneralConfig.PROXY_TYPE.get();
+        String proxyAddress = GeneralConfig.PROXY_ADDRESS.get();
         if (proxyType == Proxy.Type.DIRECT || StringUtils.isBlank(proxyAddress)) {
             return Proxy.NO_PROXY;
         }
