@@ -18,6 +18,6 @@ public class MusicPlayerItemRenderer extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn, int combinedOverlayIn) {
         poseStack.scale(4 / 3.0f, 4 / 3.0f, 4 / 3.0f);
         poseStack.translate(0.5 - 0.5 / 0.75, 0, 0.5 - 0.5 / 0.75);
-        MusicPlayerRenderer.instance.renderMusicPlayer(poseStack, bufferIn, combinedLightIn, Direction.WEST);
+        MusicPlayerRenderer.INSTANCE.renderMusicPlayer(poseStack, bufferIn, combinedLightIn, Direction.WEST);
     }
 }

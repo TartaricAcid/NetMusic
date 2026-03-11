@@ -2,6 +2,7 @@ package com.github.tartaricacid.netmusic.client.renderer;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
+import com.github.tartaricacid.netmusic.client.event.ConfigEvent;
 import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
@@ -9,7 +10,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -32,18 +32,23 @@ import net.minecraft.world.phys.AABB;
 import org.apache.commons.lang3.StringUtils;
 
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
-    public static ModelMusicPlayer<?> MODEL;
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/music_player.png");
-    public static MusicPlayerRenderer instance;
+
+    public static ModelMusicPlayer<?> MODEL;
+    public static MusicPlayerRenderer INSTANCE;
 
     private final Font font;
     private final BlockEntityRenderDispatcher dispatcher;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
         MODEL = new ModelMusicPlayer<>(context.bakeLayer(ModelMusicPlayer.LAYER));
-        instance = this;
+        INSTANCE = this;
         this.font = context.getFont();
         this.dispatcher = context.getBlockEntityRenderDispatcher();
+    }
+
+    public static AABB getAABB(BlockPos pStart, BlockPos pEnd) {
+        return new AABB(pStart.getX(), pStart.getY(), pStart.getZ(), pEnd.getX(), pEnd.getY(), pEnd.getZ());
     }
 
     @Override
@@ -103,8 +108,8 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         }
 
         Camera camera = this.dispatcher.camera;
-        ChatFormatting currentLyricColor = ChatFormatting.GRAY;
-        ChatFormatting transLyricColor = ChatFormatting.WHITE;
+        int currentLyricColor = ConfigEvent.PLAYER_ORIGINAL_COLOR;
+        int transLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
         float y = 0.5f;
 
         String lyric = lyrics.get(lyrics.firstIntKey());
@@ -124,9 +129,8 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
             }
             y += 0.5f;
         } else {
-            currentLyricColor = ChatFormatting.WHITE;
+            currentLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
         }
-        currentLine = currentLine.withStyle(currentLyricColor);
 
         poseStack.pushPose();
         poseStack.translate(0.5, 1.625, 0.5);
@@ -139,15 +143,14 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
 
         if (!currentLine.getContents().equals(PlainTextContents.EMPTY)) {
             float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
-            this.font.drawInBatch(currentLine, currentLineWidth, -y, 0xffffffff, false,
+            this.font.drawInBatch(currentLine, currentLineWidth, -y, currentLyricColor, false,
                     poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
                     bgColor, combinedLightIn);
         }
 
         if (translatedLine != null) {
             float translatedLineWidth = (float) (-this.font.width(translatedLine) / 2);
-            translatedLine = translatedLine.withStyle(transLyricColor);
-            this.font.drawInBatch(translatedLine, translatedLineWidth, -y - 12, 0xffffffff, false,
+            this.font.drawInBatch(translatedLine, translatedLineWidth, -y - 12, transLyricColor, false,
                     poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
                     bgColor, combinedLightIn);
         }
@@ -164,9 +167,5 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
     public AABB getRenderBoundingBox(TileEntityMusicPlayer blockEntity) {
         BlockPos worldPosition = blockEntity.getBlockPos();
         return getAABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(1, 2, 1));
-    }
-
-    public static AABB getAABB(BlockPos pStart, BlockPos pEnd) {
-        return new AABB(pStart.getX(), pStart.getY(), pStart.getZ(), pEnd.getX(), pEnd.getY(), pEnd.getZ());
     }
 }
