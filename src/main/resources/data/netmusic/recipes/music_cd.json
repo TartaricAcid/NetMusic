@@ -5,10 +5,10 @@
   },
   "ingredients": [
     {
-      "item": "minecraft:gray_dye"
+      "tag": "c:gray_dyes"
     },
     {
-      "item": "minecraft:brown_dye"
+      "tag": "c:brown_dyes"
     },
     {
       "item": "minecraft:clay_ball"

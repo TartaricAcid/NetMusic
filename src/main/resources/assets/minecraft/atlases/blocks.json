@@ -1,0 +1,8 @@
+{
+  "sources": [
+    {
+      "type": "single",
+      "resource": "netmusic:slot/music_cd_slot"
+    }
+  ]
+}

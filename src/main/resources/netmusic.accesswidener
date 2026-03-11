@@ -1,0 +1,3 @@
+accessWidener v2 named
+accessible field net/minecraft/client/sounds/SoundManager soundEngine Lnet/minecraft/client/sounds/SoundEngine; # soundEngine
+accessible field net/minecraft/client/sounds/SoundEngine instanceToChannel Ljava/util/Map; # instanceToChannel

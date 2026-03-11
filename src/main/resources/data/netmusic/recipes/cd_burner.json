@@ -8,10 +8,10 @@
       "item": "minecraft:jukebox"
     },
     {
-      "item": "minecraft:iron_ingot"
+      "tag": "c:iron_ingots"
     },
     {
-      "item": "minecraft:redstone"
+      "tag": "c:dusts/redstone"
     }
   ]
 }

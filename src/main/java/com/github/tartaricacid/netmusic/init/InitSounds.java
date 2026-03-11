@@ -1,23 +1,18 @@
 package com.github.tartaricacid.netmusic.init;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
-/**
- * @author : IMG
- * @create : 2024/10/2
- */
 public class InitSounds {
-
-    public static final SoundEvent NET_MUSIC = SoundEvent.of(new Identifier(NetMusic.MOD_ID, "net_music"));
+    public static final SoundEvent NET_MUSIC = SoundEvent.createVariableRangeEvent(new ResourceLocation(NetMusic.MOD_ID, "net_music"));
 
     public static void init() {
         Registry.register(
-                Registries.SOUND_EVENT,
-                new Identifier(NetMusic.MOD_ID, "net_music"),
+                BuiltInRegistries.SOUND_EVENT,
+                new ResourceLocation(NetMusic.MOD_ID, "net_music"),
                 NET_MUSIC
         );
     }

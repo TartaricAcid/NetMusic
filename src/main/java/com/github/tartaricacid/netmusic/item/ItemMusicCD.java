@@ -5,39 +5,36 @@ import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicSong;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Language;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-/**
- * @author : IMG
- * @create : 2024/10/2
- */
 public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
-    public ItemMusicCD(Settings settings) {
-        super(settings);
+    public ItemMusicCD() {
+        super((new Properties()));
     }
 
     public static SongInfo getSongInfo(ItemStack stack) {
         if (stack.getItem() == InitItems.MUSIC_CD) {
-            NbtCompound tag = stack.getOrCreateNbt();
-            if (tag != null && tag.contains(SONG_INFO_TAG, NbtElement.COMPOUND_TYPE)) {
-                NbtCompound infoTag = tag.getCompound(SONG_INFO_TAG);
+            CompoundTag tag = stack.getTag();
+            if (tag != null && tag.contains(SONG_INFO_TAG, Tag.TAG_COMPOUND)) {
+                CompoundTag infoTag = tag.getCompound(SONG_INFO_TAG);
                 return SongInfo.deserializeNBT(infoTag);
             }
         }
@@ -46,17 +43,20 @@ public class ItemMusicCD extends Item {
 
     public static ItemStack setSongInfo(SongInfo info, ItemStack stack) {
         if (stack.getItem() == InitItems.MUSIC_CD) {
-            NbtCompound tag = stack.getOrCreateNbt();
-            NbtCompound songInfoTag = new NbtCompound();
+            CompoundTag tag = stack.getTag();
+            if (tag == null) {
+                tag = new CompoundTag();
+            }
+            CompoundTag songInfoTag = new CompoundTag();
             SongInfo.serializeNBT(info, songInfoTag);
             tag.put(SONG_INFO_TAG, songInfoTag);
-            stack.setNbt(tag);
+            stack.setTag(tag);
         }
         return stack;
     }
 
     @Override
-    public Text getName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         SongInfo info = getSongInfo(stack);
         if (info != null) {
             String name = info.songName;
@@ -64,10 +64,10 @@ public class ItemMusicCD extends Item {
                 name = name + " §4§l[VIP]";
             }
             if (info.readOnly) {
-                MutableText readOnlyText = Text.translatable("tooltips.netmusic.cd.read_only").formatted(Formatting.YELLOW);
-                return Text.literal(name).append(Text.literal(" ")).append(readOnlyText);
+                MutableComponent readOnlyText = Component.translatable("tooltips.netmusic.cd.read_only").withStyle(ChatFormatting.YELLOW);
+                return Component.literal(name).append(CommonComponents.SPACE).append(readOnlyText);
             }
-            return Text.literal(name);
+            return Component.literal(name);
         }
         return super.getName(stack);
     }
@@ -77,53 +77,45 @@ public class ItemMusicCD extends Item {
         int sec = songTime % 60;
         String minStr = min <= 9 ? ("0" + min) : ("" + min);
         String secStr = sec <= 9 ? ("0" + sec) : ("" + sec);
-        String format = Language.getInstance().get("tooltips.netmusic.cd.time.format");
-        return String.format(format, minStr, secStr);
+        return I18n.get("tooltips.netmusic.cd.time.format", minStr, secStr);
     }
 
+
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendHoverText(ItemStack stack, @Nullable Level worldIn, List<Component> tooltip, TooltipFlag flagIn) {
         SongInfo info = getSongInfo(stack);
         final String prefix = "§a▍ §7";
         final String delimiter = ": ";
-        Language language = Language.getInstance();
         if (info != null) {
             if (StringUtils.isNoneBlank(info.transName)) {
-                String text = prefix + language.get("tooltips.netmusic.cd.trans_name") + delimiter + "§6" + info.transName;
-                tooltip.add(Text.literal(text));
+                String text = prefix + I18n.get("tooltips.netmusic.cd.trans_name") + delimiter + "§6" + info.transName;
+                tooltip.add(Component.literal(text));
             }
             if (info.artists != null && !info.artists.isEmpty()) {
                 String artistNames = StringUtils.join(info.artists, " | ");
-                String text = prefix + language.get("tooltips.netmusic.cd.artists") + delimiter + "§3" + artistNames;
-                tooltip.add(Text.literal(text));
+                String text = prefix + I18n.get("tooltips.netmusic.cd.artists") + delimiter + "§3" + artistNames;
+                tooltip.add(Component.literal(text));
             }
-            String text = prefix + language.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
-            tooltip.add(Text.literal(text));
+            String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
+            tooltip.add(Component.literal(text));
         } else {
-            tooltip.add(Text.translatable("tooltips.netmusic.cd.empty").formatted(Formatting.RED));
+            tooltip.add(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
         }
     }
 
     public static class SongInfo {
-
         @SerializedName("url")
         public String songUrl;
-
         @SerializedName("name")
         public String songName;
-
         @SerializedName("time_second")
         public int songTime;
-
         @SerializedName("trans_name")
         public String transName = StringUtils.EMPTY;
-
         @SerializedName("vip")
         public boolean vip = false;
-
         @SerializedName("read_only")
         public boolean readOnly = false;
-
         @SerializedName("artists")
         public List<String> artists = Lists.newArrayList();
 
@@ -167,41 +159,43 @@ public class ItemMusicCD extends Item {
             this.artists = track.getArtists();
         }
 
-        public SongInfo(NbtCompound nbt) {
-            this.songUrl = nbt.getString("url");
-            this.songName = nbt.getString("name");
-            this.songTime = nbt.getInt("time");
-            if (nbt.contains("trans_name", NbtElement.STRING_TYPE)) {
-                this.transName = nbt.getString("trans_name");
+        public SongInfo(CompoundTag tag) {
+            this.songUrl = tag.getString("url");
+            this.songName = tag.getString("name");
+            this.songTime = tag.getInt("time");
+            if (tag.contains("trans_name", Tag.TAG_STRING)) {
+                this.transName = tag.getString("trans_name");
             }
-            if (nbt.contains("vip", NbtElement.BYTE_TYPE)) {
-                this.vip = nbt.getBoolean("vip");
+            if (tag.contains("vip", Tag.TAG_BYTE)) {
+                this.vip = tag.getBoolean("vip");
             }
-            if (nbt.contains("read_only", NbtElement.BYTE_TYPE)) {
-                this.readOnly = nbt.getBoolean("read_only");
+            if (tag.contains("read_only", Tag.TAG_BYTE)) {
+                this.readOnly = tag.getBoolean("read_only");
             }
-            if (nbt.contains("artists", NbtElement.LIST_TYPE)) {
-                this.artists = nbt.getList("artists", 8).stream().map(NbtElement::asString).toList();
+            if (tag.contains("artists", Tag.TAG_LIST)) {
+                ListTag tagList = tag.getList("artists", Tag.TAG_STRING);
+                this.artists = Lists.newArrayList();
+                tagList.forEach(nbt -> this.artists.add(nbt.getAsString()));
             }
         }
 
-        public static SongInfo deserializeNBT(NbtCompound nbt) {
-            return new SongInfo(nbt);
+        public static SongInfo deserializeNBT(CompoundTag tag) {
+            return new SongInfo(tag);
         }
 
-        public static void serializeNBT(SongInfo info, NbtCompound nbt) {
-            nbt.putString("url", info.songUrl);
-            nbt.putString("name", info.songName);
-            nbt.putInt("time", info.songTime);
+        public static void serializeNBT(SongInfo info, CompoundTag tag) {
+            tag.putString("url", info.songUrl);
+            tag.putString("name", info.songName);
+            tag.putInt("time", info.songTime);
             if (StringUtils.isNoneBlank(info.transName)) {
-                nbt.putString("trans_name", info.transName);
+                tag.putString("trans_name", info.transName);
             }
-            nbt.putBoolean("vip", info.vip);
-            nbt.putBoolean("read_only", info.readOnly);
+            tag.putBoolean("vip", info.vip);
+            tag.putBoolean("read_only", info.readOnly);
             if (info.artists != null && !info.artists.isEmpty()) {
-                NbtList nbtList = new NbtList();
-                info.artists.forEach(artist -> nbtList.add(NbtString.of(artist)));
-                nbt.put("artists", nbtList);
+                ListTag nbt = new ListTag();
+                info.artists.forEach(name -> nbt.add(StringTag.valueOf(name)));
+                tag.put("artists", nbt);
             }
         }
     }
