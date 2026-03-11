@@ -19,16 +19,28 @@ public class NetEaseMusic {
         requestPropertyData.put("Cookie", cookie);
     }
 
-    private void init() {
-        requestPropertyData.put("Host", "music.163.com");
-        requestPropertyData.put("Origin", "http://music.163.com");
-        requestPropertyData.put("Referer", "http://music.163.com/");
-        requestPropertyData.put("Content-Type", "application/x-www-form-urlencoded");
-        requestPropertyData.put("User-Agent", StringUtils.joinWith("\u0020",
+    public static String getOrigin() {
+        return "http://music.163.com";
+    }
+
+    public static String getReferer() {
+        return "http://music.163.com/";
+    }
+
+    public static String getUserAgent() {
+        return StringUtils.joinWith("\u0020",
                 "Mozilla/5.0 (Windows NT 6.1; Win64; x64)",
                 "AppleWebKit/537.36 (KHTML, like Gecko)",
                 "Chrome/81.0.4044.138",
-                "Safari/537.36"));
+                "Safari/537.36");
+    }
+
+    private void init() {
+        requestPropertyData.put("Host", "music.163.com");
+        requestPropertyData.put("Origin", getOrigin());
+        requestPropertyData.put("Referer", getReferer());
+        requestPropertyData.put("Content-Type", "application/x-www-form-urlencoded");
+        requestPropertyData.put("User-Agent", getUserAgent());
     }
 
     public WebApi getApi() {

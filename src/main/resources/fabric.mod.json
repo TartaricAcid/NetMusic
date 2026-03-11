@@ -24,22 +24,21 @@
       "com.github.tartaricacid.netmusic.NetMusic"
     ],
     "client": [
-      "com.github.tartaricacid.netmusic.NetMusicClient"
-    ],
-    "fabric-datagen": [
-      "com.github.tartaricacid.netmusic.NetMusicDataGenerator"
+      "com.github.tartaricacid.netmusic.client.NetMusicClient"
     ],
     "modmenu": [
       "com.github.tartaricacid.netmusic.compat.modmenu.ModMenuApiImpl"
+    ],
+    "little_maid_extension": [
+      "com.github.tartaricacid.netmusic.compat.tlm.MaidPlugin"
     ]
   },
   "depends": {
     "fabricloader": ">=0.16.5",
     "minecraft": "~1.20.1",
     "java": ">=17",
-    "fabric-api": "*"
+    "fabric-api": "*",
+    "forgeconfigapiport": "*"
   },
-  "suggests": {
-    "another-mod": "*"
-  }
+  "accessWidener" : "netmusic.accesswidener"
 }

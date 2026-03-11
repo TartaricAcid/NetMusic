@@ -1,39 +1,55 @@
 package com.github.tartaricacid.netmusic.config;
 
-import com.github.tartaricacid.netmusic.NetMusic;
-import com.google.gson.GsonBuilder;
-import dev.isxander.yacl3.config.v2.api.ConfigClassHandler;
-import dev.isxander.yacl3.config.v2.api.SerialEntry;
-import dev.isxander.yacl3.config.v2.api.serializer.GsonConfigSerializerBuilder;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.util.Identifier;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 import java.net.Proxy;
 
-/**
- * @author : IMG
- * @create : 2024/10/3
- */
 public class GeneralConfig {
-    @SerialEntry(value = "EnableStereo", comment = "Whether stereo playback is enabled")
-    public static Boolean ENABLE_STEREO = true;
+    public static ForgeConfigSpec.BooleanValue ENABLE_STEREO;
+    public static ForgeConfigSpec.EnumValue<Proxy.Type> PROXY_TYPE;
+    public static ForgeConfigSpec.ConfigValue<String> PROXY_ADDRESS;
 
-    @SerialEntry(value = "ProxyType", comment = "Proxy Type, http and socks are supported")
-    public static Proxy.Type PROXY_TYPE = Proxy.Type.DIRECT;
+    public static ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
+    public static ForgeConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
 
-    @SerialEntry(value = "ProxyAddress", comment = "Proxy Address, such as 127.0.0.1:1080, empty is no proxy")
-    public static String PROXY_ADDRESS = "";
+    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_PLAYER_LYRICS_COLOR;
+    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_PLAYER_LYRICS_COLOR;
 
-    @SerialEntry(value = "EnablePlayerLyrics", comment = "Whether to enable lyrics display in the music player")
-    public static Boolean ENABLE_PLAYER_LYRICS = true;
+    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_MAID_LYRICS_COLOR;
+    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_MAID_LYRICS_COLOR;
 
-    public static final ConfigClassHandler<GeneralConfig> INSTANCE = ConfigClassHandler
-            .createBuilder(GeneralConfig.class)
-            .id(new Identifier(NetMusic.MOD_ID, "common"))
-            .serializer(config -> GsonConfigSerializerBuilder.create(config)
-                    .setPath(FabricLoader.getInstance().getConfigDir().resolve(NetMusic.MOD_ID).resolve("common.json5"))
-                    .appendGsonBuilder(GsonBuilder::setPrettyPrinting)
-                    .setJson5(true)
-                    .build()
-            ).build();
+    public static ForgeConfigSpec init() {
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        builder.push("general");
+
+        builder.comment("Whether stereo playback is enabled");
+        ENABLE_STEREO = builder.define("EnableStereo", true);
+
+        builder.comment("Proxy Type, http and socks are supported");
+        PROXY_TYPE = builder.defineEnum("ProxyType", Proxy.Type.DIRECT);
+
+        builder.comment("Proxy Address, such as 127.0.0.1:1080, empty is no proxy");
+        PROXY_ADDRESS = builder.define("ProxyAddress", "");
+
+        builder.comment("Whether to enable lyrics display in the music player");
+        ENABLE_PLAYER_LYRICS = builder.define("EnablePlayerLyrics", true);
+
+        builder.comment("Whether to enable lyrics display for the maid");
+        ENABLE_MAID_LYRICS = builder.define("EnableMaidLyrics", true);
+
+        builder.comment("The color of the original lyrics in the music player, in #ARGB format");
+        ORIGINAL_PLAYER_LYRICS_COLOR = builder.define("OriginalPlayerLyricsColor", "#FFAAAAAA");
+
+        builder.comment("The color of the translated lyrics in the music player, in #ARGB format");
+        TRANSLATED_PLAYER_LYRICS_COLOR = builder.define("TranslatedPlayerLyricsColor", "#FFFFFFFF");
+
+        builder.comment("The color of the original lyrics for the maid, in #ARGB format");
+        ORIGINAL_MAID_LYRICS_COLOR = builder.define("OriginalMaidLyricsColor", "#FFAAAAAA");
+
+        builder.comment("The color of the translated lyrics for the maid, in #ARGB format");
+        TRANSLATED_MAID_LYRICS_COLOR = builder.define("TranslatedMaidLyricsColor", "#FF000000");
+
+        builder.pop();
+        return builder.build();
+    }
 }

@@ -16,7 +16,7 @@
       "tag": "minecraft:planks"
     },
     "D": {
-      "item": "minecraft:diamond"
+      "tag": "c:diamonds"
     }
   }
 }
