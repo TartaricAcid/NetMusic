@@ -1,8 +1,7 @@
 package com.github.tartaricacid.netmusic.client.event;
 
-
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.client.config.MusicListManage;
+import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,7 +17,7 @@ public class ClientEvent {
             try {
                 MusicListManage.loadConfigSongs();
             } catch (IOException e) {
-                e.printStackTrace();
+                NetMusic.LOGGER.error("Failed to load music list config", e);
             }
         });
     }
