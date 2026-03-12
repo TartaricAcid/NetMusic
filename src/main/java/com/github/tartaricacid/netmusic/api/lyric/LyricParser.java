@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class LyricParser {
     private static final Gson GSON = new Gson();
-    private static final Pattern LRC_PATTERN = Pattern.compile("\\[(\\d+):(\\d+)\\.(\\d+)](.*)");
+    private static final Pattern LRC_PATTERN = Pattern.compile("\\[(\\d+):(\\d+)[.:](\\d+)](.*)");
 
     @Nullable
     public static LyricRecord parseLyric(String json, String songName) {
