@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.NetWorker;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import net.minecraft.client.sounds.AudioStream;
@@ -15,14 +16,25 @@ import java.io.InputStream;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author SQwatermark
  */
 public class NetMusicAudioStream implements AudioStream {
+    private static final ExecutorService AUDIO_STREAM_EXECUTOR = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("NetMusic-AudioStream-Downloader-", 0).factory()
+    );
+
     private final AudioInputStream stream;
     private final int frameSize;
     private final byte[] frame;
+    private final int streamingBufferSize;
+    private final ConcurrentLinkedQueue<ByteBuffer> audioDataQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicBoolean loading = new AtomicBoolean(false);
 
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
         Proxy proxy = NetWorker.getProxyFromConfig();
@@ -43,6 +55,36 @@ public class NetMusicAudioStream implements AudioStream {
         this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         this.frameSize = stream.getFormat().getFrameSize();
         frame = new byte[frameSize];
+        this.streamingBufferSize = calculateBufferSize(stream.getFormat(), 1);
+        pumpBuffers(4);
+    }
+
+    private static int calculateBufferSize(AudioFormat format, int sampleAmount) {
+        return (int) ((float) (sampleAmount * format.getSampleSizeInBits()) / 8.0F * (float) format.getChannels() * format.getSampleRate());
+    }
+
+    public void pumpBuffers(int readCount) {
+        try {
+            for (int i = 0; i < readCount; i++) {
+                ByteBuffer byteBuffer = BufferUtils.createByteBuffer(streamingBufferSize);
+                int count = 0, bytesRead = 0;
+                do {
+                    count = this.stream.read(frame);
+                    if (count != -1) {
+                        byteBuffer.put(frame, 0, count);
+                    }
+                } while (count != -1 && (bytesRead += frameSize) < streamingBufferSize);
+                if (byteBuffer.position() > 0) {
+                    byteBuffer.flip();
+                    audioDataQueue.offer(byteBuffer);
+                }
+                if (count == -1) {
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            NetMusic.LOGGER.error("Error reading audio stream: " + e.getMessage());
+        }
     }
 
     private AudioFormat getTargetPCMAudioFormat(AudioFormat originalFormat) {
@@ -71,20 +113,43 @@ public class NetMusicAudioStream implements AudioStream {
      * @throws IOException 如果在读取音频数据时发生I/O错误
      */
     @Override
-    public ByteBuffer read(int size) throws IOException {
-        // 创建指定大小的ByteBuffer
+    public ByteBuffer read(int size) {
+        // 如果队列中的数据不足以满足请求的大小, 返回 null
+        if ((float) size / streamingBufferSize > audioDataQueue.size() || size <= 0) {
+            return null;
+        }
+
+        int bytesToRead = size;
         ByteBuffer byteBuffer = BufferUtils.createByteBuffer(size);
-        int bytesRead = 0, count = 0;
-        // 循环读取数据直到达到指定大小或输入流结束
         do {
-            // 读取下一部分数据
-            count = this.stream.read(frame);
-            // 将读取的数据写入ByteBuffer
-            if (count != -1) {
-                byteBuffer.put(frame);
+            ByteBuffer buffer = audioDataQueue.peek();
+            if (buffer == null) {
+                break;
             }
-        } while (count != -1 && (bytesRead += frameSize) < size);
-        // 翻转ByteBuffer，准备进行读取操作
+            if (buffer.remaining() <= bytesToRead) {
+                bytesToRead -= buffer.remaining();
+                byteBuffer.put(buffer);
+                audioDataQueue.poll();
+            } else {
+                int oldLimit = buffer.limit();
+                buffer.limit(buffer.position() + bytesToRead);
+                byteBuffer.put(buffer);
+                buffer.limit(oldLimit);
+                bytesToRead = 0;
+            }
+        } while (bytesToRead > 0);
+
+        // 预载音频数据
+        if (audioDataQueue.size() < 4 && loading.compareAndSet(false, true)) {
+            AUDIO_STREAM_EXECUTOR.submit(() -> {
+                try {
+                    pumpBuffers(2);
+                } finally {
+                    loading.set(false);
+                }
+            });
+        }
+
         byteBuffer.flip();
         // 返回包含读取数据的ByteBuffer
         return byteBuffer;
@@ -97,6 +162,7 @@ public class NetMusicAudioStream implements AudioStream {
 
     /**
      * 跳过 ID3 标签
+     *
      * @param inputStream 输入的音频流
      * @throws IOException IO 异常
      */
