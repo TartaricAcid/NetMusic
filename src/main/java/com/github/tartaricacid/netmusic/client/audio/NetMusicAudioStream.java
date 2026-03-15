@@ -167,6 +167,7 @@ public class NetMusicAudioStream implements AudioStream {
 
     /**
      * 跳过 ID3 标签
+     *
      * @param inputStream 输入的音频流
      * @throws IOException IO 异常
      */
