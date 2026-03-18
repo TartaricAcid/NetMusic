@@ -192,7 +192,7 @@ shadowJar {
         include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
         include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
         include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
-        include(dependency("libs:jflac-codec-1.5.3:SNAPSHOT"))
+        include(dependency("libs:jflac-codec:1.5.3-SNAPSHOT"))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
