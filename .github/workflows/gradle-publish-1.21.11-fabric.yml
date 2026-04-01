@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "1.21-fabric"
+      - "1.21.11-fabric"
     paths:
       - 'src/main/**'
 
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "1.21-fabric"
+          ref: "1.21.11-fabric"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
