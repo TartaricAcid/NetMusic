@@ -13,7 +13,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.commons.io.FileUtils;
@@ -46,7 +46,7 @@ public class MusicListManage implements SimpleSynchronousResourceReloadListener 
         if (Files.exists(CONFIG_FILE)) {
             stream = Files.newInputStream(file.toPath());
         } else {
-            ResourceLocation res = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music.json");
+            Identifier res = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music.json");
             Optional<Resource> optional = Minecraft.getInstance().getResourceManager().getResource(res);
             if (optional.isPresent()) {
                 stream = optional.get().open();
@@ -111,8 +111,8 @@ public class MusicListManage implements SimpleSynchronousResourceReloadListener 
     }
 
     @Override
-    public ResourceLocation getFabricId() {
-        return ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_list");
+    public Identifier getFabricId() {
+        return Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_list");
     }
 
     @Override

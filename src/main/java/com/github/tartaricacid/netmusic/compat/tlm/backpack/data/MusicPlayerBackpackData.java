@@ -8,7 +8,6 @@ import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.api.backpack.IBackpackData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 
@@ -51,8 +50,8 @@ public class MusicPlayerBackpackData implements IBackpackData {
 
     @Override
     public void load(CompoundTag compoundTag, EntityMaid entityMaid) {
-        if (compoundTag.contains("MusicPlayerSelectSlotId", Tag.TAG_INT)) {
-            this.selectSlotId = compoundTag.getInt("MusicPlayerSelectSlotId");
+        if (compoundTag.contains("MusicPlayerSelectSlotId")) {
+            this.selectSlotId = compoundTag.getInt("MusicPlayerSelectSlotId").orElse(0);
         }
     }
 

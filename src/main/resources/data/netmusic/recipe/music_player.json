@@ -9,14 +9,8 @@
     "OOO"
   ],
   "key": {
-    "B": {
-      "item": "minecraft:book"
-    },
-    "O": {
-      "tag": "minecraft:planks"
-    },
-    "D": {
-      "item": "minecraft:diamond"
-    }
+    "B": "minecraft:book",
+    "O": "#minecraft:planks",
+    "D": "minecraft:diamond"
   }
 }

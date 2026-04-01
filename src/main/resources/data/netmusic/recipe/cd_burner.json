@@ -4,14 +4,8 @@
     "id": "netmusic:cd_burner"
   },
   "ingredients": [
-    {
-      "item": "minecraft:jukebox"
-    },
-    {
-      "item": "minecraft:iron_ingot"
-    },
-    {
-      "item": "minecraft:redstone"
-    }
+    "minecraft:jukebox",
+    "minecraft:iron_ingot",
+    "minecraft:redstone"
   ]
 }

@@ -5,10 +5,10 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class GetMusicListMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<GetMusicListMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "get_music_list"));
+    public static final CustomPacketPayload.Type<GetMusicListMessage> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "get_music_list"));
     public static final StreamCodec<ByteBuf, GetMusicListMessage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_LONG, GetMusicListMessage::getMusicListId,
             GetMusicListMessage::new);

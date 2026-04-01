@@ -13,25 +13,23 @@ import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
-import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class MusicPlayerBackpackContainer extends MaidMainContainer {
     public static final MenuType<MusicPlayerBackpackContainer> TYPE = new ExtendedScreenHandlerType<>(MusicPlayerBackpackContainer::new, ByteBufCodecs.INT);
-    private static final ResourceLocation EMPTY_CD_SLOT = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "slot/music_cd_slot");
+    private static final Identifier EMPTY_CD_SLOT = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "slot/music_cd_slot");
     private final ContainerData data;
 
     public MusicPlayerBackpackContainer(int id, Inventory inventory, int entityId) {
@@ -59,8 +57,8 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
 
                     @Override
                     @Environment(EnvType.CLIENT)
-                    public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                        return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_CD_SLOT);
+                    public Identifier getNoItemIcon() {
+                        return EMPTY_CD_SLOT;
                     }
                 });
             }
@@ -79,7 +77,7 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
             return stopMusic();
         }
         if (id == 3) {
-            // 先停止播放
+            // 鍏堝仠姝㈡挱鏀?
             this.stopMusic();
             return playMusic();
         }
@@ -139,10 +137,10 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
         MaidStopMusicMessage stopMsg = new MaidStopMusicMessage(this.maid.getId());
         NetworkHandler.sendToNearBy(this.maid.level(), this.maid.blockPosition(), stopMsg);
 
-        // 移除歌词气泡
+        // 绉婚櫎姝岃瘝姘旀场
         LongSet removeIds = new LongOpenHashSet();
         ChatBubbleDataCollection collection = maid.getChatBubbleManager().getChatBubbleDataCollection();
-        // 先记录，再移除，避免并发修改异常
+        // 鍏堣褰曪紝鍐嶇Щ闄わ紝閬垮厤骞跺彂淇敼寮傚父
         for (long id : collection.keySet()) {
             IChatBubbleData data = collection.get(id);
             if (data.id().equals(LyricChatBubbleData.ID)) {
@@ -165,3 +163,4 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
         this.data.set(1, ticks);
     }
 }
+

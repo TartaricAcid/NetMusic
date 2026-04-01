@@ -8,7 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -32,8 +33,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 6, 14);
     public static final BooleanProperty CYCLE_DISABLE = BooleanProperty.create("cycle_disable");
 
-    public BlockMusicPlayer() {
-        super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
+    public BlockMusicPlayer(BlockBehaviour.Properties properties) {
+        super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH));
     }
 
@@ -60,7 +61,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         return true;
     }
 
-    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos blockPos) {
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos blockPos, Direction direction) {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         if (blockEntity instanceof TileEntityMusicPlayer te) {
             ItemStack stackInSlot = te.getItems().get(0);
@@ -75,7 +77,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     }
 
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos blockPos, Block block, BlockPos fromPos, boolean isMoving) {
+    public void neighborChanged(BlockState state, Level level, BlockPos blockPos, Block block, Orientation orientation, boolean isMoving) {
         playerMusic(level, blockPos, level.hasNeighborSignal(blockPos));
     }
 
@@ -108,14 +110,14 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     }
 
     @Override
-    public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult useItemOn(ItemStack stack, BlockState state, Level worldIn, BlockPos pos, Player playerIn, InteractionHand hand, BlockHitResult hit) {
         if (hand == InteractionHand.OFF_HAND) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
         BlockEntity te = worldIn.getBlockEntity(pos);
         if (!(te instanceof TileEntityMusicPlayer musicPlayer)) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
 
         ItemStack musicPlayerItem = musicPlayer.getItem(0);
@@ -126,19 +128,19 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             }
             ItemStack itemStack = musicPlayer.removeItem(0, 1);
             popResource(worldIn, pos, itemStack);
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
         ItemStack heldStack = playerIn.getMainHandItem();
         ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(heldStack);
         if (info == null) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.TRY_WITH_EMPTY_HAND;
         }
         if (info.vip) {
-            if (worldIn.isClientSide) {
-                playerIn.sendSystemMessage(Component.translatable("message.netmusic.music_player.need_vip").withStyle(ChatFormatting.RED));
+            if (worldIn.isClientSide()) {
+                playerIn.displayClientMessage(Component.translatable("message.netmusic.music_player.need_vip").withStyle(ChatFormatting.RED), false);
             }
-            return ItemInteractionResult.FAIL;
+            return InteractionResult.FAIL;
         }
 
         musicPlayer.setItem(0, heldStack.copyWithCount(1));
@@ -147,26 +149,13 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         }
         musicPlayer.setPlayToClient(info);
         musicPlayer.setChanged();
-        return ItemInteractionResult.SUCCESS;
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        BlockEntity te = worldIn.getBlockEntity(pos);
-        if (te instanceof TileEntityMusicPlayer) {
-            TileEntityMusicPlayer musicPlayer = (TileEntityMusicPlayer) te;
-            ItemStack stack = musicPlayer.getItem(0);
-            if (!stack.isEmpty()) {
-                Block.popResource(worldIn, pos, stack);
-            }
-        }
-        super.onRemove(state, worldIn, pos, newState, isMoving);
+        return InteractionResult.SUCCESS;
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> entityType) {
-        return !level.isClientSide ? createTickerHelper(entityType, TileEntityMusicPlayer.TYPE, TileEntityMusicPlayer::tick) : null;
+        return !level.isClientSide() ? createTickerHelper(entityType, TileEntityMusicPlayer.TYPE, TileEntityMusicPlayer::tick) : null;
     }
 
     @Nullable
@@ -181,11 +170,11 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return RenderShape.INVISIBLE;
     }
 
     @Override
     protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return simpleCodec((properties -> new BlockMusicPlayer()));
+        return simpleCodec(BlockMusicPlayer::new);
     }
 }

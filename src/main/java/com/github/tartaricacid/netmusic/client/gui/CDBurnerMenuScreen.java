@@ -8,14 +8,16 @@ import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.anti_ad.mc.ipn.api.IPNIgnore;
@@ -26,7 +28,10 @@ import java.util.regex.Pattern;
 
 @IPNIgnore
 public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
-    private static final ResourceLocation BG = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/cd_burner.png");
+    private static final Identifier BG = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/cd_burner.png");
+    private static final int INPUT_TEXT_COLOR = 0xFFF3EFE0;
+    private static final int HINT_TEXT_COLOR = 0xFF808080;
+    private static final int ERROR_TEXT_COLOR = 0xFFCF0000;
     private static final Pattern ID_REG = Pattern.compile("^\\d{4,}$");
     private static final Pattern DJ_ID_REG = Pattern.compile("^dj/(\\d+)$");
     private static final Pattern URL_1_REG = Pattern.compile("^https://music\\.163\\.com/song\\?id=(\\d+).*$");
@@ -89,7 +94,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         textField.setValue(perText);
         textField.setBordered(false);
         textField.setMaxLength(19);
-        textField.setTextColor(0xF3EFE0);
+        textField.setTextColor(INPUT_TEXT_COLOR);
         textField.setFocused(focus);
         textField.moveCursorToEnd(false);
         this.addWidget(this.textField);
@@ -160,7 +165,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         int posX = this.leftPos;
         int posY = (this.height - this.imageHeight) / 2;
-        graphics.blit(BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, posX, posY, 0.0f, 0.0f, this.imageWidth, this.imageHeight, 256, 256);
     }
 
     @Override
@@ -168,38 +173,38 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         super.render(graphics, x, y, partialTicks);
         textField.render(graphics, x, y, partialTicks);
         if (StringUtils.isBlank(textField.getValue()) && !textField.isFocused()) {
-            graphics.drawString(font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, ChatFormatting.GRAY.getColor(), false);
+            graphics.drawString(font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, HINT_TEXT_COLOR, false);
         }
-        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 57, 135, 0xCF0000);
+        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 57, 135, ERROR_TEXT_COLOR);
         renderTooltip(graphics, x, y);
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+    public void resize(int width, int height) {
         String value = this.textField.getValue();
-        super.resize(minecraft, width, height);
+        super.resize(width, height);
         this.textField.setValue(value);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.textField.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.textField.mouseClicked(event, doubleClick)) {
             this.setFocused(this.textField);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // 防止 E 键关闭界面
-        if (keyCode == InputConstants.KEY_ESCAPE) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == InputConstants.KEY_ESCAPE && this.minecraft != null && this.minecraft.player != null) {
             this.minecraft.player.closeContainer();
-        }
-        if (minecraft.options.keyInventory.matches(keyCode, scanCode) && textField.isFocused()) {
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(event) && textField.isFocused()) {
+            return true;
+        }
+        return super.keyPressed(event);
     }
 
     @Override
@@ -211,3 +216,4 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         }
     }
 }
+

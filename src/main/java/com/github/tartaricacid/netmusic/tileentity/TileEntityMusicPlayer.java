@@ -6,11 +6,11 @@ import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -21,24 +21,28 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
 import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISABLE;
 
 public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv {
-    public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder.of(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER).build(null);
+    public static final BlockEntityType<TileEntityMusicPlayer> TYPE = FabricBlockEntityTypeBuilder
+            .create(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER)
+            .build();
+
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
+
     private final NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
 
-    /**
-     * 仅客户端使用，记录当前音乐的歌词信息，用于渲染歌词
-     */
+    // Client-only lyric data used by the renderer.
     public @Nullable LyricRecord lyricRecord = null;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
@@ -46,27 +50,22 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {
-        ContainerHelper.saveAllItems(compound, items, provider);
-        compound.putBoolean(IS_PLAY_TAG, isPlay);
-        compound.putInt(CURRENT_TIME_TAG, currentTime);
-        compound.putBoolean(SIGNAL_TAG, hasSignal);
-        super.saveAdditional(compound, provider);
+    protected void saveAdditional(ValueOutput output) {
+        ContainerHelper.saveAllItems(output, items);
+        output.putBoolean(IS_PLAY_TAG, isPlay);
+        output.putInt(CURRENT_TIME_TAG, currentTime);
+        output.putBoolean(SIGNAL_TAG, hasSignal);
+        super.saveAdditional(output);
     }
 
     @Override
-    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.loadAdditional(nbt, provider);
-        // Items 为空时 ContainerHelper.loadAllItems() 不会清空 items, 需要手动处理
-        ListTag listTag = nbt.getList("Items", CompoundTag.TAG_COMPOUND);
-        if (listTag.isEmpty()) {
-            items.clear();
-        } else {
-            ContainerHelper.loadAllItems(nbt, items, provider);
-        }
-        isPlay = nbt.getBoolean(IS_PLAY_TAG);
-        currentTime = nbt.getInt(CURRENT_TIME_TAG);
-        hasSignal = nbt.getBoolean(SIGNAL_TAG);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        items.clear();
+        ContainerHelper.loadAllItems(input, items);
+        isPlay = input.getBooleanOr(IS_PLAY_TAG, false);
+        currentTime = input.getIntOr(CURRENT_TIME_TAG, 0);
+        hasSignal = input.getBooleanOr(SIGNAL_TAG, false);
     }
 
     @Override
@@ -101,7 +100,7 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
         this.setCurrentTime(info.songTime * 20 + 64);
         this.isPlay = true;
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName);
             NetworkHandler.sendToNearBy(level, worldPosition, msg);
         }

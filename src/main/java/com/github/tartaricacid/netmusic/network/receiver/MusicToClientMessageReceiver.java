@@ -8,7 +8,7 @@ import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -25,10 +25,10 @@ public class MusicToClientMessageReceiver {
     }
 
     private static void onHandle(MusicToClientMessage message) {
-        // 使用数组方便在 lambda 表达式中修改
+        // Use an array so the async lyric result can be captured in the sound factory.
         LyricRecord[] record = new LyricRecord[1];
 
-        // 如果是网易云的音乐，那么尝试添加歌词
+        // For NetEase URLs, try to fetch lyrics first.
         if (GeneralConfig.ENABLE_PLAYER_LYRICS.get() && message.getUrl().startsWith(MUSIC_163_URL)) {
             Matcher matcher = PATTERN.matcher(message.getUrl());
             if (matcher.find()) {
@@ -49,3 +49,4 @@ public class MusicToClientMessageReceiver {
         );
     }
 }
+

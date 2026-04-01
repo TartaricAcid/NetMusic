@@ -17,7 +17,7 @@ import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -27,12 +27,12 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 public class MusicPlayerBackpack extends IMaidBackpack {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_player_backpack");
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/entity/music_player_backpack.png");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_player_backpack");
+    public static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/entity/music_player_backpack.png");
     private static final int MAX_AVAILABLE = 30;
 
     @Override
-    public ResourceLocation getId() {
+    public Identifier getId() {
         return ID;
     }
 
@@ -104,14 +104,15 @@ public class MusicPlayerBackpack extends IMaidBackpack {
     @Nullable
     @Override
     @Environment(EnvType.CLIENT)
-    public EntityModel<EntityMaid> getBackpackModel(EntityModelSet entityModelSet) {
-        return new MusicPlayerBackpackModel<>(entityModelSet.bakeLayer(MusicPlayerBackpackModel.LAYER));
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public EntityModel getBackpackModel(EntityModelSet entityModelSet) {
+        return new MusicPlayerBackpackModel(entityModelSet.bakeLayer(MusicPlayerBackpackModel.LAYER));
     }
 
     @Nullable
     @Override
     @Environment(EnvType.CLIENT)
-    public ResourceLocation getBackpackTexture() {
+    public Identifier getBackpackTexture() {
         return TEXTURE;
     }
 }

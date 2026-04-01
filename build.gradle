@@ -1,6 +1,6 @@
 plugins {
-    id 'fabric-loom' version '1.8-SNAPSHOT'
-    id 'com.gradleup.shadow' version '8.3.1'
+    id 'fabric-loom' version "${loom_version}"
+    id 'com.gradleup.shadow' version '8.3.10'
 }
 
 version = project.mod_version
@@ -8,6 +8,13 @@ group = project.maven_group
 
 base {
     archivesName = project.archives_base_name
+}
+
+sourceSets {
+    main {
+        java {
+        }
+    }
 }
 
 allprojects {
@@ -73,10 +80,6 @@ repositories {
     maven {
         url = "https://mvn.devos.one/releases/"
     }
-    maven {
-        name = 'ParchmentMC'
-        url = 'https://maven.parchmentmc.org'
-    }
 }
 
 loom {
@@ -108,10 +111,8 @@ configurations {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${project.parchment_minecraft_version}:${project.parchment_mappings_version}@zip")
-    }
+    // The current source set is Mojang-named; switching to Yarn requires a full source remap.
+    mappings loom.officialMojangMappings()
 
     // mp3 解码库
     mcLib("com.googlecode.soundlibs:mp3spi:1.9.5.4")
@@ -122,7 +123,7 @@ dependencies {
     // Fabric Loader
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     // Fabric API
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
     // JEI
     modRuntimeOnly("maven.modrinth:jei:${jei_version}")
     // ModMenu
@@ -140,7 +141,7 @@ dependencies {
     modImplementation("com.electronwill.night-config:core:3.8.0")
     modImplementation("com.electronwill.night-config:toml:3.8.0")
     // 车万女仆: 织姬
-    modImplementation("maven.modrinth:touhoulittlemaid-orihime:${project.touhoulittlemaid_orihime_version}")
+    modCompileOnly("maven.modrinth:touhoulittlemaid-orihime:${project.touhoulittlemaid_orihime_version}")
     modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:${project.cca_version}")
     modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:${project.cca_version}")
     modImplementation("org.openjdk.nashorn:nashorn-core:15.4")

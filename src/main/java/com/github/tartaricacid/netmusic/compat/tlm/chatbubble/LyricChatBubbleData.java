@@ -7,10 +7,10 @@ import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleDat
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class LyricChatBubbleData implements IChatBubbleData {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "lyric");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "lyric");
     private static final int PRIORITY = 10;
 
     private final long songId;
@@ -34,7 +34,7 @@ public class LyricChatBubbleData implements IChatBubbleData {
     }
 
     @Override
-    public ResourceLocation id() {
+    public Identifier id() {
         return ID;
     }
 

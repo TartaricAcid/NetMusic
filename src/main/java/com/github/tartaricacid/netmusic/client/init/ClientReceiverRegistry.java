@@ -1,6 +1,5 @@
 package com.github.tartaricacid.netmusic.client.init;
 
-import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.network.receiver.GetMusicListMessageReceiver;
@@ -12,7 +11,6 @@ public class ClientReceiverRegistry {
     public static void register() {
         registerReceiver(MusicToClientMessage.TYPE, MusicToClientMessageReceiver::handle);
         registerReceiver(GetMusicListMessage.TYPE, GetMusicListMessageReceiver::handle);
-        CompatRegistry.registerClientReceiver();
     }
 
     public static <T extends CustomPacketPayload> void registerReceiver(CustomPacketPayload.Type<T> type, ClientPlayNetworking.PlayPayloadHandler<T> handler) {

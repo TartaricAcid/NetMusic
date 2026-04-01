@@ -1,21 +1,20 @@
 package com.github.tartaricacid.netmusic.compat.tlm.client.model;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.resources.Identifier;
 
-public class MusicPlayerBackpackModel<T extends Entity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "music_player_backpack");
+public class MusicPlayerBackpackModel extends EntityModel<EntityRenderState> {
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "music_player_backpack");
     private final ModelPart main;
 
     public MusicPlayerBackpackModel(ModelPart root) {
+        super(root);
         this.main = root.getChild("main");
     }
 
@@ -71,11 +70,6 @@ public class MusicPlayerBackpackModel<T extends Entity> extends EntityModel<T> {
     }
 
     @Override
-    public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
-        main.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
+    public void setupAnim(EntityRenderState entityRenderState) {
     }
 }

@@ -6,7 +6,7 @@ import com.github.tartaricacid.netmusic.client.config.MusicListManage;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.init.*;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.packs.PackType;
@@ -37,6 +37,6 @@ public class NetMusic implements ModInitializer {
         CommandRegistry.registryCommand();
         NetworkHandler.init();
         ServerReceiverRegistry.register();
-        NeoForgeConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.COMMON, GeneralConfig.init());
+        ConfigRegistry.INSTANCE.register(MOD_ID, ModConfig.Type.COMMON, GeneralConfig.init());
     }
 }

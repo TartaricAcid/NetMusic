@@ -1,6 +1,5 @@
 package com.github.tartaricacid.netmusic.network;
 
-import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
@@ -18,7 +17,6 @@ public class NetworkHandler {
         PayloadTypeRegistry.playS2C().register(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(MusicToClientMessage.TYPE, MusicToClientMessage.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC);
-        CompatRegistry.initNetwork();
     }
 
     public static void sendToNearBy(Level world, BlockPos pos, CustomPacketPayload message) {

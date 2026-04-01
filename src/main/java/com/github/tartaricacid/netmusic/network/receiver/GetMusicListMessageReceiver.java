@@ -20,17 +20,17 @@ public class GetMusicListMessageReceiver {
                     if (message.getMusicListId() == GetMusicListMessage.RELOAD_MESSAGE) {
                         MusicListManage.loadConfigSongs();
                         if (player != null) {
-                            player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success"));
+                            player.displayClientMessage(Component.translatable("command.netmusic.music_cd.reload.success"), false);
                         }
                     } else {
                         MusicListManage.add163List(message.getMusicListId());
                         if (player != null) {
-                            player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.success"));
+                            player.displayClientMessage(Component.translatable("command.netmusic.music_cd.add163.success"), false);
                         }
                     }
                 } catch (Exception e) {
                     if (player != null) {
-                        player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.fail").withStyle(ChatFormatting.RED));
+                        player.displayClientMessage(Component.translatable("command.netmusic.music_cd.add163.fail").withStyle(ChatFormatting.RED), false);
                     }
                     NetMusic.LOGGER.error("Failed to get music list from NetEase Cloud Music", e);
                 }

@@ -19,6 +19,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -26,12 +27,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class ItemMusicCD extends Item {
     public static final String SONG_INFO_TAG = "NetMusicSongInfo";
 
-    public ItemMusicCD() {
-        super((new Properties()));
+    public ItemMusicCD(Properties properties) {
+        super(properties);
     }
 
     @Nullable
@@ -53,15 +55,16 @@ public class ItemMusicCD extends Item {
     public Component getName(ItemStack stack) {
         SongInfo info = getSongInfo(stack);
         if (info != null) {
-            String name = info.songName;
+            MutableComponent name = Component.literal(info.songName);
             if (info.vip) {
-                name = name + " §4§l[VIP]";
+                MutableComponent vipText = Component.literal("[VIP]").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD);
+                name.append(CommonComponents.SPACE).append(vipText);
             }
             if (info.readOnly) {
                 MutableComponent readOnlyText = Component.translatable("tooltips.netmusic.cd.read_only").withStyle(ChatFormatting.YELLOW);
-                return Component.literal(name).append(CommonComponents.SPACE).append(readOnlyText);
+                name.append(CommonComponents.SPACE).append(readOnlyText);
             }
-            return Component.literal(name);
+            return name;
         }
         return super.getName(stack);
     }
@@ -75,25 +78,28 @@ public class ItemMusicCD extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flagIn) {
         SongInfo info = getSongInfo(stack);
-        final String prefix = "§a▍ §7";
-        final String delimiter = ": ";
         if (info != null) {
             if (StringUtils.isNoneBlank(info.transName)) {
-                String text = prefix + I18n.get("tooltips.netmusic.cd.trans_name") + delimiter + "§6" + info.transName;
-                tooltip.add(Component.literal(text));
+                tooltip.accept(createTooltipLine("tooltips.netmusic.cd.trans_name", info.transName, ChatFormatting.GOLD));
             }
             if (info.artists != null && !info.artists.isEmpty()) {
                 String artistNames = StringUtils.join(info.artists, " | ");
-                String text = prefix + I18n.get("tooltips.netmusic.cd.artists") + delimiter + "§3" + artistNames;
-                tooltip.add(Component.literal(text));
+                tooltip.accept(createTooltipLine("tooltips.netmusic.cd.artists", artistNames, ChatFormatting.DARK_AQUA));
             }
-            String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
-            tooltip.add(Component.literal(text));
+            tooltip.accept(createTooltipLine("tooltips.netmusic.cd.time", getSongTime(info.songTime), ChatFormatting.DARK_PURPLE));
         } else {
-            tooltip.add(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
+            tooltip.accept(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
         }
+    }
+
+    private static Component createTooltipLine(String labelKey, String value, ChatFormatting valueColor) {
+        MutableComponent line = Component.literal("▍ ").withStyle(ChatFormatting.GREEN);
+        line.append(Component.translatable(labelKey).withStyle(ChatFormatting.GRAY));
+        line.append(Component.literal(": ").withStyle(ChatFormatting.GRAY));
+        line.append(Component.literal(value).withStyle(valueColor));
+        return line;
     }
 
     public static class SongInfo {
@@ -129,7 +135,6 @@ public class ItemMusicCD extends Item {
                         ARTISTS_CODEC.decode(buffer)
                 )
         );
-
 
         @SerializedName("url")
         public String songUrl;

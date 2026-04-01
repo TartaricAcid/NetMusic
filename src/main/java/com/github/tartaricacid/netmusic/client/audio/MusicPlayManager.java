@@ -33,11 +33,12 @@ public final class MusicPlayManager {
                 return;
             }
         }
+
         if (url != null) {
             if (url.equals(ERROR_404)) {
                 LocalPlayer player = Minecraft.getInstance().player;
                 if (player != null) {
-                    player.sendSystemMessage(Component.translatable("message.netmusic.music_player.404", rawUrl).withStyle(ChatFormatting.RED));
+                    player.displayClientMessage(Component.translatable("message.netmusic.music_player.404", rawUrl).withStyle(ChatFormatting.RED), false);
                 }
                 NetMusic.LOGGER.info("Music not found: {}", rawUrl);
                 return;
@@ -50,7 +51,7 @@ public final class MusicPlayManager {
         final URL urlFinal;
         try {
             urlFinal = new URL(url);
-            // 如果是本地文件
+            // Validate local file URLs before playback.
             if (urlFinal.getProtocol().equals(LOCAL_FILE_PROTOCOL)) {
                 File file = new File(urlFinal.toURI());
                 if (!file.exists()) {

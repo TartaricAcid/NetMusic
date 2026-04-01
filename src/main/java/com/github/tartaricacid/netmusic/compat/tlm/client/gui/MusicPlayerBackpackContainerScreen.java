@@ -7,13 +7,12 @@ import com.github.tartaricacid.touhoulittlemaid.client.gui.entity.maid.backpack.
 import com.github.tartaricacid.touhoulittlemaid.client.gui.widget.button.BaubleButton;
 import com.github.tartaricacid.touhoulittlemaid.compat.trinkets.TrinketsCompat;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import org.anti_ad.mc.ipn.api.IPNButton;
 import org.anti_ad.mc.ipn.api.IPNGuiHint;
@@ -26,7 +25,7 @@ import org.anti_ad.mc.ipn.api.IPNPlayerSideOnly;
 @IPNGuiHint(button = IPNButton.SHOW_EDITOR, horizontalOffset = -5)
 @IPNGuiHint(button = IPNButton.SETTINGS, horizontalOffset = -5)
 public class MusicPlayerBackpackContainerScreen extends AbstractMaidContainerGui<MusicPlayerBackpackContainer> implements IBackpackContainerScreen {
-    private static final ResourceLocation BACKPACK = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/maid_music_player.png");
+    private static final Identifier BACKPACK = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/maid_music_player.png");
     private final EntityMaid maid;
 
     public MusicPlayerBackpackContainerScreen(MusicPlayerBackpackContainer container, Inventory inv, Component titleIn) {
@@ -72,12 +71,10 @@ public class MusicPlayerBackpackContainerScreen extends AbstractMaidContainerGui
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
         super.renderBg(graphics, partialTicks, x, y);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, BACKPACK);
-        graphics.blit(BACKPACK, leftPos + 85, topPos + 36, 0, 0, 165, 128);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKPACK, leftPos + 85, topPos + 36, 0.0f, 0.0f, 165, 128, 256, 256);
         int selectSlotId = this.menu.getSelectSlotId();
         int xIndex = selectSlotId % 6;
         int yIndex = selectSlotId / 6;
-        graphics.blit(BACKPACK, leftPos + 142 + 18 * xIndex, topPos + 56 + 18 * yIndex, 165, 0, 18, 18);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BACKPACK, leftPos + 142 + 18 * xIndex, topPos + 56 + 18 * yIndex, 165.0f, 0.0f, 18, 18, 256, 256);
     }
 }

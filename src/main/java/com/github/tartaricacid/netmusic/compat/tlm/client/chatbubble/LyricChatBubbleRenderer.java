@@ -14,7 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -25,19 +25,19 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
     private static final MutableComponent NO_LYRIC_TEXT = Component.translatable("gui.netmusic.lyric.no_lyric");
 
     private final Font font;
-    private final ResourceLocation bg;
+    private final Identifier bg;
     private final long recordStartTick;
 
     @Nullable
     private volatile LyricRecord lyric;
     private volatile boolean isLoading = true;
 
-    public LyricChatBubbleRenderer(LyricChatBubbleData data, ResourceLocation bg) {
+    public LyricChatBubbleRenderer(LyricChatBubbleData data, Identifier bg) {
         this.bg = bg;
         this.font = Minecraft.getInstance().font;
         this.recordStartTick = data.getStartTick();
 
-        // 异步获取歌词渲染数据
+        // 寮傛鑾峰彇姝岃瘝娓叉煋鏁版嵁
         if (data.getSongId() > 0) {
             CompletableFuture.supplyAsync(() -> {
                 try {
@@ -57,7 +57,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
 
     @Override
     public int getHeight() {
-        // 因为异步问题，这里需要做个本地缓存
+        // 鍥犱负寮傛闂锛岃繖閲岄渶瑕佸仛涓湰鍦扮紦瀛?
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
             return 12;
@@ -76,7 +76,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
 
     @Override
     public int getWidth() {
-        // 因为异步问题，这里需要做个本地缓存
+        // 鍥犱负寮傛闂锛岃繖閲岄渶瑕佸仛涓湰鍦扮紦瀛?
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
             if (isLoading) {
@@ -98,7 +98,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
 
     @Override
     public void render(EntityMaidRenderer renderer, EntityGraphics graphics) {
-        // 因为异步问题，这里需要做个本地缓存
+        // 鍥犱负寮傛闂锛岃繖閲岄渶瑕佸仛涓湰鍦扮紦瀛?
         final var tmpLyric = lyric;
         if (tmpLyric == null) {
             this.renderDefault(graphics);
@@ -114,7 +114,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
             return;
         }
 
-        // 计算当前播放时间
+        // 璁＄畻褰撳墠鎾斁鏃堕棿
         int currentTick = (int) (graphics.getMaid().level().getGameTime() - recordStartTick);
         tmpLyric.updateCurrentLine(currentTick);
 
@@ -143,7 +143,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
     }
 
     @Override
-    public ResourceLocation getBackgroundTexture() {
+    public Identifier getBackgroundTexture() {
         return bg;
     }
 
@@ -155,3 +155,4 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
         }
     }
 }
+

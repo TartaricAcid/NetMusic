@@ -1,19 +1,17 @@
 package com.github.tartaricacid.netmusic.client.model;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 
 
-public class ModelMusicPlayer<T extends Entity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "musicplayer");
+public class ModelMusicPlayer extends Model<Void> {
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "musicplayer");
     private final ModelPart laba;
     private final ModelPart tube;
     private final ModelPart wheel;
@@ -23,6 +21,7 @@ public class ModelMusicPlayer<T extends Entity> extends EntityModel<T> {
     private final ModelPart getDiscBone;
 
     public ModelMusicPlayer(ModelPart root) {
+        super(root, texture -> RenderTypes.entityTranslucent(texture));
         this.laba = root.getChild("laba");
         this.tube = root.getChild("tube");
         this.wheel = root.getChild("wheel");
@@ -393,19 +392,7 @@ public class ModelMusicPlayer<T extends Entity> extends EntityModel<T> {
     }
 
     @Override
-    public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
-        laba.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        tube.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        wheel.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        ruler.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        box.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        disc.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        getDiscBone.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
+    public void setupAnim(Void unused) {
     }
 
     public ModelPart getDiscBone() {

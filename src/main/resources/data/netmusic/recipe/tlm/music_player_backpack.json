@@ -4,12 +4,8 @@
   "entity": "minecraft:item",
   "group": "altar_recipe",
   "ingredients": [
-    {
-      "item": "touhou_little_maid:maid_backpack_middle"
-    },
-    {
-      "item": "netmusic:music_player"
-    }
+    "touhou_little_maid:maid_backpack_middle",
+    "netmusic:music_player"
   ],
   "lang": "jei.touhou_little_maid.altar_craft.item_craft.result",
   "power": 0.2,

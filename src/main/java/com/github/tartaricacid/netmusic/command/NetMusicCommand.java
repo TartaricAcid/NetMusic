@@ -15,6 +15,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -32,7 +33,7 @@ public class NetMusicCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> get() {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(ROOT_NAME)
-                .requires((source -> source.hasPermission(2)));
+                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
         LiteralArgumentBuilder<CommandSourceStack> get163List = Commands.literal(GET_163_NAME);
         LiteralArgumentBuilder<CommandSourceStack> get163Song = Commands.literal(GET_163_CD_NAME);
         LiteralArgumentBuilder<CommandSourceStack> reload = Commands.literal(RELOAD_NAME);
