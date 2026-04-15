@@ -47,6 +47,8 @@
   "gui.netmusic.computer.time.tips": "时长（秒）",
   "gui.netmusic.computer.time.empty": "歌曲时长不能为空",
   "gui.netmusic.computer.time.not_number": "歌曲时长格式不正确，请输入数字！",
+  "ai.netmusic.tool.play_music.search": "搜索音乐：%s",
+  "ai.netmusic.tool.stop_music": "停止播放音乐",
   "config.netmusic.general": "通用设置",
   "config.netmusic.general.enable_stereo": "启用立体声",
   "config.netmusic.general.enable_stereo.tooltip": "是否启用立体声效果",

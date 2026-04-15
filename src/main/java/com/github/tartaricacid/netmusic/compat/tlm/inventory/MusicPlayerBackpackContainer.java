@@ -4,18 +4,13 @@ import cn.sh1rocu.touhoulittlemaid.util.itemhandler.CombinedInvWrapper;
 import cn.sh1rocu.touhoulittlemaid.util.itemhandler.SlotItemHandler;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.data.MusicPlayerBackpackData;
-import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidMusicToClientMessage;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidStopMusicMessage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
@@ -136,23 +131,8 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
             return false;
         }
         this.setSoundTicks(0);
-        MaidStopMusicMessage stopMsg = new MaidStopMusicMessage(this.maid.getId());
+        MaidStopMusicMessage stopMsg = MaidStopMusicMessage.create(this.maid);
         NetworkHandler.sendToNearBy(this.maid.level(), this.maid.blockPosition(), stopMsg);
-
-        // 移除歌词气泡
-        LongSet removeIds = new LongOpenHashSet();
-        ChatBubbleDataCollection collection = maid.getChatBubbleManager().getChatBubbleDataCollection();
-        // 先记录，再移除，避免并发修改异常
-        for (long id : collection.keySet()) {
-            IChatBubbleData data = collection.get(id);
-            if (data.id().equals(LyricChatBubbleData.ID)) {
-                removeIds.add(id);
-            }
-        }
-        for (long id : removeIds) {
-            collection.remove(id);
-        }
-        maid.getChatBubbleManager().forceUpdateChatBubble();
 
         return true;
     }
