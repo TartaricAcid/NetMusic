@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "netmusic:block/music_player"
+    },
+    "facing=south": {
+      "model": "netmusic:block/music_player",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "netmusic:block/music_player",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "netmusic:block/music_player",
+      "y": 90
+    }
+  }
+}

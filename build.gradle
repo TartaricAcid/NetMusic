@@ -1,0 +1,237 @@
+// 调用的 gradle 插件
+plugins {
+    id 'java-library'
+
+    // 用于 eclipse 或者 idea 的插件
+    id 'eclipse'
+    id 'idea'
+
+    // 用于发布 maven 时所需的插件
+    id 'maven-publish'
+
+    // NeoForged 开发插件
+    id 'net.neoforged.moddev' version '2.0.141'
+
+    // Shadow 插件，用于打包依赖到 jar 包里
+    id 'com.gradleup.shadow' version '9.4.1'
+}
+
+// ALL 为下载 gradle 源码，方便查看调试
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+// 模组相关信息
+version = mod_version
+group = mod_group_id
+
+// 打包成 jar 时的名称
+base.archivesName = 'netmusic'
+
+// 需要的前置库，目前没有
+repositories {
+    // mavenLocal 为本机仓库
+    mavenLocal()
+}
+
+// 需要 Java 25 版本
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+// 运行部分
+neoForge {
+    version = project.neo_version
+
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+
+    runs {
+        client {
+            client()
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        server {
+            server()
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        gameTestServer {
+            type = "gameTestServer"
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+
+        data {
+            clientData()
+            programArguments.addAll '--mod', project.mod_id, '--all',
+                    '--output', file('src/generated/resources/').getAbsolutePath(),
+                    '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+
+        configureEach {
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
+
+            // +AllowEnhancedClassRedefinition 为 JetBrains Runtime 所需的参数
+            // JetBrains Runtime 是一个修改过的 JDK，支持热重载
+            // +IgnoreUnrecognizedVMOptions 用于忽略未知指令
+            // 否则没有安装 JetBrains Runtime 的用户运行时会报错
+            jvmArguments.addAll([
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+AllowEnhancedClassRedefinition"
+            ])
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    // ./libs 目录为库
+    flatDir {
+        dir "libs"
+    }
+    maven {
+        name = "Curse Maven"
+        url = "https://www.cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content {
+            includeGroup "maven.modrinth"
+        }
+    }
+    maven {
+        // location of the maven that hosts JEI files since January 2023
+        name = "Jared's maven"
+        url = "https://maven.blamejared.com/"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
+    }
+    maven {
+        // location of a maven mirror for JEI files, as a fallback
+        name = "ModMaven"
+        url = "https://modmaven.dev"
+        content {
+            includeGroup "mezz.jei"
+            includeGroup "vazkii.patchouli"
+        }
+    }
+}
+
+
+dependencies {
+    // mp3 播放库
+    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    // flac 播放库
+    implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
+
+    // 女仆模组兼容
+    // implementation 'maven.modrinth:touhou-little-maid:1.5.2-neoforge+mc1.21.1'
+
+    // Cloth Config (配置界面库)
+    implementation "maven.modrinth:cloth-config:26.1.154+neoforge"
+
+    // IPN
+    // runtimeOnly "maven.modrinth:kotlin-for-forge:5.4.0"
+    // runtimeOnly "maven.modrinth:libipn:neoforge-1.21-6.0.2"
+    // implementation "maven.modrinth:inventory-profiles-next:neoforge-1.21-2.0.4"
+
+    // JEI
+    runtimeOnly("mezz.jei:jei-26.1.2-neoforge:29.5.0.26")
+
+    // Sound Physics Remastered
+    // runtimeOnly("maven.modrinth:sound-physics-remastered:neoforge-1.21.1-1.5.1")
+
+    // Sophisticated Backpacks
+    implementation "maven.modrinth:sophisticated-core:26.1-1.4.25.1687"
+    implementation "maven.modrinth:sophisticated-backpacks:26.1-3.25.47.1680"
+}
+
+// 用于 neoforge.mods 里替换那一堆 ${xxxx}
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
+}
+
+// 将 "generateModMetadata" 任务的输出目录作为构建时的资源输入目录。
+// 这样无论你是使用 Gradle 命令行还是通过 IDE 进行构建，都能正确打包生成的元数据。
+sourceSets.main.resources.srcDir generateModMetadata
+
+// 为了避免每次修改配置后都需要手动运行 "generateModMetadata" 任务，
+// 设定在每次 IDE 重新同步（Reload/Sync）项目时自动执行该任务。
+neoForge.ideSyncTask generateModMetadata
+
+shadowJar {
+    dependencies {
+        include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
+        include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
+        include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
+        include(dependency("libs:jflac-codec:1.5.3-SNAPSHOT"))
+    }
+
+    relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
+    relocate 'javazoom.spi', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.spi'
+    relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
+    relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
+
+    // 排除不需要的依赖项和资源
+    exclude 'META-INF/maven/**/*'
+    exclude 'META-INF/versions/**/*'
+    // 这个版权许可都已经手动添加进 licenses 里了
+    exclude 'META-INF/LICENSE'
+
+    mergeServiceFiles "META-INF/services"
+}
+
+jar {
+    archiveClassifier = 'slim'
+}
+
+assemble {
+    dependsOn shadowJar
+}
+
+java {
+    // 编译源码文件，方便发布 maven
+    withSourcesJar()
+}
+
+
+// 让 idea 主动下载前置库的源码和 Javadoc
+// 新版本 idea 默认不会下载这两个，这虽然加快了构建速度，但是不方便调试
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}

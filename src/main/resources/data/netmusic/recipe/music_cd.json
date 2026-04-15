@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "result": {
+    "id": "netmusic:music_cd"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:gray_dye"
+    },
+    {
+      "item": "minecraft:brown_dye"
+    },
+    {
+      "item": "minecraft:clay_ball"
+    },
+    {
+      "item": "minecraft:clay_ball"
+    }
+  ]
+}

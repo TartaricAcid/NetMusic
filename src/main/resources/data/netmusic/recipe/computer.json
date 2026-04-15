@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "result": {
+    "id": "netmusic:computer"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:jukebox"
+    },
+    {
+      "item": "minecraft:gold_ingot"
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ]
+}
