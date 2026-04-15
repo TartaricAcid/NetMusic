@@ -47,6 +47,8 @@
   "gui.netmusic.computer.time.tips": "Time (s)",
   "gui.netmusic.computer.time.empty": "The song time cannot be empty",
   "gui.netmusic.computer.time.not_number": "The song time format is incorrect, please enter the song time as a number!",
+  "ai.netmusic.tool.play_music.search": "Search Music: %s",
+  "ai.netmusic.tool.stop_music": "Stop Playing Music",
   "config.netmusic.general": "General Settings",
   "config.netmusic.general.enable_stereo": "Enable Stereo",
   "config.netmusic.general.enable_stereo.tooltip": "Whether stereo playback is enabled",
