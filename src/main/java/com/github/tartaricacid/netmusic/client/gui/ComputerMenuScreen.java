@@ -7,17 +7,18 @@ import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import org.anti_ad.mc.ipn.api.IPNIgnore;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -26,9 +27,8 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
-@IPNIgnore
 public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
-    private static final ResourceLocation BG = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/computer.png");
+    private static final Identifier BG = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/computer.png");
     private static final Pattern URL_HTTP_REG = Pattern.compile("(http|ftp|https)://[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-.,@?^=%&:/~+#]*[\\w\\-@?^=%&/~+#])?");
     private static final Pattern URL_FILE_REG = Pattern.compile("^[a-zA-Z]:\\\\(?:[^\\\\/:*?\"<>|\\r\\n]+\\\\)*[^\\\\/:*?\"<>|\\r\\n]*$");
     private static final Pattern TIME_REG = Pattern.compile("^\\d+$");
@@ -39,8 +39,7 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
     private Component tips = Component.empty();
 
     public ComputerMenuScreen(ComputerMenu screenContainer, Inventory inv, Component titleIn) {
-        super(screenContainer, inv, titleIn);
-        this.imageHeight = 216;
+        super(screenContainer, inv, titleIn, 176, 216);
     }
 
     @Override
@@ -69,7 +68,7 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         urlTextField.setTextColor(0xF3EFE0);
         urlTextField.setFocused(focus);
         urlTextField.moveCursorToEnd(false);
-        this.addWidget(this.urlTextField);
+        this.addRenderableWidget(this.urlTextField);
     }
 
     private void initNameEditBox() {
@@ -86,7 +85,7 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         nameTextField.setTextColor(0xF3EFE0);
         nameTextField.setFocused(focus);
         nameTextField.moveCursorToEnd(false);
-        this.addWidget(this.nameTextField);
+        this.addRenderableWidget(this.nameTextField);
     }
 
     private void initTimeEditBox() {
@@ -103,11 +102,11 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         timeTextField.setTextColor(0xF3EFE0);
         timeTextField.setFocused(focus);
         timeTextField.moveCursorToEnd(false);
-        this.addWidget(this.timeTextField);
+        this.addRenderableWidget(this.timeTextField);
     }
 
     private void handleCraftButton() {
-        ItemStack cd = this.getMenu().getInput().getStackInSlot(0);
+        ItemStack cd = this.getMenu().getInput().getResource(0).toStack();
         if (cd.isEmpty()) {
             this.tips = Component.translatable("gui.netmusic.cd_burner.cd_is_empty");
             return;
@@ -161,73 +160,84 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
     }
 
     @Override
-    protected void renderLabels(GuiGraphics graphics, int x, int y) {
+    protected void extractLabels(GuiGraphicsExtractor graphics, int x, int y) {
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTicks, int x, int y) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         int posX = this.leftPos;
-        int posY = (this.height - this.imageHeight) / 2;
-        graphics.blit(BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+        int posY = this.topPos;
+        extractMenuBackgroundTexture(graphics, BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+        this.minecraft.gui.extractDeferredSubtitles();
     }
 
     @Override
-    public void render(GuiGraphics graphics, int x, int y, float partialTicks) {
-        super.render(graphics, x, y, partialTicks);
-        urlTextField.render(graphics, x, y, partialTicks);
-        nameTextField.render(graphics, x, y, partialTicks);
-        timeTextField.render(graphics, x, y, partialTicks);
+    public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+        super.extractContents(graphics, mouseX, mouseY, a);
+        int color = ChatFormatting.GRAY.getColor();
         if (StringUtils.isBlank(urlTextField.getValue()) && !urlTextField.isFocused()) {
-            graphics.drawString(font, Component.translatable("gui.netmusic.computer.url.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, ChatFormatting.GRAY.getColor(), false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.url.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, color, false);
         }
         if (StringUtils.isBlank(nameTextField.getValue()) && !nameTextField.isFocused()) {
-            graphics.drawString(font, Component.translatable("gui.netmusic.computer.name.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 39, ChatFormatting.GRAY.getColor(), false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.name.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 39, color, false);
         }
         if (StringUtils.isBlank(timeTextField.getValue()) && !timeTextField.isFocused()) {
-            graphics.drawString(font, Component.translatable("gui.netmusic.computer.time.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 11, this.topPos + 61, ChatFormatting.GRAY.getColor(), false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.time.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 11, this.topPos + 61, color, false);
         }
-        graphics.drawWordWrap(font, tips, this.leftPos + 8, this.topPos + 100, 162, 0xCF0000);
-        renderTooltip(graphics, x, y);
+        graphics.textWithWordWrap(font, tips, this.leftPos + 8, this.topPos + 100, 162, 0xCF0000, false);
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+    public void resize(int width, int height) {
         String urlValue = this.urlTextField.getValue();
         String nameValue = this.nameTextField.getValue();
         String timeValue = this.timeTextField.getValue();
-        super.resize(minecraft, width, height);
+        super.resize(width, height);
         this.urlTextField.setValue(urlValue);
         this.nameTextField.setValue(nameValue);
         this.timeTextField.setValue(timeValue);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.urlTextField.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.urlTextField.mouseClicked(event, doubleClick)) {
             this.setFocused(this.urlTextField);
             return true;
         }
-        if (this.nameTextField.mouseClicked(mouseX, mouseY, button)) {
+        if (this.nameTextField.mouseClicked(event, doubleClick)) {
             this.setFocused(this.nameTextField);
             return true;
         }
-        if (this.timeTextField.mouseClicked(mouseX, mouseY, button)) {
+        if (this.timeTextField.mouseClicked(event, doubleClick)) {
             this.setFocused(this.timeTextField);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
+    public boolean charTyped(CharacterEvent event) {
+        boolean handled = false;
+        if (this.urlTextField.isFocused()) {
+            handled = this.urlTextField.charTyped(event);
+        } else if (this.nameTextField.isFocused()) {
+            handled = this.nameTextField.charTyped(event);
+        } else if (this.timeTextField.isFocused()) {
+            handled = this.timeTextField.charTyped(event);
+        }
+        return handled || super.charTyped(event);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        InputConstants.Key mouseKey = InputConstants.getKey(event);
         // 防止 E 键关闭界面
         if (this.getMinecraft().options.keyInventory.isActiveAndMatches(mouseKey)) {
             if (urlTextField.isFocused() || nameTextField.isFocused() || timeTextField.isFocused()) {
                 return true;
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override

@@ -11,14 +11,18 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nullable;
@@ -26,12 +30,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class ItemMusicCD extends Item {
-    public static final String SONG_INFO_TAG = "NetMusicSongInfo";
-
-    public ItemMusicCD() {
-        super((new Properties()));
+    public ItemMusicCD(Identifier id) {
+        super((new Properties().setId(ResourceKey.create(Registries.ITEM, id))));
     }
 
     @Nullable
@@ -75,24 +78,24 @@ public class ItemMusicCD extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flagIn) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flagIn) {
         SongInfo info = getSongInfo(stack);
         final String prefix = "§a▍ §7";
         final String delimiter = ": ";
         if (info != null) {
             if (StringUtils.isNoneBlank(info.transName)) {
                 String text = prefix + I18n.get("tooltips.netmusic.cd.trans_name") + delimiter + "§6" + info.transName;
-                tooltip.add(Component.literal(text));
+                tooltip.accept(Component.literal(text));
             }
             if (info.artists != null && !info.artists.isEmpty()) {
                 String artistNames = StringUtils.join(info.artists, " | ");
                 String text = prefix + I18n.get("tooltips.netmusic.cd.artists") + delimiter + "§3" + artistNames;
-                tooltip.add(Component.literal(text));
+                tooltip.accept(Component.literal(text));
             }
             String text = prefix + I18n.get("tooltips.netmusic.cd.time") + delimiter + "§5" + getSongTime(info.songTime);
-            tooltip.add(Component.literal(text));
+            tooltip.accept(Component.literal(text));
         } else {
-            tooltip.add(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
+            tooltip.accept(Component.translatable("tooltips.netmusic.cd.empty").withStyle(ChatFormatting.RED));
         }
     }
 

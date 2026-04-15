@@ -8,7 +8,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.math.NumberUtils;
 
-@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT)
 public class ConfigEvent {
     private static final String CONFIG_NAME = NetMusic.MOD_ID + "-common.toml";
 

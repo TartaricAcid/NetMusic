@@ -8,7 +8,6 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +18,6 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.function.Function;
 
-@OnlyIn(Dist.CLIENT)
 public final class MusicPlayManager {
     public static final String ERROR_404 = "http://music.163.com/404";
     public static final String MUSIC_163_URL = "https://music.163.com/";

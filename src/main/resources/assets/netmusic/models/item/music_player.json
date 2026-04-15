@@ -1,5 +1,4 @@
 {
-  "parent": "builtin/entity",
   "display": {
     "gui": {
       "rotation": [22.5, 22.5, 0],

@@ -2,17 +2,16 @@ package com.github.tartaricacid.netmusic.block;
 
 import com.github.tartaricacid.netmusic.inventory.ComputerMenu;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -29,17 +28,21 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public class BlockComputer extends HorizontalDirectionalBlock {
     protected static final VoxelShape NORTH_AABB = makeShape();
     protected static final VoxelShape SOUTH_AABB = rotateShape(Direction.SOUTH, Direction.NORTH, NORTH_AABB);
     protected static final VoxelShape EAST_AABB = rotateShape(Direction.SOUTH, Direction.EAST, NORTH_AABB);
     protected static final VoxelShape WEST_AABB = rotateShape(Direction.NORTH, Direction.EAST, NORTH_AABB);
+    protected static final MapCodec<BlockComputer> CODEC = simpleCodec(BlockComputer::new);
 
-    public BlockComputer() {
-        super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
+    public BlockComputer(Identifier id) {
+        super(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).sound(SoundType.WOOD).strength(0.5f).noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    public BlockComputer(Properties properties) {
+        super(properties);
     }
 
     private static VoxelShape makeShape() {
@@ -101,7 +104,7 @@ public class BlockComputer extends HorizontalDirectionalBlock {
 
     @Override
     public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         } else {
             player.openMenu(blockState.getMenuProvider(level, pos));
@@ -115,13 +118,7 @@ public class BlockComputer extends HorizontalDirectionalBlock {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("block.netmusic.computer.web_link.desc").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("block.netmusic.computer.local_file.desc").withStyle(ChatFormatting.GRAY));
-    }
-
-    @Override
     protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return simpleCodec((properties) -> new BlockComputer());
+        return CODEC;
     }
 }

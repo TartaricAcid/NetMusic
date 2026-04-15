@@ -4,7 +4,6 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.Sound;
@@ -14,6 +13,8 @@ import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -58,12 +59,13 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             this.stop();
         } else {
             if (world.getGameTime() % 8 == 0) {
+                RandomSource random = world.getRandom();
                 for (int i = 0; i < 2; i++) {
                     world.addParticle(ParticleTypes.NOTE,
-                            x - 0.5f + world.random.nextDouble(),
-                            y + world.random.nextDouble() + 1,
-                            z - 0.5f + world.random.nextDouble(),
-                            world.random.nextGaussian(), world.random.nextGaussian(), world.random.nextInt(3));
+                            x - 0.5f + random.nextDouble(),
+                            y + random.nextDouble() + 1,
+                            z - 0.5f + random.nextDouble(),
+                            random.nextGaussian(), random.nextGaussian(), random.nextInt(3));
                 }
             }
         }

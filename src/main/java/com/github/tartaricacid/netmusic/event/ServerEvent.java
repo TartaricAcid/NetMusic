@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import java.io.IOException;
 
-@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.DEDICATED_SERVER, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.DEDICATED_SERVER)
 public class ServerEvent {
     @SubscribeEvent
     public static void onServerStarting(ServerStartingEvent event) {

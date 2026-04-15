@@ -21,5 +21,6 @@ public class InitBlocks {
     public static DeferredBlock<Block> CD_BURNER = BLOCKS.register("cd_burner", BlockCDBurner::new);
     public static DeferredBlock<Block> COMPUTER = BLOCKS.register("computer", BlockComputer::new);
 
-    public static Supplier<BlockEntityType<TileEntityMusicPlayer>> MUSIC_PLAYER_TE = TILE_ENTITIES.register("music_player", () -> TileEntityMusicPlayer.TYPE);
+    public static Supplier<BlockEntityType<TileEntityMusicPlayer>> MUSIC_PLAYER_TE = TILE_ENTITIES.register("music_player",
+            () -> new BlockEntityType<>(TileEntityMusicPlayer::new, MUSIC_PLAYER.get()));
 }

@@ -7,44 +7,36 @@ import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 
-public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/music_player.png");
+import static com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer.TEXTURE;
 
-    public static ModelMusicPlayer<?> MODEL;
-    public static MusicPlayerRenderer INSTANCE;
-
+public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer, MusicPlayerRenderState> {
+    private final ModelMusicPlayer.Block model;
     private final Font font;
-    private final BlockEntityRenderDispatcher dispatcher;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
-        MODEL = new ModelMusicPlayer<>(context.bakeLayer(ModelMusicPlayer.LAYER));
-        INSTANCE = this;
-        this.font = context.getFont();
-        this.dispatcher = context.getBlockEntityRenderDispatcher();
+        this.model = new ModelMusicPlayer.Block(context.bakeLayer(ModelMusicPlayer.LAYER));
+        this.font = context.font();
     }
 
     public static AABB getAABB(BlockPos pStart, BlockPos pEnd) {
@@ -52,43 +44,21 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
     }
 
     @Override
-    public void render(TileEntityMusicPlayer te, float pPartialTicks, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
-        Direction facing = te.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        ItemStack cd = te.getPlayerInv().getStackInSlot(0);
-        ModelPart disc = MODEL.getDiscBone();
-        disc.visible = !cd.isEmpty();
-        if (!cd.isEmpty() && te.isPlay()) {
-            disc.yRot = (float) ((2 * Math.PI / 40) * (((double) System.currentTimeMillis() / 50) % 40));
-        }
-        renderMusicPlayer(matrixStack, buffer, combinedLight, facing);
-        renderLyric(te, matrixStack, buffer, combinedLight);
+    public MusicPlayerRenderState createRenderState() {
+        return new MusicPlayerRenderState();
     }
 
-    public void renderMusicPlayer(PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, Direction facing) {
-        matrixStack.pushPose();
-        matrixStack.scale(0.75f, 0.75f, 0.75f);
-        matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
-        switch (facing) {
-            case SOUTH:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
-                break;
-            case EAST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
-                break;
-            case WEST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
-                break;
-            case NORTH:
-            default:
-                break;
-        }
-        matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
-        VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
-        MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 0xffffffff);
-        matrixStack.popPose();
-    }
+    @Override
+    public void extractRenderState(TileEntityMusicPlayer te, MusicPlayerRenderState state, float partialTicks, Vec3 camera,
+                                   ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(te, state, partialTicks, camera, breakProgress);
 
-    private void renderLyric(TileEntityMusicPlayer te, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn) {
+        state.facing = te.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.hasDisc = !te.getPlayerInv().getResource(0).isEmpty();
+        if (state.hasDisc && te.isPlay()) {
+            state.discRotation = (float) ((2 * Math.PI / 40) * (((double) System.currentTimeMillis() / 50) % 40));
+        }
+
         if (!GeneralConfig.ENABLE_PLAYER_LYRICS.get()) {
             return;
         }
@@ -107,60 +77,100 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
             return;
         }
 
-        Camera camera = this.dispatcher.camera;
-        int currentLyricColor = ConfigEvent.PLAYER_ORIGINAL_COLOR;
-        int transLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
-        float y = 0.5f;
+        state.currentLyricColor = ConfigEvent.PLAYER_ORIGINAL_COLOR;
+        state.transLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
+        state.y = 0.5f;
 
         String lyric = lyrics.get(lyrics.firstIntKey());
-        MutableComponent currentLine;
         if (StringUtils.isNotBlank(lyric)) {
-            currentLine = Component.literal(lyric);
+            state.currentLine = Component.literal(lyric);
         } else {
-            currentLine = Component.empty();
+            state.currentLine = Component.empty();
         }
-        MutableComponent translatedLine = null;
+        state.translatedLine = null;
 
         Int2ObjectSortedMap<String> transLyrics = lyricRecord.getTransLyrics();
         if (transLyrics != null && !transLyrics.isEmpty()) {
             String transLyric = transLyrics.get(transLyrics.firstIntKey());
             if (StringUtils.isNotBlank(transLyric)) {
-                translatedLine = Component.literal(transLyric);
+                state.translatedLine = Component.literal(transLyric);
             }
-            y += 0.5f;
+            state.y += 0.5f;
         } else {
-            currentLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
+            state.currentLyricColor = ConfigEvent.PLAYER_TRANSLATED_COLOR;
         }
+    }
+
+    @Override
+    public void submit(MusicPlayerRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        submitMusicPlayer(state, poseStack, submitNodeCollector);
+        submitLyric(state, poseStack, submitNodeCollector, camera);
+    }
+
+    public void submitMusicPlayer(MusicPlayerRenderState state, PoseStack matrixStack, SubmitNodeCollector submitNode) {
+        matrixStack.pushPose();
+        matrixStack.scale(0.75f, 0.75f, 0.75f);
+        matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
+        switch (state.facing) {
+            case SOUTH:
+                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
+                break;
+            case EAST:
+                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
+                break;
+            case WEST:
+                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
+                break;
+            case NORTH:
+            default:
+                break;
+        }
+        matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
+        submitNode.submitModel(model, state, matrixStack, TEXTURE, state.lightCoords, OverlayTexture.NO_OVERLAY, 0, state.breakProgress);
+        matrixStack.popPose();
+    }
+
+    private void submitLyric(MusicPlayerRenderState state, PoseStack poseStack, SubmitNodeCollector submitNode, CameraRenderState camera) {
+        MutableComponent currentLine = state.currentLine;
+        int currentLyricColor = state.currentLyricColor;
+
+        MutableComponent translatedLine = state.translatedLine;
+        int transLyricColor = state.transLyricColor;
+
+        if (currentLine.equals(Component.empty()) && translatedLine == null) {
+            return;
+        }
+
+        float y = state.y;
 
         poseStack.pushPose();
         poseStack.translate(0.5, 1.625, 0.5);
-        poseStack.mulPose(Axis.YN.rotationDegrees(camera.getYRot()));
-        poseStack.mulPose(Axis.XN.rotationDegrees(-camera.getXRot()));
-        poseStack.scale(-0.025F, -0.025F, 0.025F);
+        poseStack.mulPose(Axis.YN.rotationDegrees(camera.yRot));
+        poseStack.mulPose(Axis.XN.rotationDegrees(-camera.xRot));
+        poseStack.scale(-0.025F, -0.025F, -0.025F);
 
         float opacity = Minecraft.getInstance().options.getBackgroundOpacity(0.25F);
         int bgColor = (int) (opacity * 255.0F) << 24;
 
         if (!currentLine.getContents().equals(PlainTextContents.EMPTY)) {
             float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
-            this.font.drawInBatch(currentLine, currentLineWidth, -y, currentLyricColor, false,
-                    poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
-                    bgColor, combinedLightIn);
+
+            submitNode.submitText(poseStack, currentLineWidth, -y, currentLine.getVisualOrderText(),
+                    false, Font.DisplayMode.NORMAL, state.lightCoords,
+                    currentLyricColor, bgColor, 0
+            );
         }
 
         if (translatedLine != null) {
             float translatedLineWidth = (float) (-this.font.width(translatedLine) / 2);
-            this.font.drawInBatch(translatedLine, translatedLineWidth, -y - 12, transLyricColor, false,
-                    poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
-                    bgColor, combinedLightIn);
+
+            submitNode.submitText(poseStack, translatedLineWidth, -y - 12, translatedLine.getVisualOrderText(),
+                    false, Font.DisplayMode.NORMAL, state.lightCoords,
+                    transLyricColor, bgColor, 0
+            );
         }
 
         poseStack.popPose();
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(TileEntityMusicPlayer musicPlayer) {
-        return true;
     }
 
     @Override

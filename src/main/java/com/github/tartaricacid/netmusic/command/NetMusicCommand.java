@@ -11,7 +11,6 @@ import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -19,6 +18,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,7 @@ public class NetMusicCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> get() {
         LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal(ROOT_NAME)
-                .requires((source -> source.hasPermission(2)));
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));
         LiteralArgumentBuilder<CommandSourceStack> get163List = Commands.literal(GET_163_NAME);
         LiteralArgumentBuilder<CommandSourceStack> get163Song = Commands.literal(GET_163_CD_NAME);
         LiteralArgumentBuilder<CommandSourceStack> reload = Commands.literal(RELOAD_NAME);

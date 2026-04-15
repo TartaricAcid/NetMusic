@@ -1,6 +1,5 @@
 package com.github.tartaricacid.netmusic.network;
 
-import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
@@ -9,6 +8,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -23,7 +23,7 @@ public class NetworkHandler {
         registrar.playToClient(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC, GetMusicListMessage::handle);
         registrar.playToServer(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC, SetMusicIDMessage::handle);
 
-        CompatRegistry.initNetwork(registrar);
+        // CompatRegistry.initNetwork(registrar);
     }
 
     public static void sendToNearby(Level world, BlockPos pos, CustomPacketPayload toSend) {
@@ -33,7 +33,7 @@ public class NetworkHandler {
     }
 
     public static void sendToServer(CustomPacketPayload message) {
-        PacketDistributor.sendToServer(message);
+        ClientPacketDistributor.sendToServer(message);
     }
 
     public static void sendToClientPlayer(CustomPacketPayload message, ServerPlayer player) {

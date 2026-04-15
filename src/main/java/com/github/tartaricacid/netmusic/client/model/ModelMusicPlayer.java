@@ -1,35 +1,46 @@
 package com.github.tartaricacid.netmusic.client.model;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.EntityModel;
+import com.github.tartaricacid.netmusic.client.renderer.MusicPlayerRenderState;
+import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Unit;
 
 
-public class ModelMusicPlayer<T extends Entity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "musicplayer");
-    private final ModelPart laba;
-    private final ModelPart tube;
-    private final ModelPart wheel;
-    private final ModelPart ruler;
-    private final ModelPart box;
-    private final ModelPart disc;
-    private final ModelPart getDiscBone;
+public class ModelMusicPlayer {
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "musicplayer");
+    public static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/music_player.png");
 
-    public ModelMusicPlayer(ModelPart root) {
-        this.laba = root.getChild("laba");
-        this.tube = root.getChild("tube");
-        this.wheel = root.getChild("wheel");
-        this.ruler = root.getChild("ruler");
-        this.box = root.getChild("box");
-        this.disc = root.getChild("disc");
-        this.getDiscBone = root.getChild("getDiscBone");
+    public static class Block extends Model<MusicPlayerRenderState> {
+        private final ModelPart disc;
+
+        public Block(ModelPart root) {
+            super(root, RenderTypes::entityCutout);
+            this.disc = root.getChild("disc");
+        }
+
+        @Override
+        public void setupAnim(MusicPlayerRenderState state) {
+            super.setupAnim(state);
+            this.disc.visible = state.hasDisc;
+            this.disc.yRot = state.discRotation;
+        }
+    }
+
+    public static class Item extends Model<Unit> {
+        public Item(ModelPart root) {
+            super(root, RenderTypes::entityCutout);
+        }
+
+        @Override
+        public void setupAnim(Unit state) {
+            super.setupAnim(state);
+        }
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -390,24 +401,5 @@ public class ModelMusicPlayer<T extends Entity> extends EntityModel<T> {
         PartDefinition getDiscBone = partdefinition.addOrReplaceChild("getDiscBone", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
-    }
-
-    @Override
-    public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
-        laba.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        tube.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        wheel.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        ruler.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        box.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        disc.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-        getDiscBone.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-    }
-
-    public ModelPart getDiscBone() {
-        return disc;
     }
 }

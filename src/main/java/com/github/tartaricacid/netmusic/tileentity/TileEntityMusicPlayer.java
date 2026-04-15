@@ -17,22 +17,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
 import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISABLE;
 
 public class TileEntityMusicPlayer extends BlockEntity {
-    public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder.of(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER.get()).build(null);
     private static final String CD_ITEM_TAG = "ItemStackCD";
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
-    private final ItemStackHandler playerInv = new MusicPlayerInv(this);
+    private final MusicPlayerInv playerInv = new MusicPlayerInv(this);
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
@@ -43,25 +41,25 @@ public class TileEntityMusicPlayer extends BlockEntity {
     public @Nullable LyricRecord lyricRecord = null;
 
     public TileEntityMusicPlayer(BlockPos blockPos, BlockState blockState) {
-        super(TYPE, blockPos, blockState);
+        super(InitBlocks.MUSIC_PLAYER_TE.get(), blockPos, blockState);
     }
 
     @Override
-    public void saveAdditional(CompoundTag compound, HolderLookup.Provider provider) {
-        getPersistentData().put(CD_ITEM_TAG, playerInv.serializeNBT(provider));
-        getPersistentData().putBoolean(IS_PLAY_TAG, isPlay);
-        getPersistentData().putInt(CURRENT_TIME_TAG, currentTime);
-        getPersistentData().putBoolean(SIGNAL_TAG, hasSignal);
-        super.saveAdditional(compound, provider);
+    public void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        playerInv.serialize(output.child(CD_ITEM_TAG));
+        output.putBoolean(IS_PLAY_TAG, isPlay);
+        output.putInt(CURRENT_TIME_TAG, currentTime);
+        output.putBoolean(SIGNAL_TAG, hasSignal);
     }
 
     @Override
-    public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
-        super.loadAdditional(nbt, provider);
-        playerInv.deserializeNBT(provider, getPersistentData().getCompound(CD_ITEM_TAG));
-        isPlay = getPersistentData().getBoolean(IS_PLAY_TAG);
-        currentTime = getPersistentData().getInt(CURRENT_TIME_TAG);
-        hasSignal = getPersistentData().getBoolean(SIGNAL_TAG);
+    public void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        playerInv.deserialize(input.childOrEmpty(CD_ITEM_TAG));
+        isPlay = input.getBooleanOr(IS_PLAY_TAG, false);
+        currentTime = input.getIntOr(CURRENT_TIME_TAG, 0);
+        hasSignal = input.getBooleanOr(SIGNAL_TAG, false);
     }
 
     @Override
@@ -75,16 +73,24 @@ public class TileEntityMusicPlayer extends BlockEntity {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    public ItemStackHandler getPlayerInv() {
+    public MusicPlayerInv getPlayerInv() {
         return playerInv;
     }
 
-    public IItemHandler createHandler() {
+    public MusicPlayerInv createHandler() {
         BlockState state = this.getBlockState();
         if (state.getBlock() instanceof BlockMusicPlayer) {
             return this.playerInv;
         }
         return null;
+    }
+
+    @Override
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        ItemStack stack = this.getPlayerInv().getResource(0).toStack();
+        if (!stack.isEmpty() && this.level != null) {
+            Block.popResource(level, pos, stack);
+        }
     }
 
     public boolean isPlay() {
@@ -98,7 +104,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
         this.setCurrentTime(info.songTime * 20 + 64);
         this.isPlay = true;
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName);
             NetworkHandler.sendToNearby(level, worldPosition, msg);
         }
@@ -141,7 +147,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
                 te.setPlay(false);
                 te.markDirty();
             } else {
-                ItemStack stackInSlot = te.getPlayerInv().getStackInSlot(0);
+                ItemStack stackInSlot = te.getPlayerInv().getResource(0).toStack();
                 if (stackInSlot.isEmpty()) {
                     return;
                 }

@@ -9,7 +9,7 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.io.IOException;
 
-@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT)
 public class ClientEvent {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {

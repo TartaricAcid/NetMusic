@@ -3,7 +3,6 @@ package com.github.tartaricacid.netmusic.compat.sbackpack;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
@@ -12,11 +11,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.p3pp3rf1y.sophisticatedcore.SophisticatedCore;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.StorageSoundHandler;
 
 import java.net.MalformedURLException;
@@ -31,7 +29,7 @@ public record NetMusicDiscPayload(
         ItemMusicCD.SongInfo songInfo,
         int entityId, BlockPos pos
 ) implements CustomPacketPayload {
-    public static final Type<NetMusicDiscPayload> TYPE = new Type<>(SophisticatedCore.getRL("play_netmusic_disc"));
+    public static final Type<NetMusicDiscPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "play_netmusic_disc"));
     public static final StreamCodec<RegistryFriendlyByteBuf, NetMusicDiscPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL,
             NetMusicDiscPayload::blockStorage,
@@ -64,7 +62,6 @@ public record NetMusicDiscPayload(
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void onHandle(NetMusicDiscPayload payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
         Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);

@@ -7,14 +7,12 @@ import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Util;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.io.IOException;
@@ -25,7 +23,7 @@ import java.util.regex.Pattern;
 import static com.github.tartaricacid.netmusic.client.audio.MusicPlayManager.MUSIC_163_URL;
 
 public class MusicToClientMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_to_client"));
+    public static final CustomPacketPayload.Type<MusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_to_client"));
     public static final StreamCodec<ByteBuf, MusicToClientMessage> STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, MusicToClientMessage::getPos, ByteBufCodecs.STRING_UTF8, MusicToClientMessage::getUrl, ByteBufCodecs.VAR_INT, MusicToClientMessage::getTimeSecond, ByteBufCodecs.STRING_UTF8, MusicToClientMessage::getSongName, MusicToClientMessage::new);
 
     private static final Pattern PATTERN = Pattern.compile("^.*?\\?id=(\\d+)\\.mp3$");
@@ -64,7 +62,6 @@ public class MusicToClientMessage implements CustomPacketPayload {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     private static void onHandle(MusicToClientMessage message) {
         // 使用数组方便在 lambda 表达式中修改
         LyricRecord[] record = new LyricRecord[1];
