@@ -9,7 +9,6 @@ import java.net.URL;
 import java.net.URLConnection;
 
 public class ChunkedAudioStream extends InputStream {
-    public static final int CHUNK_SIZE = 81920;
     private InputStream currentStream;
     private long currentStart;
     private final URL url;
@@ -28,8 +27,7 @@ public class ChunkedAudioStream extends InputStream {
     public int read() throws IOException {
         int b = currentStream.read();
         if (b == -1) {
-            // 到达当前流结尾，打开下一个片段
-            currentStart += CHUNK_SIZE;
+            // 尝试重新连接
             currentStream.close();
             currentStream = openChunk(currentStart);
             if (currentStream == null) {
@@ -37,6 +35,7 @@ public class ChunkedAudioStream extends InputStream {
             }
             b = currentStream.read();
         }
+        currentStart += b;
         return b;
     }
 
@@ -49,8 +48,7 @@ public class ChunkedAudioStream extends InputStream {
             conn = url.openConnection(proxy);
             conn.setConnectTimeout(3_000);
             conn.setReadTimeout(3_000);
-            conn.setRequestProperty("Range", "bytes=" + start + "-" + (start + CHUNK_SIZE - 1));
-            currentStart += conn.getContentLengthLong();
+            conn.setRequestProperty("Range", String.format("bytes=%d-", start));
             return conn.getInputStream();
         } catch (IOException e) {
             NetMusic.LOGGER.error("Failed to open audio chunk at {}: {}", start, e.getMessage());
@@ -65,7 +63,7 @@ public class ChunkedAudioStream extends InputStream {
         }
         int bytesRead = currentStream.read(b, off, len);
         if (bytesRead == -1) {
-            // 到达当前流结尾，打开下一个片段
+            // 尝试重新连接
             currentStream.close();
             currentStream = openChunk(currentStart);
             if (currentStream == null) {
@@ -73,6 +71,7 @@ public class ChunkedAudioStream extends InputStream {
             }
             bytesRead = currentStream.read(b, off, len);
         }
+        currentStart += bytesRead;
         return bytesRead;
     }
 
