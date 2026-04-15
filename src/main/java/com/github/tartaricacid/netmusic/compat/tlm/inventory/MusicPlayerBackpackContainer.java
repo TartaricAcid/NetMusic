@@ -135,23 +135,8 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
             return false;
         }
         this.setSoundTicks(0);
-        MaidStopMusicMessage stopMsg = new MaidStopMusicMessage(this.maid.getId());
+        MaidStopMusicMessage stopMsg = MaidStopMusicMessage.create(this.maid);
         NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), stopMsg);
-
-        // 移除歌词气泡
-        LongSet removeIds = new LongOpenHashSet();
-        ChatBubbleDataCollection collection = maid.getChatBubbleManager().getChatBubbleDataCollection();
-        // 先记录，再移除，避免并发修改异常
-        for (long id : collection.keySet()) {
-            IChatBubbleData data = collection.get(id);
-            if (data.id().equals(LyricChatBubbleData.ID)) {
-                removeIds.add(id);
-            }
-        }
-        for (long id : removeIds) {
-            collection.remove(id);
-        }
-        maid.getChatBubbleManager().forceUpdateChatBubble();
 
         return true;
     }

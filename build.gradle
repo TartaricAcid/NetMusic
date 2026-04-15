@@ -145,7 +145,7 @@ dependencies {
     implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
 
     // 女仆模组兼容
-    implementation 'maven.modrinth:touhou-little-maid:1.5.0-neoforge+mc1.21.1'
+    implementation 'maven.modrinth:touhou-little-maid:1.5.2-neoforge+mc1.21.1'
 
     // Cloth Config (配置界面库)
     implementation "maven.modrinth:cloth-config:15.0.140+neoforge"
