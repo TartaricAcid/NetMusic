@@ -4,17 +4,9 @@
     "id": "netmusic:music_cd"
   },
   "ingredients": [
-    {
-      "item": "minecraft:gray_dye"
-    },
-    {
-      "item": "minecraft:brown_dye"
-    },
-    {
-      "item": "minecraft:clay_ball"
-    },
-    {
-      "item": "minecraft:clay_ball"
-    }
+    "minecraft:gray_dye",
+    "minecraft:brown_dye",
+    "minecraft:clay_ball",
+    "minecraft:clay_ball"
   ]
 }

@@ -21,6 +21,7 @@ public class NetworkHandler {
 
         registrar.playToClient(MusicToClientMessage.TYPE, MusicToClientMessage.STREAM_CODEC, MusicToClientMessage::handle);
         registrar.playToClient(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC, GetMusicListMessage::handle);
+
         registrar.playToServer(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC, SetMusicIDMessage::handle);
 
         // CompatRegistry.initNetwork(registrar);

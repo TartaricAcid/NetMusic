@@ -4,14 +4,8 @@
     "id": "netmusic:computer"
   },
   "ingredients": [
-    {
-      "item": "minecraft:jukebox"
-    },
-    {
-      "item": "minecraft:gold_ingot"
-    },
-    {
-      "item": "minecraft:redstone"
-    }
+    "minecraft:jukebox",
+    "#c:ingots/gold",
+    "#c:dusts/redstone"
   ]
 }

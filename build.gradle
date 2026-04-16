@@ -50,12 +50,14 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = project.file('runs/client')
         }
 
         server {
             server()
             programArgument '--nogui'
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            gameDirectory = project.file('runs/server')
         }
 
         gameTestServer {
@@ -133,12 +135,18 @@ repositories {
     }
 }
 
+configurations {
+    // 创建一个名为 shadowLib 的专用配置
+    shadowLib
+    // 让 implementation 继承它，这样开发环境能正常调用
+    implementation.extendsFrom shadowLib
+}
 
 dependencies {
     // mp3 播放库
-    implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    shadowLib 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
     // flac 播放库
-    implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
+    shadowLib 'libs:jflac-codec:1.5.3-SNAPSHOT'
 
     // 女仆模组兼容
     // implementation 'maven.modrinth:touhou-little-maid:1.5.2-neoforge+mc1.21.1'
@@ -158,7 +166,7 @@ dependencies {
     // runtimeOnly("maven.modrinth:sound-physics-remastered:neoforge-1.21.1-1.5.1")
 
     // Sophisticated Backpacks
-    implementation "maven.modrinth:sophisticated-core:26.1-1.4.25.1687"
+    implementation "maven.modrinth:sophisticated-core:26.1.2-1.4.27.1692"
     implementation "maven.modrinth:sophisticated-backpacks:26.1-3.25.47.1680"
 }
 
@@ -192,11 +200,12 @@ sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
 shadowJar {
+    // 告诉 Shadow 只打包 shadowLib 配置中的内容
+    configurations = [project.configurations.shadowLib]
+
+    // MP3 音频库 居然会把 junit 打包进去……
     dependencies {
-        include(dependency("com.googlecode.soundlibs:mp3spi:1.9.5.4"))
-        include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
-        include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
-        include(dependency("libs:jflac-codec:1.5.3-SNAPSHOT"))
+        exclude(dependency('junit:junit'))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
