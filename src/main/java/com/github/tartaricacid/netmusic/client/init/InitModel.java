@@ -29,6 +29,6 @@ public class InitModel {
 
     @SubscribeEvent
     public static void registerSpecialModel(RegisterSpecialModelRendererEvent event) {
-        event.register(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_play"), MusicPlayerItemRenderer.Unbaked.MAP_CODEC);
+        event.register(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_player"), MusicPlayerItemRenderer.Unbaked.MAP_CODEC);
     }
 }

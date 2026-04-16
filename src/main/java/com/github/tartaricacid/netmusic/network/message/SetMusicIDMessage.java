@@ -12,8 +12,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class SetMusicIDMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SetMusicIDMessage> TYPE = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "set_music_id"));
-    public static final StreamCodec<ByteBuf, SetMusicIDMessage> STREAM_CODEC = StreamCodec.composite(ItemMusicCD.SongInfo.STREAM_CODEC, SetMusicIDMessage::getSong, SetMusicIDMessage::new);
+    public static final Type<SetMusicIDMessage> TYPE = new Type<>(
+            Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "set_music_id"));
+
+    public static final StreamCodec<ByteBuf, SetMusicIDMessage> STREAM_CODEC = StreamCodec.composite(
+            ItemMusicCD.SongInfo.STREAM_CODEC, SetMusicIDMessage::getSong, SetMusicIDMessage::new);
 
     private final ItemMusicCD.SongInfo song;
 

@@ -25,15 +25,20 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class BlockCDBurner extends HorizontalDirectionalBlock {
     protected static final VoxelShape BLOCK_AABB = Block.box(0, 0, 0, 16, 8, 16);
     protected static final MapCodec<BlockCDBurner> CODEC = simpleCodec(BlockCDBurner::new);
 
     public BlockCDBurner(Identifier id) {
-        super(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).sound(SoundType.WOOD).strength(0.5f).noOcclusion());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        super(BlockBehaviour.Properties.of()
+                .setId(ResourceKey.create(Registries.BLOCK, id))
+                .sound(SoundType.WOOD)
+                .strength(0.5f)
+                .noOcclusion());
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH));
     }
 
     public BlockCDBurner(Properties properties) {
@@ -53,12 +58,14 @@ public class BlockCDBurner extends HorizontalDirectionalBlock {
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn,
+                               BlockPos pos, CollisionContext context) {
         return BLOCK_AABB;
     }
 
     @Override
-    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos,
+                                            Player player, BlockHitResult hitResult) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         } else {
@@ -69,7 +76,8 @@ public class BlockCDBurner extends HorizontalDirectionalBlock {
 
     @Override
     public MenuProvider getMenuProvider(BlockState blockState, Level level, BlockPos blockPos) {
-        return new SimpleMenuProvider((id, inventory, player) -> new CDBurnerMenu(id, inventory), Component.literal("cd_burner"));
+        return new SimpleMenuProvider((id, inventory, player) ->
+                new CDBurnerMenu(id, inventory), Component.literal("cd_burner"));
     }
 
     @Override

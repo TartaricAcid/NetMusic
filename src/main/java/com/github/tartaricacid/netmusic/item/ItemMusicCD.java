@@ -24,14 +24,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@SuppressWarnings("deprecation")
 public class ItemMusicCD extends Item {
     public ItemMusicCD(Identifier id) {
         super((new Properties().setId(ResourceKey.create(Registries.ITEM, id))));
@@ -55,18 +56,21 @@ public class ItemMusicCD extends Item {
     @Override
     public Component getName(ItemStack stack) {
         SongInfo info = getSongInfo(stack);
-        if (info != null) {
-            String name = info.songName;
-            if (info.vip) {
-                name = name + " §4§l[VIP]";
-            }
-            if (info.readOnly) {
-                MutableComponent readOnlyText = Component.translatable("tooltips.netmusic.cd.read_only").withStyle(ChatFormatting.YELLOW);
-                return Component.literal(name).append(CommonComponents.SPACE).append(readOnlyText);
-            }
-            return Component.literal(name);
+        if (info == null) {
+            return super.getName(stack);
         }
-        return super.getName(stack);
+        String name = info.songName;
+        if (info.vip) {
+            name = name + " §4§l[VIP]";
+        }
+        if (info.readOnly) {
+            MutableComponent readOnlyText = Component.translatable("tooltips.netmusic.cd.read_only")
+                    .withStyle(ChatFormatting.YELLOW);
+            return Component.literal(name)
+                    .append(CommonComponents.SPACE)
+                    .append(readOnlyText);
+        }
+        return Component.literal(name);
     }
 
     private String getSongTime(int songTime) {

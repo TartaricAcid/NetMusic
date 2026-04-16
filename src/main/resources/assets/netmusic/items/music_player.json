@@ -3,7 +3,7 @@
     "type": "minecraft:special",
     "base": "netmusic:item/music_player",
     "model": {
-      "type": "netmusic:music_play"
+      "type": "netmusic:music_player"
     },
     "transformation": {
       "left_rotation": [

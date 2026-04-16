@@ -17,7 +17,9 @@ import java.util.function.Consumer;
 @SuppressWarnings("deprecation")
 public class ItemComputer extends BlockItem {
     public ItemComputer(Identifier id) {
-        super(InitBlocks.COMPUTER.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
+        super(InitBlocks.COMPUTER.get(), new Item.Properties()
+                .setId(ResourceKey.create(Registries.ITEM, id))
+                .stacksTo(1));
     }
 
     @Override

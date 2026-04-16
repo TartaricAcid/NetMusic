@@ -2,7 +2,7 @@ package com.github.tartaricacid.netmusic.api.pojo;
 
 import com.google.gson.annotations.SerializedName;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public record NetEaseMusicLyric(
         @SerializedName("code") int code,

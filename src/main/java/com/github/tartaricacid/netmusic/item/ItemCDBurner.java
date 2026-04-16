@@ -17,7 +17,9 @@ import java.util.function.Consumer;
 @SuppressWarnings("deprecation")
 public class ItemCDBurner extends BlockItem {
     public ItemCDBurner(Identifier id) {
-        super(InitBlocks.CD_BURNER.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)).stacksTo(1));
+        super(InitBlocks.CD_BURNER.get(), new Item.Properties()
+                .setId(ResourceKey.create(Registries.ITEM, id))
+                .stacksTo(1));
     }
 
     @Override

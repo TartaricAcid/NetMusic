@@ -26,11 +26,11 @@ public class CDInput extends ItemStackResourceHandler implements IndexModifier<I
 
     @Override
     public void set(int index, ItemResource resource, int amount) {
-        if (index != 0 || !isValid(resource) || amount <= 0) {
-            return;
+        if (amount == 0) {
+            setStack(ItemStack.EMPTY);
+        } else {
+            ItemStack stack = resource.toStack(amount);
+            setStack(stack);
         }
-        ItemStack stack = resource.toStack();
-        stack.setCount(amount);
-        setStack(stack);
     }
 }

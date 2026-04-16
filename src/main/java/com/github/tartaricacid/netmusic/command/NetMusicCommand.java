@@ -71,7 +71,9 @@ public class NetMusicCommand {
                 if (dropItem != null) {
                     dropItem.makeFakeItem();
                 }
-                serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((serverPlayer.getRandom().nextFloat() - serverPlayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(),
+                        serverPlayer.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F,
+                        ((serverPlayer.getRandom().nextFloat() - serverPlayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 serverPlayer.inventoryMenu.broadcastChanges();
             } else {
                 ItemEntity dropItem = serverPlayer.drop(musicDisc, false);
@@ -148,7 +150,9 @@ public class NetMusicCommand {
                 if (dropItem != null) {
                     dropItem.makeFakeItem();
                 }
-                serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(), serverPlayer.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F, ((serverPlayer.getRandom().nextFloat() - serverPlayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
+                serverPlayer.level().playSound(null, serverPlayer.getX(), serverPlayer.getY(),
+                        serverPlayer.getZ(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2F,
+                        ((serverPlayer.getRandom().nextFloat() - serverPlayer.getRandom().nextFloat()) * 0.7F + 1.0F) * 2.0F);
                 serverPlayer.inventoryMenu.broadcastChanges();
             } else {
                 ItemEntity dropItem = serverPlayer.drop(musicDisc, false);

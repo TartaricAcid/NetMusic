@@ -16,6 +16,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
@@ -27,12 +28,14 @@ import java.util.regex.Pattern;
 
 public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
     private static final Identifier BG = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/cd_burner.png");
+
     private static final Pattern ID_REG = Pattern.compile("^\\d{4,}$");
     private static final Pattern DJ_ID_REG = Pattern.compile("^dj/(\\d+)$");
     private static final Pattern URL_1_REG = Pattern.compile("^https://music\\.163\\.com/song\\?id=(\\d+).*$");
     private static final Pattern URL_2_REG = Pattern.compile("^https://music\\.163\\.com/#/song\\?id=(\\d+).*$");
     private static final Pattern DJ_URL_1_REG = Pattern.compile("^https://music\\.163\\.com/dj\\?id=(\\d+).*$");
     private static final Pattern DJ_URL_2_REG = Pattern.compile("^https://music\\.163\\.com/#/dj\\?id=(\\d+).*$");
+
     private EditBox textField;
     private Checkbox readOnlyButton;
     private Component tips = Component.empty();
@@ -51,7 +54,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
             perText = textField.getValue();
             focus = textField.isFocused();
         }
-        textField = new EditBox(getMinecraft().font, leftPos + 12, topPos + 18, 132, 16, Component.literal("Music ID Box")) {
+        textField = new EditBox(this.font, leftPos + 12, topPos + 18, 132, 16, Component.literal("Music ID Box")) {
             @Override
             public void insertText(String text) {
                 Matcher matcher1 = URL_1_REG.matcher(text);
@@ -88,7 +91,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         textField.setValue(perText);
         textField.setBordered(false);
         textField.setMaxLength(19);
-        textField.setTextColor(0xF3EFE0);
+        textField.setTextColor(0xFFF3EFE0);
         textField.setFocused(focus);
         textField.moveCursorToEnd(false);
         this.addRenderableWidget(this.textField);
@@ -157,9 +160,9 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        int posX = this.leftPos;
-        int posY = this.topPos;
-        extractMenuBackgroundTexture(graphics, BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+        super.extractBackground(graphics, mouseX, mouseY, a);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos, 0, 0,
+                imageWidth, imageHeight, 256, 256);
         this.minecraft.gui.extractDeferredSubtitles();
     }
 
@@ -168,9 +171,9 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
         super.extractContents(graphics, mouseX, mouseY, a);
         if (StringUtils.isBlank(textField.getValue()) && !textField.isFocused()) {
             graphics.text(font, Component.translatable("gui.netmusic.cd_burner.id.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12,
-                    this.topPos + 18, ChatFormatting.GRAY.getColor(), false);
+                    this.topPos + 18, 0xFFaaaaaa, false);
         }
-        graphics.textWithWordWrap(font, tips, this.leftPos + 8, this.topPos + 57, 135, 0xCF0000, false);
+        graphics.textWithWordWrap(font, tips, this.leftPos + 8, this.topPos + 57, 135, 0xFFCF0000, false);
     }
 
     @Override

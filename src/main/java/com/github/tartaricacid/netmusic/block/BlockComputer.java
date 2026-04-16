@@ -27,7 +27,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class BlockComputer extends HorizontalDirectionalBlock {
     protected static final VoxelShape NORTH_AABB = makeShape();
@@ -37,8 +37,13 @@ public class BlockComputer extends HorizontalDirectionalBlock {
     protected static final MapCodec<BlockComputer> CODEC = simpleCodec(BlockComputer::new);
 
     public BlockComputer(Identifier id) {
-        super(BlockBehaviour.Properties.of().setId(ResourceKey.create(Registries.BLOCK, id)).sound(SoundType.WOOD).strength(0.5f).noOcclusion());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        super(BlockBehaviour.Properties.of()
+                .setId(ResourceKey.create(Registries.BLOCK, id))
+                .sound(SoundType.WOOD)
+                .strength(0.5f)
+                .noOcclusion());
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH));
     }
 
     public BlockComputer(Properties properties) {
@@ -64,7 +69,8 @@ public class BlockComputer extends HorizontalDirectionalBlock {
         VoxelShape[] buffer = new VoxelShape[]{shape, Shapes.empty()};
         int times = (to.ordinal() - from.get2DDataValue() + 4) % 4;
         for (int i = 0; i < times; i++) {
-            buffer[0].forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> buffer[1] = Shapes.or(buffer[1], Shapes.create(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX)));
+            buffer[0].forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) ->
+                    buffer[1] = Shapes.or(buffer[1], Shapes.create(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX)));
             buffer[0] = buffer[1];
             buffer[1] = Shapes.empty();
         }
@@ -84,7 +90,8 @@ public class BlockComputer extends HorizontalDirectionalBlock {
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter worldIn,
+                               BlockPos pos, CollisionContext context) {
         Direction direction = state.getValue(FACING);
         switch (direction) {
             case SOUTH -> {
@@ -103,7 +110,8 @@ public class BlockComputer extends HorizontalDirectionalBlock {
     }
 
     @Override
-    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos,
+                                            Player player, BlockHitResult hitResult) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         } else {
@@ -114,7 +122,8 @@ public class BlockComputer extends HorizontalDirectionalBlock {
 
     @Override
     public MenuProvider getMenuProvider(BlockState blockState, Level level, BlockPos blockPos) {
-        return new SimpleMenuProvider((id, inventory, player) -> new ComputerMenu(id, inventory), Component.literal("computer"));
+        return new SimpleMenuProvider((id, inventory, player) ->
+                new ComputerMenu(id, inventory), Component.literal("computer"));
     }
 
     @Override

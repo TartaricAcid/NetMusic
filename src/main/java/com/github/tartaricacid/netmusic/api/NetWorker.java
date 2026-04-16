@@ -3,7 +3,7 @@ package com.github.tartaricacid.netmusic.api;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

@@ -1,8 +1,7 @@
 package com.github.tartaricacid.netmusic.api.lyric;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectSortedMap;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class LyricRecord {
     private final Int2ObjectSortedMap<String> lyrics;

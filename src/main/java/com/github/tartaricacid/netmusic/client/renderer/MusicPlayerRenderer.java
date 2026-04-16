@@ -1,6 +1,5 @@
 package com.github.tartaricacid.netmusic.client.renderer;
 
-import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.client.event.ConfigEvent;
 import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
@@ -21,7 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
-import net.minecraft.resources.Identifier;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -126,21 +125,22 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
                 break;
         }
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
-        submitNode.submitModel(model, state, matrixStack, TEXTURE, state.lightCoords, OverlayTexture.NO_OVERLAY, 0, state.breakProgress);
+        submitNode.submitModel(model, state, matrixStack, TEXTURE, state.lightCoords,
+                OverlayTexture.NO_OVERLAY, 0, state.breakProgress);
         matrixStack.popPose();
     }
 
-    private void submitLyric(MusicPlayerRenderState state, PoseStack poseStack, SubmitNodeCollector submitNode, CameraRenderState camera) {
+    private void submitLyric(MusicPlayerRenderState state, PoseStack poseStack,
+                             SubmitNodeCollector submitNode, CameraRenderState camera) {
         MutableComponent currentLine = state.currentLine;
-        int currentLyricColor = state.currentLyricColor;
-
         MutableComponent translatedLine = state.translatedLine;
-        int transLyricColor = state.transLyricColor;
 
         if (currentLine.equals(Component.empty()) && translatedLine == null) {
             return;
         }
 
+        int currentLyricColor = state.currentLyricColor;
+        int transLyricColor = state.transLyricColor;
         float y = state.y;
 
         poseStack.pushPose();
@@ -154,20 +154,18 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
 
         if (!currentLine.getContents().equals(PlainTextContents.EMPTY)) {
             float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
-
-            submitNode.submitText(poseStack, currentLineWidth, -y, currentLine.getVisualOrderText(),
+            FormattedCharSequence text = currentLine.getVisualOrderText();
+            submitNode.submitText(poseStack, currentLineWidth, -y, text,
                     false, Font.DisplayMode.NORMAL, state.lightCoords,
-                    currentLyricColor, bgColor, 0
-            );
+                    currentLyricColor, bgColor, 0);
         }
 
         if (translatedLine != null) {
             float translatedLineWidth = (float) (-this.font.width(translatedLine) / 2);
-
-            submitNode.submitText(poseStack, translatedLineWidth, -y - 12, translatedLine.getVisualOrderText(),
+            FormattedCharSequence text = translatedLine.getVisualOrderText();
+            submitNode.submitText(poseStack, translatedLineWidth, -y - 12, text,
                     false, Font.DisplayMode.NORMAL, state.lightCoords,
-                    transLyricColor, bgColor, 0
-            );
+                    transLyricColor, bgColor, 0);
         }
 
         poseStack.popPose();

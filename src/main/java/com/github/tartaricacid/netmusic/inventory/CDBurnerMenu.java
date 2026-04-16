@@ -24,7 +24,13 @@ public class CDBurnerMenu extends AbstractContainerMenu {
         super(TYPE, id);
 
         this.addSlot(new ResourceHandlerSlot(input, input, 0, 147, 14));
-        this.addSlot(new ResourceHandlerSlot(output, output, 0, 147, 67));
+        this.addSlot(new ResourceHandlerSlot(output, output, 0, 147, 67) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                // 输出栏只能取出不能放入
+                return false;
+            }
+        });
 
         for (int i = 0; i < 9; ++i) {
             this.addSlot(new Slot(inventory, i, 8 + i * 18, 152));
@@ -70,24 +76,46 @@ public class CDBurnerMenu extends AbstractContainerMenu {
     @Override
     public void removed(Player player) {
         super.removed(player);
-        player.getInventory().placeItemBackInInventory(input.getResource(0).toStack());
-        player.getInventory().placeItemBackInInventory(output.getResource(0).toStack());
+
+        ItemResource inputResource = input.getResource(0);
+        ItemResource outputResource = output.getResource(0);
+
+        if (!inputResource.isEmpty()) {
+            try (var tx = Transaction.openRoot()) {
+                int extractInput = this.input.extract(0, inputResource, 64, tx);
+                tx.commit();
+                player.getInventory().placeItemBackInInventory(inputResource.toStack(extractInput));
+            }
+        }
+
+        if (!outputResource.isEmpty()) {
+            try (var tx = Transaction.openRoot()) {
+                int extractOutput = this.output.extract(0, outputResource, 64, tx);
+                tx.commit();
+                player.getInventory().placeItemBackInInventory(outputResource.toStack(extractOutput));
+            }
+        }
     }
 
     public void setSongInfo(ItemMusicCD.SongInfo setSongInfo) {
         this.songInfo = setSongInfo;
+
         ItemResource inputResource = this.input.getResource(0);
-        if (!inputResource.isEmpty() && this.output.getResource(0).isEmpty()) {
+        ItemResource outputResource = this.output.getResource(0);
+
+        if (!inputResource.isEmpty() && outputResource.isEmpty()) {
             try (var tx = Transaction.openRoot()) {
                 int extract = this.input.extract(0, inputResource, 1, tx);
-                tx.commit();
 
                 ItemStack itemStack = inputResource.toStack(extract);
                 ItemMusicCD.SongInfo rawSongInfo = ItemMusicCD.getSongInfo(itemStack);
                 if (rawSongInfo == null || !rawSongInfo.readOnly) {
                     ItemMusicCD.setSongInfo(this.songInfo, itemStack);
                 }
-                this.output.set(0, ItemResource.of(itemStack), itemStack.getCount());
+
+                this.output.insert(0, ItemResource.of(itemStack), itemStack.getCount(), tx);
+
+                tx.commit();
             }
         }
     }

@@ -28,8 +28,6 @@ public class MusicPlayerItemRenderer implements NoDataSpecialModelRenderer {
 
     @Override
     public void submit(PoseStack poseStack, SubmitNodeCollector submitNode, int light, int overlay, boolean hasFoil, int outlineColor) {
-        //poseStack.scale(4 / 3.0f, 4 / 3.0f, 4 / 3.0f);
-        //poseStack.translate(0.5 - 0.5 / 0.75, 0, 0.5 - 0.5 / 0.75);
         submitNode.submitModel(this.model, Unit.INSTANCE, poseStack, TEXTURE, light, overlay, 0, null);
     }
 

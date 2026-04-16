@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 
 public class ItemMusicPlayer extends BlockItem {
     public ItemMusicPlayer(Identifier id) {
-        super(InitBlocks.MUSIC_PLAYER.get(), new Item.Properties().setId(ResourceKey.create(Registries.ITEM, id)));
+        super(InitBlocks.MUSIC_PLAYER.get(), new Item.Properties()
+                .setId(ResourceKey.create(Registries.ITEM, id)));
     }
 }

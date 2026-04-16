@@ -2,8 +2,8 @@ package com.github.tartaricacid.netmusic.api.search;
 
 import com.google.gson.annotations.SerializedName;
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.StringJoiner;
 

@@ -15,6 +15,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,9 +30,11 @@ import java.util.regex.Pattern;
 
 public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
     private static final Identifier BG = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/computer.png");
+
     private static final Pattern URL_HTTP_REG = Pattern.compile("(http|ftp|https)://[\\w\\-_]+(\\.[\\w\\-_]+)+([\\w\\-.,@?^=%&:/~+#]*[\\w\\-@?^=%&/~+#])?");
     private static final Pattern URL_FILE_REG = Pattern.compile("^[a-zA-Z]:\\\\(?:[^\\\\/:*?\"<>|\\r\\n]+\\\\)*[^\\\\/:*?\"<>|\\r\\n]*$");
     private static final Pattern TIME_REG = Pattern.compile("^\\d+$");
+
     private EditBox urlTextField;
     private EditBox nameTextField;
     private EditBox timeTextField;
@@ -48,7 +51,9 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
         this.initUrlEditBox();
         this.initNameEditBox();
         this.initTimeEditBox();
-        this.readOnlyButton = Checkbox.builder(Component.translatable("gui.netmusic.cd_burner.read_only"), font).pos(leftPos + 58, topPos + 55).maxWidth(80).selected(false).build();
+        this.readOnlyButton = Checkbox.builder(Component.translatable("gui.netmusic.cd_burner.read_only"), font)
+                .pos(leftPos + 58, topPos + 55)
+                .maxWidth(80).selected(false).build();
         this.addRenderableWidget(this.readOnlyButton);
         this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.cd_burner.craft"), (b) -> handleCraftButton())
                 .pos(leftPos + 7, topPos + 78).size(135, 18).build());
@@ -61,11 +66,12 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
             perText = urlTextField.getValue();
             focus = urlTextField.isFocused();
         }
-        urlTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 18, 120, 16, Component.literal("Music URL Box"));
+        urlTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 18,
+                120, 16, Component.literal("Music URL Box"));
         urlTextField.setValue(perText);
         urlTextField.setBordered(false);
         urlTextField.setMaxLength(32500);
-        urlTextField.setTextColor(0xF3EFE0);
+        urlTextField.setTextColor(0xFFF3EFE0);
         urlTextField.setFocused(focus);
         urlTextField.moveCursorToEnd(false);
         this.addRenderableWidget(this.urlTextField);
@@ -78,11 +84,12 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
             perText = nameTextField.getValue();
             focus = nameTextField.isFocused();
         }
-        nameTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 39, 120, 16, Component.literal("Music Name Box"));
+        nameTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 39,
+                120, 16, Component.literal("Music Name Box"));
         nameTextField.setValue(perText);
         nameTextField.setBordered(false);
         nameTextField.setMaxLength(256);
-        nameTextField.setTextColor(0xF3EFE0);
+        nameTextField.setTextColor(0xFFF3EFE0);
         nameTextField.setFocused(focus);
         nameTextField.moveCursorToEnd(false);
         this.addRenderableWidget(this.nameTextField);
@@ -95,11 +102,12 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
             perText = timeTextField.getValue();
             focus = timeTextField.isFocused();
         }
-        timeTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 61, 40, 16, Component.literal("Music Time Box"));
+        timeTextField = new EditBox(getMinecraft().font, leftPos + 10, topPos + 61,
+                40, 16, Component.literal("Music Time Box"));
         timeTextField.setValue(perText);
         timeTextField.setBordered(false);
         timeTextField.setMaxLength(5);
-        timeTextField.setTextColor(0xF3EFE0);
+        timeTextField.setTextColor(0xFFF3EFE0);
         timeTextField.setFocused(focus);
         timeTextField.moveCursorToEnd(false);
         this.addRenderableWidget(this.timeTextField);
@@ -165,26 +173,30 @@ public class ComputerMenuScreen extends AbstractContainerScreen<ComputerMenu> {
 
     @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        int posX = this.leftPos;
-        int posY = this.topPos;
-        extractMenuBackgroundTexture(graphics, BG, posX, posY, 0, 0, this.imageWidth, this.imageHeight);
+        super.extractBackground(graphics, mouseX, mouseY, a);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos, 0, 0,
+                imageWidth, imageHeight, 256, 256);
         this.minecraft.gui.extractDeferredSubtitles();
     }
 
     @Override
     public void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
         super.extractContents(graphics, mouseX, mouseY, a);
-        int color = ChatFormatting.GRAY.getColor();
+        int color = 0xFFaaaaaa;
         if (StringUtils.isBlank(urlTextField.getValue()) && !urlTextField.isFocused()) {
-            graphics.text(font, Component.translatable("gui.netmusic.computer.url.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 18, color, false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.url.tips").withStyle(ChatFormatting.ITALIC),
+                    this.leftPos + 12, this.topPos + 18, color, false);
         }
         if (StringUtils.isBlank(nameTextField.getValue()) && !nameTextField.isFocused()) {
-            graphics.text(font, Component.translatable("gui.netmusic.computer.name.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 12, this.topPos + 39, color, false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.name.tips").withStyle(ChatFormatting.ITALIC),
+                    this.leftPos + 12, this.topPos + 39, color, false);
         }
         if (StringUtils.isBlank(timeTextField.getValue()) && !timeTextField.isFocused()) {
-            graphics.text(font, Component.translatable("gui.netmusic.computer.time.tips").withStyle(ChatFormatting.ITALIC), this.leftPos + 11, this.topPos + 61, color, false);
+            graphics.text(font, Component.translatable("gui.netmusic.computer.time.tips").withStyle(ChatFormatting.ITALIC),
+                    this.leftPos + 11, this.topPos + 61, color, false);
         }
-        graphics.textWithWordWrap(font, tips, this.leftPos + 8, this.topPos + 100, 162, 0xCF0000, false);
+        graphics.textWithWordWrap(font, tips, this.leftPos + 8, this.topPos + 100,
+                162, 0xFFCF0000, false);
     }
 
     @Override

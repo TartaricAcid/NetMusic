@@ -35,6 +35,7 @@ public class ModelMusicPlayer {
     public static class Item extends Model<Unit> {
         public Item(ModelPart root) {
             super(root, RenderTypes::entityCutout);
+            root.getChild("disc").visible = false;
         }
 
         @Override

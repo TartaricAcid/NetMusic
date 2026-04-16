@@ -20,8 +20,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISABLE;
 
@@ -30,7 +29,9 @@ public class TileEntityMusicPlayer extends BlockEntity {
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
     private static final String SIGNAL_TAG = "RedStoneSignal";
+
     private final MusicPlayerInv playerInv = new MusicPlayerInv(this);
+
     private boolean isPlay = false;
     private int currentTime;
     private boolean hasSignal = false;
@@ -77,6 +78,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
         return playerInv;
     }
 
+    @Nullable
     public MusicPlayerInv createHandler() {
         BlockState state = this.getBlockState();
         if (state.getBlock() instanceof BlockMusicPlayer) {
