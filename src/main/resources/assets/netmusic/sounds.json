@@ -1,0 +1,12 @@
+{
+  "net_music": {
+    "category": "record",
+    "subtitle": "subtitle.netmusic.block.music_player",
+    "sounds": [
+      {
+        "name": "random/orb",
+        "stream": true
+      }
+    ]
+  }
+}

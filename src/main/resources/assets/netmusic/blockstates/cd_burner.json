@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "netmusic:block/cd_burner"
+    },
+    "facing=south": {
+      "model": "netmusic:block/cd_burner",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "netmusic:block/cd_burner",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "netmusic:block/cd_burner",
+      "y": 90
+    }
+  }
+}

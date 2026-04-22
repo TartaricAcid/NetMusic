@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "result": {
+    "id": "netmusic:music_player"
+  },
+  "pattern": [
+    "OBO",
+    "ODO",
+    "OOO"
+  ],
+  "key": {
+    "B": "minecraft:book",
+    "O": "#minecraft:planks",
+    "D": "#c:gems/diamond"
+  }
+}

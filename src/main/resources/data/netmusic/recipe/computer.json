@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "result": {
+    "id": "netmusic:computer"
+  },
+  "ingredients": [
+    "minecraft:jukebox",
+    "#c:ingots/gold",
+    "#c:dusts/redstone"
+  ]
+}
