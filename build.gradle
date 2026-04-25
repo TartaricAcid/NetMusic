@@ -122,6 +122,7 @@ dependencies {
 
     // 必须的音频解码库
     minecraftLibrary 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    minecraftLibrary 'libs:javasound-aac:0.9.6'
     minecraftLibrary 'libs:jflac-codec-1.5.3:SNAPSHOT'
 
     // JEI
@@ -169,12 +170,14 @@ shadowJar {
         include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
         include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
         include(dependency("libs:jflac-codec-1.5.3:SNAPSHOT"))
+        include(dependency("libs:javasound-aac:0.9.6"))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
     relocate 'javazoom.spi', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.spi'
     relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
     relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
+    relocate 'net.sourceforge.jaad', 'com.github.tartaricacid.netmusic.soundlibs.net.sourceforge.jaad'
 
     // 排除不需要的依赖项和资源
     exclude 'META-INF/maven/**/*'

@@ -8,13 +8,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author 内个球
@@ -103,5 +102,17 @@ public class NetWorker {
             return Proxy.NO_PROXY;
         }
         return new Proxy(proxyType, new InetSocketAddress(split[0], Integer.parseInt(split[1])));
+    }
+
+    public static class ConfigProxySelector extends ProxySelector {
+        @Override
+        public List<Proxy> select(URI uri) {
+            Proxy proxy = NetWorker.getProxyFromConfig();
+            return List.of(Objects.requireNonNullElse(proxy, Proxy.NO_PROXY));
+        }
+
+        @Override
+        public void connectFailed(URI uri, SocketAddress sa, java.io.IOException ioe) {
+        }
     }
 }

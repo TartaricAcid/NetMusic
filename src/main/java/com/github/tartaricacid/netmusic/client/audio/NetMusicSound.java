@@ -90,6 +90,9 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
+                if (NetMusicLiveAudioStream.isM3U8Stream(songUrl)) {
+                    return new NetMusicLiveAudioStream(songUrl);
+                }
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
                 NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);
