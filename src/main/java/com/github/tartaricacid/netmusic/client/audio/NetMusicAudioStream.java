@@ -88,7 +88,7 @@ public class NetMusicAudioStream implements AudioStream {
                 }
             }
         } catch (IOException e) {
-            NetMusic.LOGGER.error("Error reading audio stream: " + e.getMessage());
+            NetMusic.LOGGER.error("Failed to read audio stream", e);
         }
     }
 

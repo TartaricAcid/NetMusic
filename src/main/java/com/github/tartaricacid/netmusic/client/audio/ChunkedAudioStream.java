@@ -55,7 +55,7 @@ public class ChunkedAudioStream extends InputStream {
             conn.setRequestProperty("Range", String.format("bytes=%d-", start));
             return conn.getInputStream();
         } catch (IOException e) {
-            NetMusic.LOGGER.error("Failed to open audio chunk at {}: {}", start, e.getMessage());
+            NetMusic.LOGGER.error("Failed to open audio chunk at {}", start, e);
             return null;
         }
     }
