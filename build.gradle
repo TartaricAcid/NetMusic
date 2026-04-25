@@ -28,7 +28,12 @@ minecraft {
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {
         client {
-            jvmArgs "-XX:+AllowEnhancedClassRedefinition"
+            jvmArgs = [
+                    "-XX:+IgnoreUnrecognizedVMOptions",
+                    "-XX:+AllowEnhancedClassRedefinition",
+                    // 开启 HTTP 请求日志，方便调试
+                    "-Djdk.httpclient.HttpClient.log=requests,responses,headers,errors"
+            ]
             workingDirectory project.file('run/client_a')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
