@@ -1,7 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.api.NetWorker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -11,7 +10,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -53,19 +51,6 @@ public final class MusicPlayManager {
     }
 
     public static Optional<String> getFinalUrl(String url) {
-        if (url.startsWith(MUSIC_163_URL)) {
-            try {
-                url = NetWorker.getRedirectUrl(url, NetMusic.NET_EASE_WEB_API.getRequestPropertyData());
-            } catch (IOException e) {
-                NetMusic.LOGGER.error("Failed to get redirect URL for: {}", url, e);
-                return Optional.empty();
-            }
-        }
-
-        if (url == null || url.equals(ERROR_404)) {
-            return Optional.empty();
-        }
-
         try {
             URL urlFinal = URI.create(url).toURL();
             // 如果是本地文件

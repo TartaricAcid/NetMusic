@@ -3,7 +3,6 @@ package com.github.tartaricacid.netmusic.api;
 import com.google.common.net.UrlEscapers;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Arrays;
@@ -98,10 +97,9 @@ public final class WebApi {
         return NetWorker.get(url, requestPropertyData);
     }
 
-    @Nullable
+    @Deprecated(forRemoval = true)
     public String getRedirectMusicUrl(long musicId) throws Exception {
-        String url = String.format("https://music.163.com/song/media/outer/url?id=%d.mp3", musicId);
-        return NetWorker.getRedirectUrl(url, requestPropertyData);
+        return String.format("https://music.163.com/song/media/outer/url?id=%d.mp3", musicId);
     }
 
     public String dj(long djId) throws Exception {

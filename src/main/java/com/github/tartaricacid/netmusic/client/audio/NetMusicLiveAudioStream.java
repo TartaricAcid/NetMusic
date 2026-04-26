@@ -14,25 +14,17 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.net.http.HttpClient;
 import java.nio.ByteBuffer;
-import java.time.Duration;
 
 public class NetMusicLiveAudioStream implements AudioStream {
-    private static final HttpClient LIVE_CLIENT = HttpClient.newBuilder()
-            .version(HttpClient.Version.HTTP_2)
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .connectTimeout(Duration.ofSeconds(5))
-            .proxy(new NetWorker.ConfigProxySelector())
-            .build();
-
     private final AudioInputStream stream;
     private final int frameSize;
     private final byte[] frame;
 
     public NetMusicLiveAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
         // 获取 M3U8 网络流，并套上 5MB 缓冲 (为了支持格式嗅探)
-        final BufferedInputStream bis = new BufferedInputStream(new M3U8InputStream(LIVE_CLIENT, url.toString()), 5 * 1024 * 1024);
+        final M3U8InputStream m3U8InputStream = new M3U8InputStream(NetWorker.HTTP_CLIENT, url.toString());
+        final BufferedInputStream bis = new BufferedInputStream(m3U8InputStream, 5 * 1024 * 1024);
 
         // 流转换读取
         try {

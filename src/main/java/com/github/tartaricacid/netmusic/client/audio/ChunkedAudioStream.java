@@ -1,12 +1,20 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.api.NetEaseMusic;
+import com.github.tartaricacid.netmusic.api.NetWorker;
+import com.google.common.net.HttpHeaders;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Proxy;
+import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.HttpURLConnection.HTTP_PARTIAL;
 
 /**
  * @author : IMG
@@ -17,18 +25,21 @@ public class ChunkedAudioStream extends InputStream {
     private long currentStart;
     private final URL url;
     private long contentLength = -1;
-    private final Proxy proxy;
 
-    public ChunkedAudioStream(URL url, Proxy proxy) {
+    public ChunkedAudioStream(URL url) throws IOException {
         this.url = url;
         this.currentStart = 0;
-        this.proxy = proxy == null ? Proxy.NO_PROXY : proxy;
         this.currentStream = openChunk(currentStart);
-        this.contentLength = getContentLength();
+        if (this.currentStream == null) {
+            throw new IOException("Failed to open initial audio chunk for " + url);
+        }
     }
 
     @Override
     public int read() throws IOException {
+        if (currentStream == null) {
+            return -1;
+        }
         int b = currentStream.read();
         if (b == -1) {
             // 尝试重新连接
@@ -39,7 +50,9 @@ public class ChunkedAudioStream extends InputStream {
             }
             b = currentStream.read();
         }
-        currentStart += b;
+        if (b != -1) {
+            currentStart += 1;
+        }
         return b;
     }
 
@@ -48,12 +61,41 @@ public class ChunkedAudioStream extends InputStream {
             if (contentLength != -1 && start >= contentLength) {
                 return null;
             }
-            URLConnection conn;
-            conn = url.openConnection(proxy);
-            conn.setConnectTimeout(3_000);
-            conn.setReadTimeout(3_000);
-            conn.setRequestProperty("Range", String.format("bytes=%d-", start));
-            return conn.getInputStream();
+            var builder = HttpRequest.newBuilder(URI.create(url.toString()))
+                    .header(HttpHeaders.RANGE, "bytes=%d-".formatted(start))
+                    .GET();
+
+            if (url.getHost().contains(NetEaseMusic.getHost())) {
+                // 如果是网易云，那么需要添加特殊的 header
+                NetMusic.NET_EASE_WEB_API.getRequestPropertyData().forEach(builder::header);
+            } else {
+                // 否则添加普通的用户代理接口
+                builder.header(HttpHeaders.USER_AGENT, NetEaseMusic.getUserAgent());
+            }
+
+            HttpResponse<InputStream> response = NetWorker.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
+
+            int statusCode = response.statusCode();
+            if (statusCode != HTTP_OK && statusCode != HTTP_PARTIAL) {
+                NetMusic.LOGGER.info("Audio not found at {}: {}", url, statusCode);
+                return null;
+            }
+
+            // 如果是 206，从 Content-Range 解析总大小
+            String rangeHeader = response.headers().firstValue(HttpHeaders.CONTENT_RANGE).orElse(StringUtils.EMPTY);
+            if (StringUtils.isNotBlank(rangeHeader)) {
+                // 格式通常为 "bytes 0-999/5000"
+                contentLength = Long.parseLong(rangeHeader.substring(rangeHeader.lastIndexOf('/') + 1));
+            } else {
+                // 如果是 200，直接拿 Content-Length
+                contentLength = response.headers().firstValueAsLong(HttpHeaders.CONTENT_LENGTH).orElse(-1L);
+            }
+            if (contentLength <= 0) {
+                NetMusic.LOGGER.error("Invalid content length for audio at {}: {}", url, contentLength);
+                return null;
+            }
+
+            return response.body();
         } catch (IOException e) {
             NetMusic.LOGGER.error("Failed to open audio chunk at {}", start, e);
             return null;
@@ -75,19 +117,18 @@ public class ChunkedAudioStream extends InputStream {
             }
             bytesRead = currentStream.read(b, off, len);
         }
-        currentStart += bytesRead;
+        if (bytesRead > 0) {
+            currentStart += bytesRead;
+        }
         return bytesRead;
     }
 
-    private long getContentLength() {
-        if (contentLength == -1) {
-            try {
-                URLConnection conn = this.url.openConnection();
-                contentLength = conn.getContentLengthLong();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+    @Override
+    public void close() throws IOException {
+        if (currentStream != null) {
+            currentStream.close();
+            currentStream = null;
         }
-        return contentLength;
+        super.close();
     }
 }

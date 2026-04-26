@@ -6,18 +6,12 @@ import com.github.tartaricacid.netmusic.api.WebApi;
 import com.google.common.net.HttpHeaders;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 public class NeteaseMusicSearch {
-    private static final HttpClient SEARCH_CLIENT = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(30))
-            .proxy(new NetWorker.ConfigProxySelector())
-            .build();
-
     public static CompletableFuture<HttpResponse<String>> searchSongs(String keywords) {
         URI uri = URI.create(WebApi.getSearchUrl(keywords, WebApi.TYPE_SONG, 5));
         HttpRequest request = HttpRequest.newBuilder()
@@ -27,6 +21,6 @@ public class NeteaseMusicSearch {
                 .header(HttpHeaders.USER_AGENT, NetEaseMusic.getUserAgent())
                 .uri(uri).GET().build();
 
-        return SEARCH_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        return NetWorker.HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString());
     }
 }
