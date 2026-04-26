@@ -92,6 +92,11 @@ Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)
 所有资源文件（纹理、模型、音效等）采用 **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC
 BY-NC-SA 4.0)**（知识共享 署名-非商业性使用-相同方式共享 4.0 国际许可协议）。
 
+The file `error.ogg` comes from <https://freesound.org/people/ecfike/sounds/135125/> and is licensed under CC0 1.0
+Universal (CC0 1.0).
+
+其中 `error.ogg` 来自于 <https://freesound.org/people/ecfike/sounds/135125/>，授权协议为 CC0 1.0 Universal (CC0 1.0)。
+
 See [LICENSE-ASSETS](LICENSE-ASSETS) file for details.
 
 详见 [LICENSE-ASSETS](LICENSE-ASSETS) 文件。

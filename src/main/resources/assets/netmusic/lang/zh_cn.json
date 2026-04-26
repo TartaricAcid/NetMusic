@@ -16,6 +16,7 @@
   "block.netmusic.computer.local_file.desc": "你还可以使用本地文件路径，但这样就只有你自己能听到音乐",
   "message.netmusic.music_player.need_vip": "这首歌曲是 VIP 歌曲，无法播放",
   "message.netmusic.music_player.404": "无法找到链接为 %s 的歌曲",
+  "message.netmusic.music_player.play_error": "播放音乐失败",
   "subtitle.netmusic.block.music_player": "唱片机声",
   "command.netmusic.music_cd.reload.success": "所有的唱片重载了！",
   "command.netmusic.music_cd.add163.success": "添加网易云歌单成功！",

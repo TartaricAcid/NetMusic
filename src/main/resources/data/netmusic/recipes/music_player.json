@@ -4,9 +4,9 @@
     "item": "netmusic:music_player"
   },
   "pattern": [
-    "OBO",
+    "CBC",
     "ODO",
-    "OOO"
+    "COC"
   ],
   "key": {
     "B": {
@@ -17,6 +17,9 @@
     },
     "D": {
       "tag": "forge:gems/diamond"
+    },
+    "C": {
+      "tag": "forge:ingots/copper"
     }
   }
 }

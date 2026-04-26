@@ -32,14 +32,14 @@ import org.apache.commons.lang3.StringUtils;
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
     public static final ResourceLocation TEXTURE = new ResourceLocation(NetMusic.MOD_ID, "textures/block/music_player.png");
 
-    public static ModelMusicPlayer<?> MODEL;
+    public static ModelMusicPlayer MODEL;
     public static MusicPlayerRenderer INSTANCE;
 
     private final Font font;
     private final BlockEntityRenderDispatcher dispatcher;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
-        MODEL = new ModelMusicPlayer<>(context.bakeLayer(ModelMusicPlayer.LAYER));
+        MODEL = new ModelMusicPlayer(context.bakeLayer(ModelMusicPlayer.LAYER));
         INSTANCE = this;
         this.font = context.getFont();
         this.dispatcher = context.getBlockEntityRenderDispatcher();
