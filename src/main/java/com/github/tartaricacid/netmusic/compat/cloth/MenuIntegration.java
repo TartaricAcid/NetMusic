@@ -95,6 +95,30 @@ public class MenuIntegration {
                 .setSaveConsumer(color -> GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.set(String.format("#%08X", color)))
                 .build());
 
+        general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_max_range"), GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get())
+                .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_max_range.tooltip"))
+                .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.getDefault())
+                .setMin(1)
+                .setMax(256)
+                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_MAX_RANGE::set)
+                .build());
+
+        general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_scan_interval"), GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.get())
+                .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_scan_interval.tooltip"))
+                .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.getDefault())
+                .setMin(1)
+                .setMax(1200)
+                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL::set)
+                .build());
+
+        general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_client_active_limit"), GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.get())
+                .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_client_active_limit.tooltip"))
+                .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.getDefault())
+                .setMin(1)
+                .setMax(16)
+                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT::set)
+                .build());
+
         ConfigCategory sBackpack = root.getOrCreateCategory(Component.translatable("config.netmusic.sophisticatedbackpacks"));
 
         sBackpack.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_netmusic_cd_generation"), GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.get())

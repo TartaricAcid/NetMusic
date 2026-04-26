@@ -1,0 +1,232 @@
+package com.github.tartaricacid.netmusic.client.gui;
+
+import com.github.tartaricacid.netmusic.config.GeneralConfig;
+import com.github.tartaricacid.netmusic.network.NetworkHandler;
+import com.github.tartaricacid.netmusic.network.message.BigMegaphoneControlMessage;
+import com.github.tartaricacid.netmusic.tileentity.TileEntityBigMegaphone;
+import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractSliderButton;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+public class BigMegaphoneScreen extends Screen {
+    private final BlockPos blockPos;
+
+    private int leftPos;
+    private int topPos;
+
+    private EditBox urlTextField;
+    private EditBox nameTextField;
+    private RangeSlider rangeSlider;
+
+    private Component tips = Component.empty();
+
+    public BigMegaphoneScreen(BlockPos blockPos) {
+        super(Component.translatable("block.netmusic.big_megaphone"));
+        this.blockPos = blockPos;
+    }
+
+    @Override
+    protected void init() {
+        this.leftPos = (this.width - 240) / 2;
+        this.topPos = (this.height - 180) / 2;
+
+        this.initUrlEditBox();
+        this.initNameEditBox();
+        this.initRangeSlider(32);
+
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.big_megaphone.save"),
+                        b -> this.sendAction(BigMegaphoneControlMessage.Action.SAVE))
+                .pos(this.leftPos, this.topPos + 114).size(76, 20).build());
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.big_megaphone.start"),
+                        b -> this.sendAction(BigMegaphoneControlMessage.Action.START))
+                .pos(this.leftPos + 82, this.topPos + 114).size(76, 20).build());
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.big_megaphone.stop"),
+                        b -> this.sendAction(BigMegaphoneControlMessage.Action.STOP))
+                .pos(this.leftPos + 164, this.topPos + 114).size(76, 20).build());
+
+        this.initFromBlockEntity();
+    }
+
+    private void initUrlEditBox() {
+        String previousText = this.urlTextField == null ? "" : this.urlTextField.getValue();
+        boolean focused = this.urlTextField != null && this.urlTextField.isFocused();
+        this.urlTextField = new EditBox(this.font, this.leftPos, this.topPos + 14, 240, 18,
+                Component.literal("Megaphone URL Box"));
+        this.urlTextField.setValue(previousText);
+        this.urlTextField.setMaxLength(32500);
+        this.urlTextField.setTextColor(0xF3EFE0);
+        this.urlTextField.setFocused(focused);
+        this.urlTextField.moveCursorToEnd();
+        this.addRenderableWidget(this.urlTextField);
+    }
+
+    private void initNameEditBox() {
+        String previousText = this.nameTextField == null ? "" : this.nameTextField.getValue();
+        boolean focused = this.nameTextField != null && this.nameTextField.isFocused();
+        this.nameTextField = new EditBox(this.font, this.leftPos, this.topPos + 37, 240, 18,
+                Component.literal("Megaphone Name Box"));
+        this.nameTextField.setValue(previousText);
+        this.nameTextField.setMaxLength(256);
+        this.nameTextField.setTextColor(0xF3EFE0);
+        this.nameTextField.setFocused(focused);
+        this.nameTextField.moveCursorToEnd();
+        this.addRenderableWidget(this.nameTextField);
+    }
+
+    private void initRangeSlider(int range) {
+        int maxRange = Math.max(1, GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get());
+        double value = maxRange == 1 ? 0 : (double) (Mth.clamp(range, 1, maxRange) - 1) / (maxRange - 1);
+        this.rangeSlider = new RangeSlider(this.leftPos, this.topPos + 60, 240, 20, value, maxRange);
+        this.addRenderableWidget(this.rangeSlider);
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        this.urlTextField.tick();
+        this.nameTextField.tick();
+
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level == null || !(level.getBlockEntity(this.blockPos) instanceof TileEntityBigMegaphone)) {
+            this.onClose();
+        }
+    }
+
+    private void initFromBlockEntity() {
+        Minecraft minecraft = this.getMinecraft();
+        if (minecraft.level == null) {
+            return;
+        }
+        BlockEntity blockEntity = minecraft.level.getBlockEntity(this.blockPos);
+        if (blockEntity instanceof TileEntityBigMegaphone megaphone) {
+            this.urlTextField.setValue(megaphone.getStreamUrl());
+            this.nameTextField.setValue(megaphone.getDisplayName());
+            this.rangeSlider.setRange(megaphone.getMaxRange());
+            return;
+        }
+        this.onClose();
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(graphics);
+
+        graphics.drawCenteredString(this.font, this.tips, this.width / 2, this.topPos + 92, 0xCF0000);
+
+        super.render(graphics, mouseX, mouseY, partialTicks);
+
+        if (Util.isBlank(this.urlTextField.getValue()) && !this.urlTextField.isFocused()) {
+            MutableComponent placeHolder = Component.translatable("gui.netmusic.big_megaphone.url.tips").withStyle(ChatFormatting.ITALIC);
+            graphics.drawString(this.font, placeHolder, this.leftPos + 5, this.topPos + 19, 0xaaaaaa, false);
+        }
+
+        if (Util.isBlank(this.nameTextField.getValue()) && !this.nameTextField.isFocused()) {
+            MutableComponent placeHolder = Component.translatable("gui.netmusic.big_megaphone.name.tips").withStyle(ChatFormatting.ITALIC);
+            graphics.drawString(this.font, placeHolder, this.leftPos + 5, this.topPos + 42, 0xaaaaaa, false);
+        }
+    }
+
+    private void sendAction(BigMegaphoneControlMessage.Action action) {
+        this.tips = Component.empty();
+        String url = this.urlTextField.getValue().trim();
+        String name = this.nameTextField.getValue().trim();
+        int range = this.rangeSlider.getCurrentRange();
+
+        if (action != BigMegaphoneControlMessage.Action.STOP) {
+            if (Util.isBlank(url)) {
+                this.tips = Component.translatable("gui.netmusic.big_megaphone.url.empty");
+                return;
+            }
+            if (!BigMegaphoneUtil.isValidStreamUrl(url)) {
+                this.tips = Component.translatable("gui.netmusic.big_megaphone.url.invalid");
+                return;
+            }
+            if (Util.isBlank(name)) {
+                this.tips = Component.translatable("gui.netmusic.big_megaphone.name.empty");
+                return;
+            }
+        }
+
+        NetworkHandler.CHANNEL.sendToServer(new BigMegaphoneControlMessage(this.blockPos, url, name, range, action));
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.urlTextField.mouseClicked(mouseX, mouseY, button)) {
+            this.setFocused(this.urlTextField);
+            return true;
+        }
+        if (this.nameTextField.mouseClicked(mouseX, mouseY, button)) {
+            this.setFocused(this.nameTextField);
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        InputConstants.Key key = InputConstants.getKey(keyCode, scanCode);
+        if (this.getMinecraft().options.keyInventory.isActiveAndMatches(key)) {
+            if (this.urlTextField.isFocused() || this.nameTextField.isFocused()) {
+                return true;
+            }
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    private static class RangeSlider extends AbstractSliderButton {
+        private final int maxRange;
+
+        protected RangeSlider(int x, int y, int width, int height, double value, int maxRange) {
+            super(x, y, width, height, Component.empty(), value);
+            this.maxRange = maxRange;
+            this.updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            this.setMessage(Component.translatable("gui.netmusic.big_megaphone.range", this.getCurrentRange()));
+        }
+
+        @Override
+        protected void applyValue() {
+            this.updateMessage();
+        }
+
+        public int getCurrentRange() {
+            if (this.maxRange <= 1) {
+                return 1;
+            }
+            return Mth.clamp((int) Math.round(1 + this.value * (this.maxRange - 1)), 1, this.maxRange);
+        }
+
+        public void setRange(int range) {
+            if (this.maxRange <= 1) {
+                this.value = 0;
+            } else {
+                this.value = (double) (Mth.clamp(range, 1, this.maxRange) - 1) / (double) (this.maxRange - 1);
+            }
+            this.updateMessage();
+        }
+    }
+}

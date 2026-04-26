@@ -2,9 +2,7 @@ package com.github.tartaricacid.netmusic.network;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
-import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
-import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +28,12 @@ public class NetworkHandler {
         CHANNEL.registerMessage(1, GetMusicListMessage.class, GetMusicListMessage::encode, GetMusicListMessage::decode, GetMusicListMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(2, SetMusicIDMessage.class, SetMusicIDMessage::encode, SetMusicIDMessage::decode, SetMusicIDMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(3, BigMegaphoneStartMessage.class, BigMegaphoneStartMessage::encode, BigMegaphoneStartMessage::decode, BigMegaphoneStartMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(4, BigMegaphoneStopMessage.class, BigMegaphoneStopMessage::encode, BigMegaphoneStopMessage::decode, BigMegaphoneStopMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(5, BigMegaphoneControlMessage.class, BigMegaphoneControlMessage::encode, BigMegaphoneControlMessage::decode, BigMegaphoneControlMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CompatRegistry.initNetwork(CHANNEL);
     }

@@ -48,15 +48,6 @@ public class NetMusicLiveAudioStream implements AudioStream {
         }
     }
 
-    public static boolean isM3U8Stream(URL url) {
-        if (url == null) {
-            return false;
-        }
-        // 可能会出现 http://example.com/live.m3u8?token=12345 这样的 url
-        String path = url.getPath();
-        return path != null && path.toLowerCase().endsWith(".m3u8");
-    }
-
     private AudioFormat getTargetPCMAudioFormat(AudioFormat originalFormat) {
         int sampleSizeInBits = originalFormat.getSampleSizeInBits();
         if (sampleSizeInBits == AudioSystem.NOT_SPECIFIED) {
