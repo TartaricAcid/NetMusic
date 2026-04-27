@@ -1,20 +1,19 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "result": {
     "item": "netmusic:big_megaphone"
   },
-  "ingredients": [
-    {
-      "item": "minecraft:jukebox"
-    },
-    {
-      "tag": "forge:ingots/iron"
-    },
-    {
+  "pattern": [
+    " C ",
+    "C C",
+    "N C"
+  ],
+  "key": {
+    "C": {
       "tag": "forge:ingots/copper"
     },
-    {
-      "tag": "forge:dusts/redstone"
+    "N": {
+      "item": "minecraft:note_block"
     }
-  ]
+  }
 }

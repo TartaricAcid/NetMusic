@@ -11,6 +11,7 @@ import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 
@@ -42,6 +43,16 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || level.getBlockEntity(this.pos) == null) {
             this.stop();
+        } else {
+            if (level.getGameTime() % 8 == 0) {
+                for (int i = 0; i < 2; i++) {
+                    level.addParticle(ParticleTypes.NOTE,
+                            x - 0.5f + level.random.nextDouble() * 2,
+                            y + level.random.nextDouble() * 1.5,
+                            z - 0.5f + level.random.nextDouble() * 2,
+                            level.random.nextGaussian(), level.random.nextGaussian(), level.random.nextInt(3));
+                }
+            }
         }
     }
 

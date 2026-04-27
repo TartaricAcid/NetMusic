@@ -33,13 +33,12 @@ public class TileEntityBigMegaphone extends BlockEntity {
     private static final String NAME_TAG = "DisplayName";
     private static final String RANGE_TAG = "MaxRange";
     private static final String BROADCASTING_TAG = "Broadcasting";
-    private static final String POWERED_TAG = "Powered";
 
     private String streamUrl = "";
     private String displayName = "";
     private int maxRange = GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get();
     private boolean broadcasting = false;
-    private boolean powered = false;
+    private boolean lastRedstoneSignal = false;
 
     private long sessionId = 0;
     private final Set<UUID> listeners = Sets.newHashSet();
@@ -54,7 +53,6 @@ public class TileEntityBigMegaphone extends BlockEntity {
         tag.putString(NAME_TAG, this.displayName);
         tag.putInt(RANGE_TAG, this.maxRange);
         tag.putBoolean(BROADCASTING_TAG, this.broadcasting);
-        tag.putBoolean(POWERED_TAG, this.powered);
         super.saveAdditional(tag);
     }
 
@@ -65,7 +63,14 @@ public class TileEntityBigMegaphone extends BlockEntity {
         this.displayName = tag.getString(NAME_TAG);
         this.maxRange = BigMegaphoneUtil.clampRange(tag.getInt(RANGE_TAG), GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get());
         this.broadcasting = tag.getBoolean(BROADCASTING_TAG);
-        this.powered = tag.getBoolean(POWERED_TAG);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (this.level != null && !this.level.isClientSide) {
+            this.lastRedstoneSignal = this.level.hasNeighborSignal(this.worldPosition);
+        }
     }
 
     @Override
@@ -95,10 +100,6 @@ public class TileEntityBigMegaphone extends BlockEntity {
         return broadcasting;
     }
 
-    public boolean isPowered() {
-        return powered;
-    }
-
     public boolean applyConfig(String streamUrl, String displayName, int maxRange) {
         String nextUrl = streamUrl == null ? "" : streamUrl.trim();
         String nextName = displayName == null ? "" : displayName.trim();
@@ -115,21 +116,22 @@ public class TileEntityBigMegaphone extends BlockEntity {
     }
 
     public void onRedstoneSignalChanged(boolean hasSignal) {
-        if (this.powered == hasSignal) {
+        if (this.level == null || this.level.isClientSide || this.lastRedstoneSignal == hasSignal) {
             return;
         }
-        this.powered = hasSignal;
-        if (this.powered) {
-            // 充能停止播放
-            this.stopBroadcast();
-        } else {
-            this.markDirty();
+        this.lastRedstoneSignal = hasSignal;
+        if (hasSignal) {
+            if (this.broadcasting) {
+                this.stopBroadcast();
+            } else {
+                this.startBroadcast();
+            }
         }
     }
 
     public void startBroadcast() {
         // 二次检测，以防万一
-        if (!(this.level instanceof ServerLevel) || this.powered
+        if (!(this.level instanceof ServerLevel)
             || !BigMegaphoneUtil.isValidStreamUrl(this.streamUrl)
             || this.displayName.isBlank()) {
             return;
@@ -170,7 +172,7 @@ public class TileEntityBigMegaphone extends BlockEntity {
     }
 
     private void refreshAudience() {
-        if (!(this.level instanceof ServerLevel serverLevel) || !this.broadcasting || this.powered) {
+        if (!(this.level instanceof ServerLevel serverLevel) || !this.broadcasting) {
             return;
         }
 
@@ -210,7 +212,7 @@ public class TileEntityBigMegaphone extends BlockEntity {
         if (level.isClientSide) {
             return;
         }
-        if (!megaphone.broadcasting || megaphone.powered) {
+        if (!megaphone.broadcasting) {
             if (!megaphone.listeners.isEmpty()) {
                 megaphone.stopAllListeners();
             }
