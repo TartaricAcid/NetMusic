@@ -1,6 +1,6 @@
 {
   "parent": "builtin/entity",
   "textures": {
-    "particle": "netmusic:block/music_player"
+    "particle": "minecraft:block/copper_block"
   }
 }

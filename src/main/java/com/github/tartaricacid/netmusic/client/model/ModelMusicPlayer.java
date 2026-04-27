@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 
 
 public class ModelMusicPlayer extends Model {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(new ResourceLocation(NetMusic.MOD_ID, "main"), "musicplayer");
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(new ResourceLocation(NetMusic.MOD_ID, "main"), "music_player");
     private final ModelPart root;
     private final ModelPart disc;
 

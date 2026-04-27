@@ -22,8 +22,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
@@ -32,8 +30,6 @@ import java.util.List;
 
 @SuppressWarnings("deprecation")
 public class BlockBigMegaphone extends HorizontalDirectionalBlock implements EntityBlock {
-    private static final VoxelShape SHAPE = Block.box(1, 0, 1, 15, 13, 15);
-
     public BlockBigMegaphone() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -100,12 +96,7 @@ public class BlockBigMegaphone extends HorizontalDirectionalBlock implements Ent
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

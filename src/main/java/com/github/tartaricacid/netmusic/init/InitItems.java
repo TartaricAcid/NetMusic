@@ -3,6 +3,7 @@ package com.github.tartaricacid.netmusic.init;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
+import com.github.tartaricacid.netmusic.item.ItemBigMegaphone;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.item.ItemMusicPlayer;
 import net.minecraft.core.registries.Registries;
@@ -23,7 +24,7 @@ public class InitItems {
     public static RegistryObject<Item> MUSIC_PLAYER = ITEMS.register("music_player", ItemMusicPlayer::new);
     public static RegistryObject<Item> CD_BURNER = ITEMS.register("cd_burner", () -> new BlockItem(InitBlocks.CD_BURNER.get(), new Item.Properties().stacksTo(1)));
     public static RegistryObject<Item> COMPUTER = ITEMS.register("computer", () -> new BlockItem(InitBlocks.COMPUTER.get(), new Item.Properties().stacksTo(1)));
-    public static RegistryObject<Item> BIG_MEGAPHONE = ITEMS.register("big_megaphone", () -> new BlockItem(InitBlocks.BIG_MEGAPHONE.get(), new Item.Properties().stacksTo(1)));
+    public static RegistryObject<Item> BIG_MEGAPHONE = ITEMS.register("big_megaphone", ItemBigMegaphone::new);
     public static RegistryObject<Item> MUSIC_PLAYER_BACKPACK = ITEMS.register("music_player_backpack", () -> new Item(new Item.Properties().stacksTo(1)));
 
     public static RegistryObject<CreativeModeTab> NET_MUSIC_TAB = TABS.register("netmusic", () -> CreativeModeTab.builder().title(Component.translatable("itemGroup.netmusic"))
