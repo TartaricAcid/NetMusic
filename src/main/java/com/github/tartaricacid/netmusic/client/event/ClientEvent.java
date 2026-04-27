@@ -2,6 +2,7 @@ package com.github.tartaricacid.netmusic.client.event;
 
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.gui.BigMegaphonePresetManager;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -17,8 +18,9 @@ public class ClientEvent {
         event.enqueueWork(() -> {
             try {
                 MusicListManage.loadConfigSongs();
+                BigMegaphonePresetManager.loadBundledStations();
             } catch (IOException e) {
-                NetMusic.LOGGER.error("Failed to load music list config", e);
+                NetMusic.LOGGER.error("Failed to load client bundled resources", e);
             }
         });
     }

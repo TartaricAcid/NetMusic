@@ -22,6 +22,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class BigMegaphoneScreen extends Screen {
+    private static final int WIDTH = 240;
+
     private final BlockPos blockPos;
 
     private int leftPos;
@@ -32,6 +34,7 @@ public class BigMegaphoneScreen extends Screen {
     private RangeSlider rangeSlider;
 
     private Component tips = Component.empty();
+    private boolean loadedFromBlockEntity = false;
 
     public BigMegaphoneScreen(BlockPos blockPos) {
         super(Component.translatable("block.netmusic.big_megaphone"));
@@ -40,12 +43,16 @@ public class BigMegaphoneScreen extends Screen {
 
     @Override
     protected void init() {
-        this.leftPos = (this.width - 240) / 2;
+        this.leftPos = (this.width - WIDTH) / 2;
         this.topPos = (this.height - 180) / 2;
 
         this.initUrlEditBox();
         this.initNameEditBox();
-        this.initRangeSlider(32);
+        this.initRangeSlider(this.rangeSlider == null ? 32 : this.rangeSlider.getCurrentRange());
+
+        this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.big_megaphone.presets"),
+                        b -> this.openPresetPicker())
+                .pos(this.leftPos, this.topPos + 139).size(WIDTH, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.netmusic.big_megaphone.save"),
                         b -> this.sendAction(BigMegaphoneControlMessage.Action.SAVE))
@@ -63,34 +70,38 @@ public class BigMegaphoneScreen extends Screen {
     private void initUrlEditBox() {
         String previousText = this.urlTextField == null ? "" : this.urlTextField.getValue();
         boolean focused = this.urlTextField != null && this.urlTextField.isFocused();
-        this.urlTextField = new EditBox(this.font, this.leftPos, this.topPos + 14, 240, 18,
+        this.urlTextField = new EditBox(this.font, this.leftPos, this.topPos + 14, WIDTH, 18,
                 Component.literal("Megaphone URL Box"));
-        this.urlTextField.setValue(previousText);
-        this.urlTextField.setMaxLength(32500);
+        this.urlTextField.setMaxLength(1024);
         this.urlTextField.setTextColor(0xF3EFE0);
         this.urlTextField.setFocused(focused);
-        this.urlTextField.moveCursorToEnd();
+        this.urlTextField.setValue(previousText);
         this.addRenderableWidget(this.urlTextField);
     }
 
     private void initNameEditBox() {
         String previousText = this.nameTextField == null ? "" : this.nameTextField.getValue();
         boolean focused = this.nameTextField != null && this.nameTextField.isFocused();
-        this.nameTextField = new EditBox(this.font, this.leftPos, this.topPos + 37, 240, 18,
+        this.nameTextField = new EditBox(this.font, this.leftPos, this.topPos + 37, WIDTH, 18,
                 Component.literal("Megaphone Name Box"));
-        this.nameTextField.setValue(previousText);
         this.nameTextField.setMaxLength(256);
         this.nameTextField.setTextColor(0xF3EFE0);
         this.nameTextField.setFocused(focused);
-        this.nameTextField.moveCursorToEnd();
+        this.nameTextField.setValue(previousText);
         this.addRenderableWidget(this.nameTextField);
     }
 
     private void initRangeSlider(int range) {
         int maxRange = Math.max(1, GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get());
         double value = maxRange == 1 ? 0 : (double) (Mth.clamp(range, 1, maxRange) - 1) / (maxRange - 1);
-        this.rangeSlider = new RangeSlider(this.leftPos, this.topPos + 60, 240, 20, value, maxRange);
+        this.rangeSlider = new RangeSlider(this.leftPos, this.topPos + 60, WIDTH, 20, value, maxRange);
         this.addRenderableWidget(this.rangeSlider);
+    }
+
+    private void openPresetPicker() {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new BigMegaphonePresetPickerScreen(this));
+        }
     }
 
     @Override
@@ -106,6 +117,9 @@ public class BigMegaphoneScreen extends Screen {
     }
 
     private void initFromBlockEntity() {
+        if (this.loadedFromBlockEntity) {
+            return;
+        }
         Minecraft minecraft = this.getMinecraft();
         if (minecraft.level == null) {
             return;
@@ -115,9 +129,20 @@ public class BigMegaphoneScreen extends Screen {
             this.urlTextField.setValue(megaphone.getStreamUrl());
             this.nameTextField.setValue(megaphone.getDisplayName());
             this.rangeSlider.setRange(megaphone.getMaxRange());
+            this.loadedFromBlockEntity = true;
             return;
         }
         this.onClose();
+    }
+
+    public void applyPresetStation(String name, String url) {
+        this.tips = Component.empty();
+        if (this.urlTextField != null) {
+            this.urlTextField.setValue(url);
+        }
+        if (this.nameTextField != null) {
+            this.nameTextField.setValue(name);
+        }
     }
 
     @Override

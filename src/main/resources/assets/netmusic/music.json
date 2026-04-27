@@ -153,5 +153,65 @@
     "artists": [
       "Lunatic Locus"
     ]
+  },
+  {
+    "url": "https://ngcdn001.cnr.cn/live/zgzs/index.m3u8",
+    "name": "CNR 中国之声",
+    "time_second": 31536000,
+    "trans_name": "CNR Voice of China",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
+  },
+  {
+    "url": "https://ngcdn003.cnr.cn/live/yyzs/index.m3u8",
+    "name": "CNR 音乐之声",
+    "time_second": 31536000,
+    "trans_name": "CNR Music Radio",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
+  },
+  {
+    "url": "https://ngcdn010.cnr.cn/live/wyzs/index.m3u8",
+    "name": "CNR 文艺之声",
+    "time_second": 31536000,
+    "trans_name": "CNR Arts Radio",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
+  },
+  {
+    "url": "https://ngcdn016.cnr.cn/live/gsgljtgb/index.m3u8",
+    "name": "CNR 中国交通广播",
+    "time_second": 31536000,
+    "trans_name": "CNR China Traffic Radio",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
+  },
+  {
+    "url": "https://ngcdn017.cnr.cn/live/xczs/index.m3u8",
+    "name": "CNR 中国乡村之声",
+    "time_second": 31536000,
+    "trans_name": "CNR Voice of China Rural Radio",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
+  },
+  {
+    "url": "https://sk.cri.cn/am846.m3u8",
+    "name": "CNR CGTN Radio",
+    "time_second": 31536000,
+    "trans_name": "CNR CGTN Radio",
+    "vip": false,
+    "artists": [
+      "央广网"
+    ]
   }
 ]
