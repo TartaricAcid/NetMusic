@@ -74,11 +74,16 @@ public final class BigMegaphoneClientManager {
         }
 
         long gameTime = minecraft.level.getGameTime();
+        var tickingSounds = minecraft.getSoundManager().soundEngine.tickingSounds;
 
         // 间或一段时间，更新一次播放列表，防止玩家进入/离开范围时，声音没有及时更新
         if (gameTime % CHECK_INTERVAL_TICK == 0) {
             for (TrackedBroadcast tracked : TRACKED_BROADCASTS.values()) {
-                if (tracked.sound != null && tracked.sound.isStopped()) {
+                if (tracked.sound == null) {
+                    continue;
+                }
+                // 有可能存在 sound 已经不在客户端声音列表中，但因为这里引用导致无法回收的问题
+                if (tracked.sound.isStopped() || !tickingSounds.contains(tracked.sound)) {
                     tracked.sound = null;
                     tracked.nextRetryTick = Math.max(tracked.nextRetryTick, gameTime + INITIAL_RETRY_TICK_INTERVAL);
                 }

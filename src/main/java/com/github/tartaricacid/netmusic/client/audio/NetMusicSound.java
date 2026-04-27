@@ -4,7 +4,6 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
-import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -106,9 +105,6 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                if (BigMegaphoneUtil.isValidStreamUrl(songUrl)) {
-                    return new NetMusicLiveAudioStream(songUrl);
-                }
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
                 NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);

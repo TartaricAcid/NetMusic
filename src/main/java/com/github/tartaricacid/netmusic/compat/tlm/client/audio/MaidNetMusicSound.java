@@ -2,8 +2,6 @@ package com.github.tartaricacid.netmusic.compat.tlm.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
-import com.github.tartaricacid.netmusic.client.audio.NetMusicLiveAudioStream;
-import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.MusicPlayerBackpack;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
@@ -92,9 +90,6 @@ public class MaidNetMusicSound extends AbstractTickableSoundInstance {
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                if (BigMegaphoneUtil.isValidStreamUrl(songUrl)) {
-                    return new NetMusicLiveAudioStream(songUrl);
-                }
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
                 NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);

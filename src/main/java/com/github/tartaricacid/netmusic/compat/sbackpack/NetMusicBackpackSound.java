@@ -2,8 +2,6 @@ package com.github.tartaricacid.netmusic.compat.sbackpack;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
-import com.github.tartaricacid.netmusic.client.audio.NetMusicLiveAudioStream;
-import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.Util;
@@ -92,9 +90,6 @@ public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                if (BigMegaphoneUtil.isValidStreamUrl(songUrl)) {
-                    return new NetMusicLiveAudioStream(songUrl);
-                }
                 return new NetMusicAudioStream(this.songUrl);
             } catch (UnsupportedAudioFileException | IOException e) {
                 NetMusic.LOGGER.error("Failed to play netmusic song from url: {}", this.songUrl, e);

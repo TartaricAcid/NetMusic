@@ -1,8 +1,12 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.api.NetWorker;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
+import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import net.minecraft.client.sounds.AudioStream;
+import net.sourceforge.jaad.m3u8.M3U8InputStream;
+import net.sourceforge.jaad.spi.javasound.TSAudioFileReader;
 import org.lwjgl.BufferUtils;
 
 import javax.sound.sampled.AudioFormat;
@@ -40,13 +44,25 @@ public class NetMusicAudioStream implements AudioStream {
     private final AtomicBoolean loading = new AtomicBoolean(false);
 
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-        BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url));
-        skipID3(bufferedInputStream);
-        AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
+        AudioInputStream originalInputStream;
+
+        // 如果是广播流
+        if (BigMegaphoneUtil.isValidStreamUrl(url)) {
+            // 获取 M3U8 网络流，并套上 5MB 缓冲 (为了支持格式嗅探)
+            final M3U8InputStream m3U8InputStream = new M3U8InputStream(NetWorker.HTTP_CLIENT, url.toString());
+            final BufferedInputStream bis = new BufferedInputStream(m3U8InputStream, 5 * 1024 * 1024);
+            originalInputStream = new TSAudioFileReader().getAudioInputStream(bis);
+        } else {
+            // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
+            BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url));
+            skipID3(bufferedInputStream);
+            originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
+        }
+
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = getTargetPCMAudioFormat(originalFormat);
         AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
+
         if (GeneralConfig.ENABLE_STEREO.get()) {
             targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     1, 2, originalFormat.getSampleRate(), false);
@@ -54,15 +70,20 @@ public class NetMusicAudioStream implements AudioStream {
             targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     2, 4, originalFormat.getSampleRate(), false);
         }
+
         this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         this.frameSize = stream.getFormat().getFrameSize();
-        frame = new byte[frameSize];
+        this.frame = new byte[frameSize];
         this.streamingBufferSize = calculateBufferSize(stream.getFormat(), 1);
         pumpBuffers(4);
     }
 
-    private static int calculateBufferSize(AudioFormat format, int sampleAmount) {
-        return (int) ((float) (sampleAmount * format.getSampleSizeInBits()) / 8.0F * (float) format.getChannels() * format.getSampleRate());
+    private static int calculateBufferSize(AudioFormat format, int seconds) {
+        float bytesPerSample = format.getSampleSizeInBits() / 8f;
+        int channels = format.getChannels();
+        float sampleRate = format.getSampleRate();
+
+        return (int) (seconds * bytesPerSample * channels * sampleRate);
     }
 
     public void pumpBuffers(int readCount) {

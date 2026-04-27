@@ -54,7 +54,7 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
         return CompletableFuture.supplyAsync(() -> {
             Minecraft mc = Minecraft.getInstance();
             try {
-                AudioStream stream = new NetMusicLiveAudioStream(this.streamUrl);
+                AudioStream stream = new NetMusicAudioStream(this.streamUrl);
                 mc.submit(() -> BigMegaphoneClientManager.handleStreamOpenSuccess(this.pos, this.sessionId, this));
                 return stream;
             } catch (IOException | UnsupportedAudioFileException e) {
