@@ -18,7 +18,7 @@
  * Boston, MA  02111-1307, USA.
  */
 
-package com.github.tartaricacid.netmusic.client.audio;
+package com.github.tartaricacid.netmusic.client.audio.provider;
 
 public class FlacFormatConversionProvider extends org.jflac.sound.spi.FlacFormatConversionProvider {
 }

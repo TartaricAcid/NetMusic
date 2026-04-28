@@ -21,7 +21,7 @@
  * --------------------------------------------------------------------------
  */
 
-package com.github.tartaricacid.netmusic.client.audio;
+package com.github.tartaricacid.netmusic.client.audio.provider;
 
 public class MpegFormatConversionProvider extends javazoom.spi.mpeg.sampled.convert.MpegFormatConversionProvider {
 }

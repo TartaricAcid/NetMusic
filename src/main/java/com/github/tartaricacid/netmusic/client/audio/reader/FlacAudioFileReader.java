@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.github.tartaricacid.netmusic.client.audio;
+package com.github.tartaricacid.netmusic.client.audio.reader;
 
 public class FlacAudioFileReader extends org.jflac.sound.spi.FlacAudioFileReader {
 }

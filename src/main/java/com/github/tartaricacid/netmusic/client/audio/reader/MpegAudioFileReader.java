@@ -41,7 +41,7 @@
  *----------------------------------------------------------------------
  */
 
-package com.github.tartaricacid.netmusic.client.audio;
+package com.github.tartaricacid.netmusic.client.audio.reader;
 
 public class MpegAudioFileReader extends javazoom.spi.mpeg.sampled.file.MpegAudioFileReader {
 }
