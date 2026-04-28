@@ -1,21 +1,16 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.api.NetWorker;
+import com.github.tartaricacid.netmusic.client.api.AudioStreamHandlerManager;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
-import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import net.minecraft.client.sounds.AudioStream;
-import net.sourceforge.jaad.m3u8.M3U8InputStream;
-import net.sourceforge.jaad.spi.javasound.TSAudioFileReader;
 import org.lwjgl.BufferUtils;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -44,21 +39,7 @@ public class NetMusicAudioStream implements AudioStream {
     private final AtomicBoolean loading = new AtomicBoolean(false);
 
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        AudioInputStream originalInputStream;
-
-        // 如果是广播流
-        if (BigMegaphoneUtil.isValidStreamUrl(url)) {
-            // 获取 M3U8 网络流，并套上 5MB 缓冲 (为了支持格式嗅探)
-            final M3U8InputStream m3U8InputStream = new M3U8InputStream(NetWorker.HTTP_CLIENT, url.toString());
-            final BufferedInputStream bis = new BufferedInputStream(m3U8InputStream, 5 * 1024 * 1024);
-            originalInputStream = new TSAudioFileReader().getAudioInputStream(bis);
-        } else {
-            // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-            BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url));
-            skipID3(bufferedInputStream);
-            originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
-        }
-
+        AudioInputStream originalInputStream = AudioStreamHandlerManager.handle(url);
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = getTargetPCMAudioFormat(originalFormat);
         AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
@@ -181,40 +162,5 @@ public class NetMusicAudioStream implements AudioStream {
     @Override
     public void close() throws IOException {
         stream.close();
-    }
-
-    /**
-     * 跳过 ID3 标签
-     *
-     * @param inputStream 输入的音频流
-     * @throws IOException IO 异常
-     */
-    private static void skipID3(InputStream inputStream) throws IOException {
-        // 读取 ID3 标签头部
-        inputStream.mark(10);
-        byte[] header = new byte[10];
-        int read = inputStream.read(header, 0, 10);
-        if (read < 10) {
-            inputStream.reset();
-            return;
-        }
-
-        // 检查是否有 ID3 标签
-        if (header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
-            // 计算元数据大小
-            int size = (header[6] << 21) | (header[7] << 14) | (header[8] << 7) | header[9];
-
-            // 跳过元数据
-            int skipped = 0;
-            int skip = 0;
-            do {
-                skip = (int) inputStream.skip(size - skipped);
-                if (skip != 0) {
-                    skipped += skip;
-                }
-            } while (skipped < size && skip != 0);
-        } else {
-            inputStream.reset();
-        }
     }
 }
