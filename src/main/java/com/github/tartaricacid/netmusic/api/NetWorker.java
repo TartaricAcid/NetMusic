@@ -25,6 +25,7 @@ public class NetWorker {
             .connectTimeout(Duration.ofSeconds(5))
             .followRedirects(HttpClient.Redirect.ALWAYS)
             .proxy(new NetWorker.ConfigProxySelector())
+            .version(HttpClient.Version.HTTP_1_1)
             .build();
 
     public static String get(String url, Map<String, String> requestPropertyData) throws IOException {

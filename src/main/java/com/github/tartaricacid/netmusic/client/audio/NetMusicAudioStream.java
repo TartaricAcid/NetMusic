@@ -38,6 +38,8 @@ public class NetMusicAudioStream implements AudioStream {
     private final ConcurrentLinkedQueue<ByteBuffer> audioDataQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean loading = new AtomicBoolean(false);
 
+    private volatile Throwable failed;
+
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
         AudioInputStream originalInputStream = AudioStreamHandlerManager.handle(url);
         AudioFormat originalFormat = originalInputStream.getFormat();
@@ -86,8 +88,12 @@ public class NetMusicAudioStream implements AudioStream {
                     break;
                 }
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
             NetMusic.LOGGER.error("Failed to read audio stream", e);
+            this.failed = e;
+            try {
+                this.stream.close();
+            } catch (IOException ignore) {}
         }
     }
 
@@ -107,6 +113,18 @@ public class NetMusicAudioStream implements AudioStream {
         return stream.getFormat();
     }
 
+    private void loadAudioData() {
+        if (failed == null && audioDataQueue.size() < 4 && loading.compareAndSet(false, true)) {
+            AUDIO_STREAM_EXECUTOR.submit(() -> {
+                try {
+                    pumpBuffers(2);
+                } finally {
+                    loading.set(false);
+                }
+            });
+        }
+    }
+
     /**
      * 从流中读取音频数据，并返回一个最多包含指定字节数的字节缓冲区。
      * 该方法从流中读取音频帧并将其添加到输出缓冲区，直到缓冲区至少
@@ -118,6 +136,8 @@ public class NetMusicAudioStream implements AudioStream {
      */
     @Override
     public ByteBuffer read(int size) {
+        // 预载音频数据
+        loadAudioData();
         // 如果队列中的数据不足以满足请求的大小, 返回 null
         if ((float) size / streamingBufferSize > audioDataQueue.size() || size <= 0) {
             return null;
@@ -142,18 +162,6 @@ public class NetMusicAudioStream implements AudioStream {
                 bytesToRead = 0;
             }
         } while (bytesToRead > 0);
-
-        // 预载音频数据
-        if (audioDataQueue.size() < 4 && loading.compareAndSet(false, true)) {
-            AUDIO_STREAM_EXECUTOR.submit(() -> {
-                try {
-                    pumpBuffers(2);
-                } finally {
-                    loading.set(false);
-                }
-            });
-        }
-
         byteBuffer.flip();
         // 返回包含读取数据的 ByteBuffer
         return byteBuffer;

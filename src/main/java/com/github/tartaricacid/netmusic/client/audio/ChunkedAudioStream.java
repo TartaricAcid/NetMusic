@@ -2,15 +2,14 @@ package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.NetWorker;
-import com.google.common.net.HttpHeaders;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 import java.util.function.Function;
 
 import static java.net.HttpURLConnection.HTTP_OK;
@@ -25,107 +24,89 @@ public class ChunkedAudioStream extends InputStream {
 
     private InputStream currentStream;
     private long currentStart;
-    private long contentLength = -1;
 
     public ChunkedAudioStream(Function<Long, HttpRequest> request) throws IOException {
         this.request = request;
         this.currentStart = 0;
-
         this.currentStream = openChunk(currentStart);
-        if (this.currentStream == null) {
-            throw new IOException("Failed to open initial audio chunk");
-        }
     }
 
-    @Override
-    public int read() throws IOException {
-        if (currentStream == null) {
-            return -1;
-        }
-        int b = currentStream.read();
-        if (b == -1) {
-            // 尝试重新连接
-            currentStream.close();
-            currentStream = openChunk(currentStart);
-            if (currentStream == null) {
-                return -1;
-            }
-            b = currentStream.read();
-        }
-        if (b != -1) {
-            currentStart += 1;
-        }
-        return b;
-    }
-
-    private InputStream openChunk(long start) {
-        try {
-            if (contentLength != -1 && start >= contentLength) {
-                return null;
-            }
-            return openHttpChunk(start);
-        } catch (IOException e) {
-            NetMusic.LOGGER.error("Failed to open audio chunk at {}", start, e);
-            return null;
-        }
-    }
-
-    @Nullable
-    private InputStream openHttpChunk(long start) throws IOException {
+    @NotNull
+    private InputStream openChunk(long start) throws IOException {
         HttpRequest httpRequest = this.request.apply(start);
         URI uri = httpRequest.uri();
         HttpResponse<InputStream> response = NetWorker.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream());
 
         int statusCode = response.statusCode();
         if (statusCode != HTTP_OK && statusCode != HTTP_PARTIAL) {
-            NetMusic.LOGGER.info("Audio not found at {}: {}", uri, statusCode);
-            return null;
+            throw new IOException("Audio not found at %s: %d".formatted(uri, statusCode));
         }
 
-        // 如果是 206，从 Content-Range 解析总大小
-        String rangeHeader = response.headers().firstValue(HttpHeaders.CONTENT_RANGE).orElse(StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(rangeHeader)) {
-            // 格式通常为 "bytes 0-999/5000"
-            contentLength = Long.parseLong(rangeHeader.substring(rangeHeader.lastIndexOf('/') + 1));
-        } else {
-            // 如果是 200，直接拿 Content-Length
-            contentLength = response.headers().firstValueAsLong(HttpHeaders.CONTENT_LENGTH).orElse(-1L);
-        }
-        if (contentLength <= 0) {
-            NetMusic.LOGGER.error("Invalid content length for audio at {}: {}", uri, contentLength);
-            return null;
-        }
+        // 确保返回值不为 null
+        return Optional.ofNullable(response.body())
+                .orElseThrow(() -> new IOException("Audio not found at %s: empty response body".formatted(uri)));
+    }
 
-        return response.body();
+    private InputStream getCurrentStream() throws IOException {
+        if (currentStream == null) {
+            currentStream = openChunk(currentStart);
+        }
+        return currentStream;
+    }
+
+    public int tryRead(int count) throws IOException {
+        if (count <= 0) {
+            throw new IOException("Failed to read audio stream after multiple attempts");
+        }
+        try {
+            return getCurrentStream().read();
+        } catch (IOException e) {
+            NetMusic.LOGGER.error("Error reading audio stream at {}: {}, left {} attempts", currentStart, e.getMessage(), count - 1);
+            clearCurrentStream();
+            return tryRead(--count);
+        }
+    }
+
+    public int tryRead(byte[] b, int off, int len, int count) throws IOException {
+        if (count <= 0) {
+            throw new IOException("Failed to read audio stream after multiple attempts");
+        }
+        try {
+            return getCurrentStream().read(b, off, len);
+        } catch (IOException e) {
+            NetMusic.LOGGER.error("Error reading audio stream at {}: {}, left {} attempts", currentStart, e.getMessage(), count - 1);
+            clearCurrentStream();
+            return tryRead(b, off, len, --count);
+        }
+    }
+
+    @Override
+    public int read() throws IOException {
+        // 尝试读取数据，如果失败则重试最多 3 次
+        int byteRead = tryRead(3);
+        currentStart += byteRead;
+        return byteRead;
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (currentStream == null) {
-            return -1;
+        // 尝试读取数据，如果失败则重试最多 3 次
+        int byteRead = tryRead(b, off, len, 3);
+        currentStart += byteRead;
+        return byteRead;
+    }
+
+    private void clearCurrentStream() throws IOException {
+        if (currentStream != null) {
+            InputStream stream = currentStream;
+            currentStream = null;
+            stream.close();
         }
-        int bytesRead = currentStream.read(b, off, len);
-        if (bytesRead == -1) {
-            // 尝试重新连接
-            currentStream.close();
-            currentStream = openChunk(currentStart);
-            if (currentStream == null) {
-                return -1;
-            }
-            bytesRead = currentStream.read(b, off, len);
-        }
-        if (bytesRead > 0) {
-            currentStart += bytesRead;
-        }
-        return bytesRead;
     }
 
     @Override
     public void close() throws IOException {
-        if (currentStream != null) {
-            currentStream.close();
-            currentStream = null;
-        }
+        clearCurrentStream();
         super.close();
     }
 }
