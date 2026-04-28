@@ -1,9 +1,6 @@
 package com.github.tartaricacid.netmusic.client.api;
 
-import com.github.tartaricacid.netmusic.client.api.implement.DirectHttpHandler;
-import com.github.tartaricacid.netmusic.client.api.implement.LocalFileHandler;
-import com.github.tartaricacid.netmusic.client.api.implement.M3u8Handler;
-import com.github.tartaricacid.netmusic.client.api.implement.NetEaseHttpHandler;
+import com.github.tartaricacid.netmusic.client.api.implement.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.minecraftforge.common.MinecraftForge;
@@ -25,6 +22,7 @@ public final class AudioStreamHandlerManager {
         MinecraftForge.EVENT_BUS.post(event);
 
         // 注册自己的 handler
+        manager.registerHandler(new CnrM3u8Handler());
         manager.registerHandler(new M3u8Handler());
         manager.registerHandler(new NetEaseHttpHandler());
         manager.registerHandler(new LocalFileHandler());

@@ -1,23 +1,15 @@
 [
   {
     "name": "CNR 中国之声",
-    "url": "https://ngcdn001.cnr.cn/live/zgzs/index.m3u8"
+    "url": "https://apicnrapp.cnr.cn/html/play.html?channelId=1"
   },
   {
     "name": "CNR 音乐之声",
-    "url": "https://ngcdn003.cnr.cn/live/yyzs/index.m3u8"
-  },
-  {
-    "name": "CNR 文艺之声",
-    "url": "https://ngcdn010.cnr.cn/live/wyzs/index.m3u8"
+    "url": "https://apicnrapp.cnr.cn/html/play.html?channelId=4"
   },
   {
     "name": "CNR 中国交通广播",
-    "url": "https://ngcdn016.cnr.cn/live/gsgljtgb/index.m3u8"
-  },
-  {
-    "name": "CNR 中国乡村之声",
-    "url": "https://ngcdn017.cnr.cn/live/xczs/index.m3u8"
+    "url": "https://apicnrapp.cnr.cn/html/play.html?channelId=16"
   },
   {
     "name": "CNR CGTN Radio",

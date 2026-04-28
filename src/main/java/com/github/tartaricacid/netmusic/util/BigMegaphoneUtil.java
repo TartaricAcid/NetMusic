@@ -9,6 +9,7 @@ public final class BigMegaphoneUtil {
     private static final String HTTP = "http";
     private static final String HTTPS = "https";
     private static final double START_RADIUS_RATIO = 0.8;
+    private static final String PLAY_URL = "https://apicnrapp.cnr.cn/html/play.html";
 
     private BigMegaphoneUtil() {
     }
@@ -18,13 +19,17 @@ public final class BigMegaphoneUtil {
             if (url == null || url.isBlank()) {
                 return false;
             }
-            return isValidStreamUrl(URI.create(url.trim()).toURL());
+            // 央广网的 api 链接是特例
+            if (url.startsWith(PLAY_URL)) {
+                return true;
+            }
+            return isM3u8Url(URI.create(url.trim()).toURL());
         } catch (Exception e) {
             return false;
         }
     }
 
-    public static boolean isValidStreamUrl(URL url) {
+    public static boolean isM3u8Url(URL url) {
         if (url == null) {
             return false;
         }

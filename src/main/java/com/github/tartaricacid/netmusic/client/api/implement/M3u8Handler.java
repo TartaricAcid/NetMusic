@@ -25,7 +25,7 @@ public class M3u8Handler implements IAudioStreamHandler {
 
     @Override
     public boolean canHandle(URL url) {
-        return BigMegaphoneUtil.isValidStreamUrl(url);
+        return BigMegaphoneUtil.isM3u8Url(url);
     }
 
     @Override

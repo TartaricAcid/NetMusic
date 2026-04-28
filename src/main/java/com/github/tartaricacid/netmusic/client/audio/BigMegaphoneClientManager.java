@@ -27,6 +27,7 @@ import java.util.Objects;
 public final class BigMegaphoneClientManager {
     private static final int CHECK_INTERVAL_TICK = 19;
     private static final int INITIAL_RETRY_TICK_INTERVAL = 40;
+    private static final int MAX_RETRY_COUNT = 2;
     private static final AbstractLong2ObjectMap<TrackedBroadcast> TRACKED_BROADCASTS = new Long2ObjectOpenHashMap<>();
 
     private BigMegaphoneClientManager() {
@@ -173,6 +174,14 @@ public final class BigMegaphoneClientManager {
         sound.forceStop();
         tracked.sound = null;
 
+        if (tracked.failureCount >= MAX_RETRY_COUNT) {
+            tracked.permanentFailure = true;
+            tracked.nextRetryTick = Long.MAX_VALUE;
+            NetMusic.LOGGER.error("Failed to open big megaphone stream for {} after {} attempts. No more retries will be made.",
+                    tracked.url, tracked.failureCount, error);
+            return;
+        }
+
         // 依据重试次数，指数增加时间
         tracked.failureCount++;
         long delay = (long) INITIAL_RETRY_TICK_INTERVAL << Math.max(0, tracked.failureCount - 1);
@@ -218,7 +227,8 @@ public final class BigMegaphoneClientManager {
          */
         private int failureCount;
         /**
-         * 是否为严重错误，一般情况下不会触发这个
+         * 是否为严重错误，一般在指数退避到最大次数后，会被标记为严重错误，停止重试。
+         * 直到下一次新的播放请求到来时才会重置
          */
         private boolean permanentFailure;
 
