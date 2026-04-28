@@ -139,7 +139,9 @@ public final class BigMegaphoneClientManager {
     private static BigMegaphoneSound createSound(TrackedBroadcast tracked) {
         try {
             URL url = URI.create(tracked.url).toURL();
-            return new BigMegaphoneSound(tracked.pos, tracked.sessionId, url);
+            // 当 volume 大于 1 时，此时控制的就是播放范围，距离为 16 * volume
+            float volume = Math.max(tracked.range / 16f, 1f);
+            return new BigMegaphoneSound(tracked.pos, tracked.sessionId, url, volume);
         } catch (Exception e) {
             // 一般不太可能会触发此问题
             NetMusic.LOGGER.error("Malformed big megaphone url: {}", tracked.url, e);

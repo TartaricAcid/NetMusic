@@ -57,7 +57,7 @@ public class GeneralConfig {
         TRANSLATED_MAID_LYRICS_COLOR = builder.define("TranslatedMaidLyricsColor", "#FF000000");
 
         builder.comment("Maximum configurable broadcast range for the big megaphone");
-        BIG_MEGAPHONE_MAX_RANGE = builder.defineInRange("BigMegaphoneMaxRange", 64, 1, 256);
+        BIG_MEGAPHONE_MAX_RANGE = builder.defineInRange("BigMegaphoneMaxRange", 96, 1, 256);
 
         builder.comment("Server scan interval for big megaphone audience refresh in ticks");
         BIG_MEGAPHONE_SCAN_INTERVAL = builder.defineInRange("BigMegaphoneScanInterval", 200, 1, 1200);

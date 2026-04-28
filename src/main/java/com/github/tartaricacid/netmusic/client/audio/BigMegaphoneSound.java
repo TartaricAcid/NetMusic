@@ -27,7 +27,7 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
     private final BlockPos pos;
     private final long sessionId;
 
-    public BigMegaphoneSound(BlockPos pos, long sessionId, URL streamUrl) {
+    public BigMegaphoneSound(BlockPos pos, long sessionId, URL streamUrl, float volume) {
         super(InitSounds.NET_MUSIC.get(), SoundSource.RECORDS, SoundInstance.createUnseededRandom());
         this.streamUrl = streamUrl;
         this.pos = pos;
@@ -35,7 +35,8 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
         this.x = pos.getX() + 0.5f;
         this.y = pos.getY() + 0.5f;
         this.z = pos.getZ() + 0.5f;
-        this.volume = 4.0f;
+        // 当 volume 大于 1 时，此时控制的就是播放范围，距离为 16 * volume
+        this.volume = volume;
     }
 
     @Override
