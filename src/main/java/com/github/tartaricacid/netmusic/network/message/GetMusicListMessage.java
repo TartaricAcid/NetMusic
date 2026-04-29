@@ -18,15 +18,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.concurrent.CompletableFuture;
 
-public class GetMusicListMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<GetMusicListMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "get_music_list"));
-    public static final StreamCodec<ByteBuf, GetMusicListMessage> STREAM_CODEC = StreamCodec.composite(ByteBufCodecs.VAR_LONG, GetMusicListMessage::getMusicListId, GetMusicListMessage::new);
+public record GetMusicListMessage(long musicListId) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<GetMusicListMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "get_music_list"));
+    public static final StreamCodec<ByteBuf, GetMusicListMessage> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_LONG, GetMusicListMessage::musicListId, GetMusicListMessage::new);
     public static final long RELOAD_MESSAGE = -1;
-    private final long musicListId;
-
-    public GetMusicListMessage(long musicListId) {
-        this.musicListId = musicListId;
-    }
 
     public static void handle(GetMusicListMessage message, IPayloadContext context) {
         if (context.flow().isClientbound()) {
@@ -38,13 +35,13 @@ public class GetMusicListMessage implements CustomPacketPayload {
     private static void addMusicList(GetMusicListMessage message) {
         LocalPlayer player = Minecraft.getInstance().player;
         try {
-            if (message.musicListId == RELOAD_MESSAGE) {
+            if (message.musicListId() == RELOAD_MESSAGE) {
                 MusicListManage.loadConfigSongs();
                 if (player != null) {
                     player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success"));
                 }
             } else {
-                MusicListManage.add163List(message.musicListId);
+                MusicListManage.add163List(message.musicListId());
                 if (player != null) {
                     player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.success"));
                 }
@@ -55,10 +52,6 @@ public class GetMusicListMessage implements CustomPacketPayload {
             }
             NetMusic.LOGGER.error("Failed to get music list from NetEase Cloud Music", e);
         }
-    }
-
-    public long getMusicListId() {
-        return musicListId;
     }
 
     @Override

@@ -47,8 +47,13 @@ runs {
         // JetBrains Runtime 是一个修改过的 JDK，支持热重载
         // +IgnoreUnrecognizedVMOptions 用于忽略未知指令
         // 否则没有安装 JetBrains Runtime 的用户运行时会报错
-        jvmArguments = ['-XX:+IgnoreUnrecognizedVMOptions',
-                        '-XX:+AllowEnhancedClassRedefinition']
+        jvmArguments = [
+                '-XX:+IgnoreUnrecognizedVMOptions',
+                '-XX:+AllowEnhancedClassRedefinition',
+                // 开启 HTTP 请求日志，方便调试
+                "-Djdk.httpclient.HttpClient.log=requests,responses,headers,errors"
+
+        ]
         systemProperty 'forge.logging.markers', 'REGISTRIES'
         systemProperty 'forge.logging.console.level', 'debug'
         modSource project.sourceSets.main
@@ -56,6 +61,7 @@ runs {
         dependencies {
             runtime 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
             runtime 'libs:jflac-codec:1.5.3-SNAPSHOT'
+            runtime 'libs:javasound-aac:0.9.6'
         }
     }
 
@@ -141,6 +147,8 @@ dependencies {
 
     // mp3 播放库
     implementation 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    // aac/m4a 播放库
+    implementation 'libs:javasound-aac:0.9.6'
     // flac 播放库
     implementation 'libs:jflac-codec:1.5.3-SNAPSHOT'
 
@@ -193,12 +201,14 @@ shadowJar {
         include(dependency("com.googlecode.soundlibs:jlayer:1.0.1.4"))
         include(dependency("com.googlecode.soundlibs:tritonus-share:0.3.7.4"))
         include(dependency("libs:jflac-codec:1.5.3-SNAPSHOT"))
+        include(dependency("libs:javasound-aac:0.9.6"))
     }
 
     relocate 'javazoom.jl', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.jl'
     relocate 'javazoom.spi', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.spi'
     relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
     relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
+    relocate 'net.sourceforge.jaad', 'com.github.tartaricacid.netmusic.soundlibs.net.sourceforge.jaad'
 
     // 排除不需要的依赖项和资源
     exclude 'META-INF/maven/**/*'

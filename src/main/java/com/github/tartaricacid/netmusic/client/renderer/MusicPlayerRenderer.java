@@ -34,14 +34,14 @@ import org.apache.commons.lang3.StringUtils;
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/music_player.png");
 
-    public static ModelMusicPlayer<?> MODEL;
+    public static ModelMusicPlayer MODEL;
     public static MusicPlayerRenderer INSTANCE;
 
     private final Font font;
     private final BlockEntityRenderDispatcher dispatcher;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
-        MODEL = new ModelMusicPlayer<>(context.bakeLayer(ModelMusicPlayer.LAYER));
+        MODEL = new ModelMusicPlayer(context.bakeLayer(ModelMusicPlayer.LAYER));
         INSTANCE = this;
         this.font = context.getFont();
         this.dispatcher = context.getBlockEntityRenderDispatcher();
@@ -68,20 +68,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         matrixStack.pushPose();
         matrixStack.scale(0.75f, 0.75f, 0.75f);
         matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
-        switch (facing) {
-            case SOUTH:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
-                break;
-            case EAST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
-                break;
-            case WEST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
-                break;
-            case NORTH:
-            default:
-                break;
-        }
+        matrixStack.mulPose(Axis.YP.rotationDegrees(180 - facing.get2DDataValue() * 90));
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
         MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 0xffffffff);

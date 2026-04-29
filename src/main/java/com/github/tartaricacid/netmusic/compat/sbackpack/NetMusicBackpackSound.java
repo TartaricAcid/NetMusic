@@ -4,12 +4,16 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
+import net.minecraft.client.sounds.JOrbisAudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -17,8 +21,12 @@ import net.minecraft.world.entity.player.Player;
 import javax.annotation.Nullable;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+
+import static com.github.tartaricacid.netmusic.client.audio.NetMusicSound.ERROR_SOUND;
 
 public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
     private final URL songUrl;
@@ -71,6 +79,13 @@ public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
         }
     }
 
+    private void errorStop() {
+        // 直接把 tick 设置为结束的时间点，这样就能在下一次 tick 时正常结束
+        this.tick = tickTimes;
+        MutableComponent error = Component.translatable("message.netmusic.music_player.play_error");
+        Minecraft.getInstance().gui.setOverlayMessage(error, false);
+    }
+
     @Override
     public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
         return CompletableFuture.supplyAsync(() -> {
@@ -78,7 +93,15 @@ public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
                 return new NetMusicAudioStream(this.songUrl);
             } catch (UnsupportedAudioFileException | IOException e) {
                 NetMusic.LOGGER.error("Failed to play netmusic song from url: {}", this.songUrl, e);
-                return null;
+                Minecraft.getInstance().submit(this::errorStop);
+            }
+
+            // 播放失败返回一个默认音频，避免 tick 里的音频实例不能够删除
+            try {
+                InputStream inputstream = Minecraft.getInstance().getResourceManager().open(ERROR_SOUND);
+                return new JOrbisAudioStream(inputstream);
+            } catch (IOException ioexception) {
+                throw new CompletionException(ioexception);
             }
         }, Util.backgroundExecutor());
     }

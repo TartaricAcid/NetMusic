@@ -24,39 +24,18 @@ import java.util.regex.Pattern;
 
 import static com.github.tartaricacid.netmusic.client.audio.MusicPlayManager.MUSIC_163_URL;
 
-public class MusicToClientMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_to_client"));
-    public static final StreamCodec<ByteBuf, MusicToClientMessage> STREAM_CODEC = StreamCodec.composite(BlockPos.STREAM_CODEC, MusicToClientMessage::getPos, ByteBufCodecs.STRING_UTF8, MusicToClientMessage::getUrl, ByteBufCodecs.VAR_INT, MusicToClientMessage::getTimeSecond, ByteBufCodecs.STRING_UTF8, MusicToClientMessage::getSongName, MusicToClientMessage::new);
+public record MusicToClientMessage(BlockPos pos, String url, int timeSecond,
+                                   String songName) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<MusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_to_client"));
+    public static final StreamCodec<ByteBuf, MusicToClientMessage> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC, MusicToClientMessage::pos,
+            ByteBufCodecs.STRING_UTF8, MusicToClientMessage::url,
+            ByteBufCodecs.VAR_INT, MusicToClientMessage::timeSecond,
+            ByteBufCodecs.STRING_UTF8, MusicToClientMessage::songName,
+            MusicToClientMessage::new);
 
     private static final Pattern PATTERN = Pattern.compile("^.*?\\?id=(\\d+)\\.mp3$");
-
-    private final BlockPos pos;
-    private final String url;
-    private final int timeSecond;
-    private final String songName;
-
-    public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName) {
-        this.pos = pos;
-        this.url = url;
-        this.timeSecond = timeSecond;
-        this.songName = songName;
-    }
-
-    public BlockPos getPos() {
-        return pos;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public int getTimeSecond() {
-        return timeSecond;
-    }
-
-    public String getSongName() {
-        return songName;
-    }
 
     public static void handle(MusicToClientMessage message, IPayloadContext context) {
         if (context.flow().isClientbound()) {
@@ -70,20 +49,21 @@ public class MusicToClientMessage implements CustomPacketPayload {
         LyricRecord[] record = new LyricRecord[1];
 
         // 如果是网易云的音乐，那么尝试添加歌词
-        if (GeneralConfig.ENABLE_PLAYER_LYRICS.get() && message.url.startsWith(MUSIC_163_URL)) {
-            Matcher matcher = PATTERN.matcher(message.url);
+        if (GeneralConfig.ENABLE_PLAYER_LYRICS.get() && message.url().startsWith(MUSIC_163_URL)) {
+            Matcher matcher = PATTERN.matcher(message.url());
             if (matcher.find()) {
                 long musicId = Long.parseLong(matcher.group(1));
                 try {
                     String lyric = NetMusic.NET_EASE_WEB_API.lyric(musicId);
-                    record[0] = LyricParser.parseLyric(lyric, message.songName);
+                    record[0] = LyricParser.parseLyric(lyric, message.songName());
                 } catch (IOException e) {
-                    NetMusic.LOGGER.error(e);
+                    NetMusic.LOGGER.error("Failed to load lyric for music id: {}", musicId, e);
                 }
             }
         }
 
-        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
+        MusicPlayManager.play(message.url(), message.songName(), url ->
+                new NetMusicSound(message.pos(), url, message.timeSecond(), record[0]));
     }
 
     @Override

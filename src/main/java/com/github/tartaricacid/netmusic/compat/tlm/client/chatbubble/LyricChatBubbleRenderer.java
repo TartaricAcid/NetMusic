@@ -43,7 +43,7 @@ public class LyricChatBubbleRenderer implements IChatBubbleRenderer {
                     String lyric = NetMusic.NET_EASE_WEB_API.lyric(data.getSongId());
                     return LyricParser.parseLyric(lyric, data.getSongName());
                 } catch (IOException e) {
-                    NetMusic.LOGGER.error(e);
+                    NetMusic.LOGGER.error("Failed to load maid lyric, song id: {}", data.getSongId(), e);
                 } finally {
                     isLoading = false;
                 }

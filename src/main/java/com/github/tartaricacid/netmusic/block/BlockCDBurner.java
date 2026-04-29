@@ -14,7 +14,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -23,14 +22,12 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
 public class BlockCDBurner extends HorizontalDirectionalBlock {
-    protected static final VoxelShape BLOCK_AABB = Block.box(0, 0, 0, 16, 8, 16);
+    private static final MapCodec<BlockCDBurner> CODEC = simpleCodec((properties) -> new BlockCDBurner());
 
     public BlockCDBurner() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
@@ -47,11 +44,6 @@ public class BlockCDBurner extends HorizontalDirectionalBlock {
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();
         return this.defaultBlockState().setValue(FACING, direction);
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
-        return BLOCK_AABB;
     }
 
     @Override
@@ -76,6 +68,6 @@ public class BlockCDBurner extends HorizontalDirectionalBlock {
 
     @Override
     protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return simpleCodec((properties) -> new BlockCDBurner());
+        return CODEC;
     }
 }

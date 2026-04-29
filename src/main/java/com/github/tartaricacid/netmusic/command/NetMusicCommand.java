@@ -83,7 +83,7 @@ public class NetMusicCommand {
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.add163cd.success"), false);
         } catch (Exception e) {
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.add163cd.fail"));
-            NetMusic.LOGGER.error(e);
+            NetMusic.LOGGER.error("Failed to execute get163cd command", e);
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -160,7 +160,7 @@ public class NetMusicCommand {
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.addDJcd.success"), false);
         } catch (Exception e) {
             context.getSource().sendFailure(Component.translatable("command.netmusic.music_cd.addDJcd.fail"));
-            NetMusic.LOGGER.error(e);
+            NetMusic.LOGGER.error("Failed to execute getDJcd command", e);
         }
         return Command.SINGLE_SUCCESS;
     }

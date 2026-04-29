@@ -1,17 +1,28 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "result": {
     "id": "netmusic:computer"
   },
-  "ingredients": [
-    {
-      "item": "minecraft:jukebox"
+  "pattern": [
+    "GGG",
+    "COC",
+    "IRI"
+  ],
+  "key": {
+    "G": {
+      "item": "minecraft:glass_pane"
     },
-    {
-      "item": "minecraft:gold_ingot"
+    "C": {
+      "tag": "c:ingots/copper"
     },
-    {
+    "O": {
+      "item": "minecraft:clock"
+    },
+    "I": {
+      "tag": "c:ingots/iron"
+    },
+    "R": {
       "item": "minecraft:redstone"
     }
-  ]
+  }
 }
