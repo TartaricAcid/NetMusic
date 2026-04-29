@@ -26,7 +26,6 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
 import org.jspecify.annotations.Nullable;
 
 public class BlockComputer extends HorizontalDirectionalBlock {
@@ -52,16 +51,11 @@ public class BlockComputer extends HorizontalDirectionalBlock {
 
     private static VoxelShape makeShape() {
         VoxelShape shape = Shapes.empty();
-        shape = Shapes.join(shape, Shapes.box(0, 0, 0.40625, 1, 0.3125, 1), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.1875, 0.3125, 0.40625, 0.8125, 0.375, 0.875), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.125, 0.375, 0.53125, 0.875, 0.84375, 0.9375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.1250625, 0.5608175, 0.47502125, 0.8749375, 0.9356925, 0.88114625), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.1875, 0.4375, 0.40625, 0.8125, 0.9375, 0.59375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.0625, 0.3125, 0.34375, 0.9375, 0.4375, 0.59375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.0625, 0.9375, 0.34375, 0.9375, 1.0625, 0.59375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.8125, 0.4375, 0.34375, 0.9375, 0.9375, 0.59375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0.0625, 0.4375, 0.34375, 0.1875, 0.9375, 0.59375), BooleanOp.OR);
-        shape = Shapes.join(shape, Shapes.box(0, 0.0625, 0.03125, 1, 0.1875, 0.375), BooleanOp.OR);
+        shape = Shapes.join(shape, Block.box(0, 0, 5.5, 16, 17, 16), BooleanOp.OR);
+        shape = Shapes.join(shape, Block.box(0, 0, 0, 16, 4, 5.5), BooleanOp.OR);
+        shape = Shapes.join(shape, Block.box(5, 17, 6.5, 13, 21, 10.5), BooleanOp.OR);
+        shape = Shapes.join(shape, Block.box(0.5, 17, 10.5, 4.5, 21, 14.5), BooleanOp.OR);
+        shape = Shapes.join(shape, Block.box(1, 4, 4.5, 5, 8, 5.5), BooleanOp.OR);
         return shape;
     }
 

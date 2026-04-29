@@ -110,20 +110,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         matrixStack.pushPose();
         matrixStack.scale(0.75f, 0.75f, 0.75f);
         matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
-        switch (state.facing) {
-            case SOUTH:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
-                break;
-            case EAST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
-                break;
-            case WEST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
-                break;
-            case NORTH:
-            default:
-                break;
-        }
+        matrixStack.mulPose(Axis.YP.rotationDegrees(180 - state.facing.get2DDataValue() * 90));
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         submitNode.submitModel(model, state, matrixStack, TEXTURE, state.lightCoords,
                 OverlayTexture.NO_OVERLAY, 0, state.breakProgress);

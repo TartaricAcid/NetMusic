@@ -1,4 +1,7 @@
 {
+  "textures": {
+    "particle": "minecraft:block/copper_block"
+  },
   "display": {
     "gui": {
       "rotation": [22.5, 22.5, 0],

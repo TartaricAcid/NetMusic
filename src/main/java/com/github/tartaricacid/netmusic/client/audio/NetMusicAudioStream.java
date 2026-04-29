@@ -1,7 +1,7 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.api.NetWorker;
+import com.github.tartaricacid.netmusic.client.api.AudioStreamHandlerManager;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import net.minecraft.client.sounds.AudioStream;
 import org.lwjgl.BufferUtils;
@@ -10,10 +10,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.Proxy;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,15 +33,14 @@ public class NetMusicAudioStream implements AudioStream {
     private final ConcurrentLinkedQueue<ByteBuffer> audioDataQueue = new ConcurrentLinkedQueue<>();
     private final AtomicBoolean loading = new AtomicBoolean(false);
 
+    private volatile Throwable failed;
+
     public NetMusicAudioStream(URL url) throws UnsupportedAudioFileException, IOException {
-        Proxy proxy = NetWorker.getProxyFromConfig();
-        // 有些流不支持 mark/reset, 需要用 BufferedInputStream 包装
-        BufferedInputStream bufferedInputStream = new MusicBufferedInputStream(new ChunkedAudioStream(url, proxy));
-        skipID3(bufferedInputStream);
-        AudioInputStream originalInputStream = AudioSystem.getAudioInputStream(bufferedInputStream);
+        AudioInputStream originalInputStream = AudioStreamHandlerManager.handle(url);
         AudioFormat originalFormat = originalInputStream.getFormat();
         AudioFormat targetFormat = getTargetPCMAudioFormat(originalFormat);
         AudioInputStream targetInputStream = AudioSystem.getAudioInputStream(targetFormat, originalInputStream);
+
         if (GeneralConfig.ENABLE_STEREO.get()) {
             targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     1, 2, originalFormat.getSampleRate(), false);
@@ -52,15 +48,20 @@ public class NetMusicAudioStream implements AudioStream {
             targetFormat = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, originalFormat.getSampleRate(), 16,
                     2, 4, originalFormat.getSampleRate(), false);
         }
+
         this.stream = AudioSystem.getAudioInputStream(targetFormat, targetInputStream);
         this.frameSize = stream.getFormat().getFrameSize();
-        frame = new byte[frameSize];
+        this.frame = new byte[frameSize];
         this.streamingBufferSize = calculateBufferSize(stream.getFormat(), 1);
         pumpBuffers(4);
     }
 
-    private static int calculateBufferSize(AudioFormat format, int sampleAmount) {
-        return (int) ((float) (sampleAmount * format.getSampleSizeInBits()) / 8.0F * (float) format.getChannels() * format.getSampleRate());
+    private static int calculateBufferSize(AudioFormat format, int seconds) {
+        float bytesPerSample = format.getSampleSizeInBits() / 8f;
+        int channels = format.getChannels();
+        float sampleRate = format.getSampleRate();
+
+        return (int) (seconds * bytesPerSample * channels * sampleRate);
     }
 
     public void pumpBuffers(int readCount) {
@@ -82,8 +83,13 @@ public class NetMusicAudioStream implements AudioStream {
                     break;
                 }
             }
-        } catch (IOException e) {
-            NetMusic.LOGGER.error("Error reading audio stream: " + e.getMessage());
+        } catch (Throwable e) {
+            NetMusic.LOGGER.error("Failed to read audio stream", e);
+            this.failed = e;
+            try {
+                this.stream.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 
@@ -103,6 +109,18 @@ public class NetMusicAudioStream implements AudioStream {
         return stream.getFormat();
     }
 
+    private void loadAudioData() {
+        if (failed == null && audioDataQueue.size() < 4 && loading.compareAndSet(false, true)) {
+            AUDIO_STREAM_EXECUTOR.submit(() -> {
+                try {
+                    pumpBuffers(2);
+                } finally {
+                    loading.set(false);
+                }
+            });
+        }
+    }
+
     /**
      * 从流中读取音频数据，并返回一个最多包含指定字节数的字节缓冲区。
      * 该方法从流中读取音频帧并将其添加到输出缓冲区，直到缓冲区至少
@@ -114,6 +132,8 @@ public class NetMusicAudioStream implements AudioStream {
      */
     @Override
     public ByteBuffer read(int size) {
+        // 预载音频数据
+        loadAudioData();
         // 如果队列中的数据不足以满足请求的大小, 返回 null
         if ((float) size / streamingBufferSize > audioDataQueue.size() || size <= 0) {
             return null;
@@ -138,60 +158,13 @@ public class NetMusicAudioStream implements AudioStream {
                 bytesToRead = 0;
             }
         } while (bytesToRead > 0);
-
-        // 预载音频数据
-        if (audioDataQueue.size() < 4 && loading.compareAndSet(false, true)) {
-            AUDIO_STREAM_EXECUTOR.submit(() -> {
-                try {
-                    pumpBuffers(2);
-                } finally {
-                    loading.set(false);
-                }
-            });
-        }
-
         byteBuffer.flip();
-        // 返回包含读取数据的ByteBuffer
+        // 返回包含读取数据的 ByteBuffer
         return byteBuffer;
     }
 
     @Override
     public void close() throws IOException {
         stream.close();
-    }
-
-    /**
-     * 跳过 ID3 标签
-     *
-     * @param inputStream 输入的音频流
-     * @throws IOException IO 异常
-     */
-    private static void skipID3(InputStream inputStream) throws IOException {
-        // 读取 ID3 标签头部
-        inputStream.mark(10);
-        byte[] header = new byte[10];
-        int read = inputStream.read(header, 0, 10);
-        if (read < 10) {
-            inputStream.reset();
-            return;
-        }
-
-        // 检查是否有 ID3 标签
-        if (header[0] == 'I' && header[1] == 'D' && header[2] == '3') {
-            // 计算元数据大小
-            int size = (header[6] << 21) | (header[7] << 14) | (header[8] << 7) | header[9];
-
-            // 跳过元数据
-            int skipped = 0;
-            int skip = 0;
-            do {
-                skip = (int) inputStream.skip(size - skipped);
-                if (skip != 0) {
-                    skipped += skip;
-                }
-            } while (skipped < size && skip != 0);
-        } else {
-            inputStream.reset();
-        }
     }
 }

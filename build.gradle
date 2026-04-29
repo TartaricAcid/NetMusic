@@ -82,7 +82,9 @@ neoForge {
             // 否则没有安装 JetBrains Runtime 的用户运行时会报错
             jvmArguments.addAll([
                     "-XX:+IgnoreUnrecognizedVMOptions",
-                    "-XX:+AllowEnhancedClassRedefinition"
+                    "-XX:+AllowEnhancedClassRedefinition",
+                    // 开启 HTTP 请求日志，方便调试
+                    "-Djdk.httpclient.HttpClient.log=requests,responses,headers,errors"
             ])
         }
     }
@@ -145,6 +147,8 @@ configurations {
 dependencies {
     // mp3 播放库
     shadowLib 'com.googlecode.soundlibs:mp3spi:1.9.5.4'
+    // aac/m4a 播放库
+    shadowLib 'libs:javasound-aac:0.9.6'
     // flac 播放库
     shadowLib 'libs:jflac-codec:1.5.3-SNAPSHOT'
 
@@ -212,6 +216,7 @@ shadowJar {
     relocate 'javazoom.spi', 'com.github.tartaricacid.netmusic.soundlibs.javazoom.spi'
     relocate 'org.tritonus', 'com.github.tartaricacid.netmusic.soundlibs.org.tritonus'
     relocate 'org.jflac', 'com.github.tartaricacid.netmusic.soundlibs.org.jflac'
+    relocate 'net.sourceforge.jaad', 'com.github.tartaricacid.netmusic.soundlibs.net.sourceforge.jaad'
 
     // 排除不需要的依赖项和资源
     exclude 'META-INF/maven/**/*'

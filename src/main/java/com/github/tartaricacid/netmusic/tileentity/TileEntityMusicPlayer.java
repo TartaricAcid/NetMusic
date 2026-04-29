@@ -87,14 +87,6 @@ public class TileEntityMusicPlayer extends BlockEntity {
         return null;
     }
 
-    @Override
-    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
-        ItemStack stack = this.getPlayerInv().getResource(0).toStack();
-        if (!stack.isEmpty() && this.level != null) {
-            Block.popResource(level, pos, stack);
-        }
-    }
-
     public boolean isPlay() {
         return isPlay;
     }

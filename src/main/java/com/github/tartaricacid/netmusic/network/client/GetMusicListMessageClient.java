@@ -15,7 +15,7 @@ public class GetMusicListMessageClient {
         LocalPlayer player = Minecraft.getInstance().player;
         try {
             if (message.musicListId() == RELOAD_MESSAGE) {
-                MusicListManage.loadConfigSongs();
+                MusicListManage.loadConfigSongs(Minecraft.getInstance().getResourceManager());
                 if (player != null) {
                     player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success"));
                 }

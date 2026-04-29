@@ -28,13 +28,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
-
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
     /**
@@ -182,6 +185,19 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         musicPlayer.setPlayToClient(info);
         musicPlayer.markDirty();
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> stacks = super.getDrops(state, builder);
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (blockEntity instanceof TileEntityMusicPlayer musicPlayer) {
+            var stack = musicPlayer.getPlayerInv().getResource(0);
+            if (!stack.isEmpty()) {
+                stacks.add(stack.toStack(1));
+            }
+        }
+        return stacks;
     }
 
     @Nullable

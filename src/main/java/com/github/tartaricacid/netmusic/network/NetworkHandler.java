@@ -1,8 +1,6 @@
 package com.github.tartaricacid.netmusic.network;
 
-import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
-import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
@@ -23,6 +21,10 @@ public class NetworkHandler {
         registrar.playToClient(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC, GetMusicListMessage::handle);
 
         registrar.playToServer(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC, SetMusicIDMessage::handle);
+
+        registrar.playToClient(BigMegaphoneStartMessage.TYPE, BigMegaphoneStartMessage.STREAM_CODEC, BigMegaphoneStartMessage::handle);
+        registrar.playToClient(BigMegaphoneStopMessage.TYPE, BigMegaphoneStopMessage.STREAM_CODEC, BigMegaphoneStopMessage::handle);
+        registrar.playToServer(BigMegaphoneControlMessage.TYPE, BigMegaphoneControlMessage.STREAM_CODEC, BigMegaphoneControlMessage::handle);
 
         // CompatRegistry.initNetwork(registrar);
     }

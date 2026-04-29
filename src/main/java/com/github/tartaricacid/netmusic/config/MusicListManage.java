@@ -11,7 +11,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -34,10 +33,6 @@ public class MusicListManage {
     private static final Path CONFIG_DIR = Paths.get("config").resolve("net_music");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("music.json");
     public static List<ItemMusicCD.SongInfo> SONGS = Lists.newArrayList();
-
-    public static void loadConfigSongs() throws IOException {
-        loadConfigSongs(Minecraft.getInstance().getResourceManager());
-    }
 
     public static void loadConfigSongs(ResourceManager manager) throws IOException {
         if (!Files.isDirectory(CONFIG_DIR)) {
