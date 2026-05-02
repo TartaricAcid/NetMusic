@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "result": {
+    "id": "netmusic:big_megaphone"
+  },
+  "pattern": [
+    " C ",
+    "C C",
+    "N C"
+  ],
+  "key": {
+    "C": {
+      "tag": "c:ingots/copper"
+    },
+    "N": {
+      "item": "minecraft:note_block"
+    }
+  }
+}

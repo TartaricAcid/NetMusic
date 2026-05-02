@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "netmusic:block/big_megaphone"
+    },
+    "facing=south": {
+      "model": "netmusic:block/big_megaphone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "netmusic:block/big_megaphone",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "netmusic:block/big_megaphone",
+      "y": 90
+    }
+  }
+}

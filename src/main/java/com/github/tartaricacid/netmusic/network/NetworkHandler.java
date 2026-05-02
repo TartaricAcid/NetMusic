@@ -1,9 +1,7 @@
 package com.github.tartaricacid.netmusic.network;
 
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
-import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
-import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.*;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -18,6 +16,11 @@ public class NetworkHandler {
         PayloadTypeRegistry.playS2C().register(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(MusicToClientMessage.TYPE, MusicToClientMessage.STREAM_CODEC);
         PayloadTypeRegistry.playC2S().register(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC);
+
+        PayloadTypeRegistry.playC2S().register(BigMegaphoneControlMessage.TYPE, BigMegaphoneControlMessage.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(BigMegaphoneStartMessage.TYPE, BigMegaphoneStartMessage.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(BigMegaphoneStopMessage.TYPE, BigMegaphoneStopMessage.STREAM_CODEC);
+
         CompatRegistry.initNetwork();
     }
 

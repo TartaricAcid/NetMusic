@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -58,12 +57,8 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     public void loadAdditional(CompoundTag nbt, HolderLookup.Provider provider) {
         super.loadAdditional(nbt, provider);
         // Items 为空时 ContainerHelper.loadAllItems() 不会清空 items, 需要手动处理
-        ListTag listTag = nbt.getList("Items", CompoundTag.TAG_COMPOUND);
-        if (listTag.isEmpty()) {
-            items.clear();
-        } else {
-            ContainerHelper.loadAllItems(nbt, items, provider);
-        }
+        items.clear();
+        ContainerHelper.loadAllItems(nbt, items, provider);
         isPlay = nbt.getBoolean(IS_PLAY_TAG);
         currentTime = nbt.getInt(CURRENT_TIME_TAG);
         hasSignal = nbt.getBoolean(SIGNAL_TAG);

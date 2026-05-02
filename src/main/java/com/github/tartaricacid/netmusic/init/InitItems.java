@@ -23,6 +23,8 @@ public class InitItems {
 
     public static Item COMPUTER = register(new BlockItem(InitBlocks.COMPUTER, new Item.Properties().stacksTo(1)), "computer");
 
+    public static Item BIG_MEGAPHONE = register(new BlockItem(InitBlocks.BIG_MEGAPHONE, new Item.Properties().stacksTo(1)), "big_megaphone");
+
     public static Item MUSIC_PLAYER_BACKPACK = register(new Item(new Item.Properties().stacksTo(1)), "music_player_backpack");
 
     public static Item register(Item item, String id) {
@@ -37,6 +39,7 @@ public class InitItems {
                 output.accept(new ItemStack(MUSIC_PLAYER));
                 output.accept(new ItemStack(CD_BURNER));
                 output.accept(new ItemStack(COMPUTER));
+                output.accept(new ItemStack(BIG_MEGAPHONE));
                 CompatRegistry.initCreativeModeTab(output);
                 output.accept(new ItemStack(InitItems.MUSIC_CD));
                 for (ItemMusicCD.SongInfo info : MusicListManage.SONGS) {
