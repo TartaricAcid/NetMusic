@@ -89,6 +89,7 @@ loom {
     runs {
         client {
             programArgs("--username", "_IMG_")
+            vmArg("-Djdk.httpclient.HttpClient.log=requests,responses,headers,errors")
         }
     }
     runConfigs.configureEach {
@@ -119,6 +120,9 @@ dependencies {
     mcLib("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
     // flac 解码库
     mcLib("libs:jflac-codec-1.5.3:SNAPSHOT")
+    // AAC 解码库
+    mcLib("libs:javasound-aac:0.9.6")
+
     // Fabric Loader
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     // Fabric API
