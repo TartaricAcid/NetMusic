@@ -4,19 +4,22 @@
     "id": "netmusic:music_player"
   },
   "pattern": [
-    "OBO",
-    "ODO",
+    "  C",
+    " LN",
     "OOO"
   ],
   "key": {
-    "B": {
-      "item": "minecraft:book"
+    "C": {
+      "tag": "c:ingots/copper"
+    },
+    "L": {
+      "item": "minecraft:lightning_rod"
+    },
+    "N": {
+      "item": "minecraft:note_block"
     },
     "O": {
       "tag": "minecraft:planks"
-    },
-    "D": {
-      "item": "minecraft:diamond"
     }
   }
 }

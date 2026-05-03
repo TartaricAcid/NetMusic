@@ -18,6 +18,10 @@ public class GeneralConfig {
     public static ModConfigSpec.ConfigValue<String> ORIGINAL_MAID_LYRICS_COLOR;
     public static ModConfigSpec.ConfigValue<String> TRANSLATED_MAID_LYRICS_COLOR;
 
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_MAX_RANGE;
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_SCAN_INTERVAL;
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT;
+
     public static ModConfigSpec init() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         builder.push("general");
@@ -48,6 +52,15 @@ public class GeneralConfig {
 
         builder.comment("The color of the translated lyrics for the maid, in #ARGB format");
         TRANSLATED_MAID_LYRICS_COLOR = builder.define("TranslatedMaidLyricsColor", "#FF000000");
+
+        builder.comment("Maximum configurable broadcast range for the big megaphone");
+        BIG_MEGAPHONE_MAX_RANGE = builder.defineInRange("BigMegaphoneMaxRange", 96, 1, 256);
+
+        builder.comment("Server scan interval for big megaphone audience refresh in ticks");
+        BIG_MEGAPHONE_SCAN_INTERVAL = builder.defineInRange("BigMegaphoneScanInterval", 200, 1, 1200);
+
+        builder.comment("Maximum number of simultaneous big megaphone broadcasts a client will actively play");
+        BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT = builder.defineInRange("BigMegaphoneClientActiveLimit", 3, 1, 16);
 
         builder.pop();
         return builder.build();

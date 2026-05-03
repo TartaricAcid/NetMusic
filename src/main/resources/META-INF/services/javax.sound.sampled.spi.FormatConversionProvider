@@ -1,3 +1,0 @@
-# for the javalayer mp3 decoder
-com.github.tartaricacid.netmusic.client.audio.MpegFormatConversionProvider
-com.github.tartaricacid.netmusic.client.audio.FlacFormatConversionProvider
