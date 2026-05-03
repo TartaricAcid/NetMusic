@@ -21,19 +21,23 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
+@SuppressWarnings("deprecation")
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
     protected static final VoxelShape BLOCK_AABB = Block.box(2, 0, 2, 14, 6, 14);
     public static final BooleanProperty CYCLE_DISABLE = BooleanProperty.create("cycle_disable");
 
     public BlockMusicPlayer() {
         super(BlockBehaviour.Properties.of().sound(SoundType.WOOD).strength(0.5f).noOcclusion());
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH).setValue(CYCLE_DISABLE, true));
     }
 
     @Nullable
@@ -51,7 +55,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();
-        return this.defaultBlockState().setValue(FACING, direction).setValue(CYCLE_DISABLE, true);
+        return this.defaultBlockState().setValue(FACING, direction);
     }
 
     @Override
@@ -59,6 +63,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         return true;
     }
 
+    @Override
     public int getAnalogOutputSignal(BlockState state, Level level, BlockPos blockPos) {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         if (blockEntity instanceof TileEntityMusicPlayer te) {
@@ -150,16 +155,16 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     }
 
     @Override
-    public void onRemove(BlockState state, Level worldIn, BlockPos pos, BlockState newState, boolean isMoving) {
-        BlockEntity te = worldIn.getBlockEntity(pos);
-        if (te instanceof TileEntityMusicPlayer) {
-            TileEntityMusicPlayer musicPlayer = (TileEntityMusicPlayer) te;
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> stacks = super.getDrops(state, builder);
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (blockEntity instanceof TileEntityMusicPlayer musicPlayer) {
             ItemStack stack = musicPlayer.getItem(0);
             if (!stack.isEmpty()) {
-                Block.popResource(worldIn, pos, stack);
+                stacks.add(stack);
             }
         }
-        super.onRemove(state, worldIn, pos, newState, isMoving);
+        return stacks;
     }
 
     @Nullable
@@ -169,7 +174,9 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     }
 
     @Nullable
-    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
+    @SuppressWarnings("all")
+    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(
+            BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
         return type == entityType ? (BlockEntityTicker<A>) ticker : null;
     }
 

@@ -130,7 +130,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
                 return;
             } catch (Exception e) {
                 this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
-                NetMusic.LOGGER.error(e);
+                NetMusic.LOGGER.error("Failed to get DJ song info for CD burner, dj id: {}", djId, e);
                 return;
             }
         }
@@ -146,7 +146,7 @@ public class CDBurnerMenuScreen extends AbstractContainerScreen<CDBurnerMenu> {
                 ClientNetWorkHandler.sendToServer(new SetMusicIDMessage(song));
             } catch (Exception e) {
                 this.tips = Component.translatable("gui.netmusic.cd_burner.get_info_error");
-                NetMusic.LOGGER.error(e);
+                NetMusic.LOGGER.error("Failed to get song info for CD burner, song id: {}", id, e);
             }
         } else {
             this.tips = Component.translatable("gui.netmusic.cd_burner.music_id_error");
