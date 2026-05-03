@@ -16,24 +16,30 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 import static com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer.TEXTURE;
 
-public class MusicPlayerRenderer implements BlockEntityRenderer<@NotNull TileEntityMusicPlayer, @NotNull MusicPlayerRenderState> {
+public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer, MusicPlayerRenderState> {
     private final ModelMusicPlayer.Block model;
     private final Font font;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
         this.model = new ModelMusicPlayer.Block(context.bakeLayer(ModelMusicPlayer.LAYER));
         this.font = context.font();
+    }
+
+    public static AABB getAABB(BlockPos pStart, BlockPos pEnd) {
+        return new AABB(pStart.getX(), pStart.getY(), pStart.getZ(), pEnd.getX(), pEnd.getY(), pEnd.getZ());
     }
 
     @Override
@@ -43,7 +49,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<@NotNull TileEnt
 
     @Override
     public void extractRenderState(TileEntityMusicPlayer te, MusicPlayerRenderState state, float partialTicks, Vec3 camera,
-                                   ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+                                   ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(te, state, partialTicks, camera, breakProgress);
 
         state.facing = te.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
@@ -104,20 +110,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<@NotNull TileEnt
         matrixStack.pushPose();
         matrixStack.scale(0.75f, 0.75f, 0.75f);
         matrixStack.translate(0.5 / 0.75, 1.5, 0.5 / 0.75);
-        switch (state.facing) {
-            case SOUTH:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(180));
-                break;
-            case EAST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(270));
-                break;
-            case WEST:
-                matrixStack.mulPose(Axis.YP.rotationDegrees(90));
-                break;
-            case NORTH:
-            default:
-                break;
-        }
+        matrixStack.mulPose(Axis.YP.rotationDegrees(180 - state.facing.get2DDataValue() * 90));
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         submitNode.submitModel(model, state, matrixStack, TEXTURE, state.lightCoords,
                 OverlayTexture.NO_OVERLAY, 0, state.breakProgress);

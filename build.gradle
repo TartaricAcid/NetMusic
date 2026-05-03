@@ -90,6 +90,7 @@ loom {
         client {
             ideConfigGenerated = true
             programArgs("--username", "_IMG_")
+            vmArg("-Djdk.httpclient.HttpClient.log=requests,responses,headers,errors")
         }
 
         server {
@@ -119,6 +120,8 @@ dependencies {
     shadowLib("com.googlecode.soundlibs:mp3spi:1.9.5.4")
     // flac 解码库
     shadowLib("libs:jflac-codec-1.5.3:SNAPSHOT")
+    // AAC 解码库
+    shadowLib("libs:javasound-aac:0.9.6")
 
     // JEI
     runtimeOnly("maven.modrinth:jei:${jei_version}")

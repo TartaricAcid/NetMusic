@@ -1,11 +1,17 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "result": {
     "id": "netmusic:cd_burner"
   },
-  "ingredients": [
-    "minecraft:jukebox",
-    "#c:ingots/iron",
-    "#c:dusts/redstone"
-  ]
+  "pattern": [
+    " L ",
+    "IRI",
+    "CCC"
+  ],
+  "key": {
+    "L": "minecraft:lightning_rod",
+    "I": "#c:nuggets/iron",
+    "R": "minecraft:redstone",
+    "C": "#c:ingots/copper"
+  }
 }

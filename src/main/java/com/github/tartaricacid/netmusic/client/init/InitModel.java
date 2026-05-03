@@ -1,7 +1,10 @@
 package com.github.tartaricacid.netmusic.client.init;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.model.ModelBigMegaphone;
 import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
+import com.github.tartaricacid.netmusic.client.renderer.BigMegaphoneItemRenderer;
+import com.github.tartaricacid.netmusic.client.renderer.BigMegaphoneRenderer;
 import com.github.tartaricacid.netmusic.client.renderer.MusicPlayerItemRenderer;
 import com.github.tartaricacid.netmusic.client.renderer.MusicPlayerRenderer;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
@@ -15,5 +18,9 @@ public class InitModel {
         BlockEntityRenderers.register(InitBlocks.MUSIC_PLAYER_TE, MusicPlayerRenderer::new);
         SpecialModelRenderers.ID_MAPPER.put(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_player"), MusicPlayerItemRenderer.Unbaked.MAP_CODEC);
         ModelLayerRegistry.registerModelLayer(ModelMusicPlayer.LAYER, ModelMusicPlayer::createBodyLayer);
+
+        BlockEntityRenderers.register(InitBlocks.BIG_MEGAPHONE_TE, BigMegaphoneRenderer::new);
+        SpecialModelRenderers.ID_MAPPER.put(Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "big_megaphone"), BigMegaphoneItemRenderer.Unbaked.MAP_CODEC);
+        ModelLayerRegistry.registerModelLayer(ModelBigMegaphone.LAYER, ModelBigMegaphone::createBodyLayer);
     }
 }

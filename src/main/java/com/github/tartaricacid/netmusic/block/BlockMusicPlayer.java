@@ -27,12 +27,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
+
+@SuppressWarnings("deprecation")
 public class BlockMusicPlayer extends HorizontalDirectionalBlock implements EntityBlock {
     /**
      * 内部机制，只能用调试工具切换到此状态
@@ -71,7 +76,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction direction = context.getHorizontalDirection().getOpposite();
-        return this.defaultBlockState().setValue(FACING, direction).setValue(CYCLE_DISABLE, true);
+        return this.defaultBlockState().setValue(FACING, direction);
     }
 
     @Override
@@ -175,6 +180,19 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         return InteractionResult.SUCCESS;
     }
 
+    @Override
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        List<ItemStack> stacks = super.getDrops(state, builder);
+        BlockEntity blockEntity = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+        if (blockEntity instanceof TileEntityMusicPlayer musicPlayer) {
+            ItemStack stack = musicPlayer.getItem(0);
+            if (!stack.isEmpty()) {
+                stacks.add(stack);
+            }
+        }
+        return stacks;
+    }
+
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState blockState, BlockEntityType<T> entityType) {
@@ -183,7 +201,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
 
     @Nullable
     @SuppressWarnings("all")
-    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
+    protected static <E extends BlockEntity, A extends BlockEntity> BlockEntityTicker<A> createTickerHelper(
+            BlockEntityType<A> entityType, BlockEntityType<E> type, BlockEntityTicker<? super E> ticker) {
         return type == entityType ? (BlockEntityTicker<A>) ticker : null;
     }
 

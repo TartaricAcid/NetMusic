@@ -1,3 +1,4 @@
 classTweaker v1 official
 accessible field net/minecraft/client/sounds/SoundManager soundEngine Lnet/minecraft/client/sounds/SoundEngine; # soundEngine
 accessible field net/minecraft/client/sounds/SoundEngine instanceToChannel Ljava/util/Map; # instanceToChannel
+accessible field net/minecraft/client/sounds/SoundEngine tickingSounds Ljava/util/List; # tickingSounds

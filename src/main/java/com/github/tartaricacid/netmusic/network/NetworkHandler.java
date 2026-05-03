@@ -3,6 +3,7 @@ package com.github.tartaricacid.netmusic.network;
 import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
+import com.github.tartaricacid.netmusic.network.message.*;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
@@ -17,6 +18,10 @@ public class NetworkHandler {
         PayloadTypeRegistry.clientboundPlay().register(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC);
         PayloadTypeRegistry.clientboundPlay().register(MusicToClientMessage.TYPE, MusicToClientMessage.STREAM_CODEC);
         PayloadTypeRegistry.serverboundPlay().register(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC);
+
+        PayloadTypeRegistry.serverboundPlay().register(BigMegaphoneControlMessage.TYPE, BigMegaphoneControlMessage.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(BigMegaphoneStartMessage.TYPE, BigMegaphoneStartMessage.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(BigMegaphoneStopMessage.TYPE, BigMegaphoneStopMessage.STREAM_CODEC);
     }
 
     public static void sendToNearBy(Level world, BlockPos pos, CustomPacketPayload message) {

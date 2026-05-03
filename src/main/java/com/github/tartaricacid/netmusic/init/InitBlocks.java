@@ -1,9 +1,11 @@
 package com.github.tartaricacid.netmusic.init;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.block.BlockBigMegaphone;
 import com.github.tartaricacid.netmusic.block.BlockCDBurner;
 import com.github.tartaricacid.netmusic.block.BlockComputer;
 import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
+import com.github.tartaricacid.netmusic.tileentity.TileEntityBigMegaphone;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
@@ -19,9 +21,13 @@ public class InitBlocks {
     public static final Block MUSIC_PLAYER = register("music_player", BlockMusicPlayer::new);
     public static final Block CD_BURNER = register("cd_burner", BlockCDBurner::new);
     public static final Block COMPUTER = register("computer", BlockComputer::new);
+    public static final Block BIG_MEGAPHONE = register("big_megaphone", BlockBigMegaphone::new);
 
     public static final BlockEntityType<TileEntityMusicPlayer> MUSIC_PLAYER_TE = registerBlockEntity("music_player",
             () -> FabricBlockEntityTypeBuilder.create(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER).build());
+
+    public static final BlockEntityType<TileEntityBigMegaphone> BIG_MEGAPHONE_TE = registerBlockEntity("big_megaphone",
+            () -> FabricBlockEntityTypeBuilder.create(TileEntityBigMegaphone::new, InitBlocks.BIG_MEGAPHONE).build());
 
     private static <T extends Block> T register(String name, Function<Identifier, T> blockFactory) {
         Identifier id = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, name);

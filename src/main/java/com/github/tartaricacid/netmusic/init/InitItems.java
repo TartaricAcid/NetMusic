@@ -2,10 +2,7 @@ package com.github.tartaricacid.netmusic.init;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.config.MusicListManage;
-import com.github.tartaricacid.netmusic.item.ItemCDBurner;
-import com.github.tartaricacid.netmusic.item.ItemComputer;
-import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import com.github.tartaricacid.netmusic.item.ItemMusicPlayer;
+import com.github.tartaricacid.netmusic.item.*;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,6 +23,8 @@ public class InitItems {
 
     public static Item COMPUTER = register("computer", ItemComputer::new);
 
+    public static Item BIG_MEGAPHONE = register("big_megaphone", ItemBigMegaphone::new);
+
     public static Item register(String id, Function<Identifier, Item> itemFactory) {
         Identifier itemId = Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, id);
         Item item = itemFactory.apply(itemId);
@@ -39,6 +38,7 @@ public class InitItems {
                 output.accept(new ItemStack(MUSIC_PLAYER));
                 output.accept(new ItemStack(CD_BURNER));
                 output.accept(new ItemStack(COMPUTER));
+                output.accept(new ItemStack(BIG_MEGAPHONE));
                 output.accept(new ItemStack(InitItems.MUSIC_CD));
                 for (ItemMusicCD.SongInfo info : MusicListManage.SONGS) {
                     ItemStack stack = new ItemStack(MUSIC_CD);

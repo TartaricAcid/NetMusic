@@ -30,7 +30,7 @@ public class MusicToClientMessageClient {
                     String lyric = NetMusic.NET_EASE_WEB_API.lyric(musicId);
                     record[0] = LyricParser.parseLyric(lyric, message.songName());
                 } catch (IOException e) {
-                    NetMusic.LOGGER.error(e);
+                    NetMusic.LOGGER.error("Failed to load lyric for music id: {}", musicId, e);
                 }
             }
         }
