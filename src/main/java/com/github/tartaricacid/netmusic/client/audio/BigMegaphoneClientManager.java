@@ -3,6 +3,8 @@ package com.github.tartaricacid.netmusic.client.audio;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.longs.AbstractLong2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArraySet;
@@ -13,11 +15,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * 客户端大喇叭广播的管理类
@@ -28,7 +29,11 @@ public final class BigMegaphoneClientManager {
     private static final int CHECK_INTERVAL_TICK = 19;
     private static final int INITIAL_RETRY_TICK_INTERVAL = 40;
     private static final int MAX_RETRY_COUNT = 2;
+
     private static final AbstractLong2ObjectMap<TrackedBroadcast> TRACKED_BROADCASTS = new Long2ObjectOpenHashMap<>();
+
+    private static final Map<Class<?>, Method> DELEGATE_METHOD_CACHE = Maps.newHashMap();
+    private static final Set<Class<?>> MISSING_DELEGATE_METHOD_CACHE = Sets.newHashSet();
 
     private BigMegaphoneClientManager() {
     }
@@ -84,7 +89,7 @@ public final class BigMegaphoneClientManager {
                     continue;
                 }
                 // 有可能存在 sound 已经不在客户端声音列表中，但因为这里引用导致无法回收的问题
-                if (tracked.sound.isStopped() || !tickingSounds.contains(tracked.sound)) {
+                if (!isTrackedSoundActive(tracked.sound, tickingSounds)) {
                     tracked.sound = null;
                     tracked.nextRetryTick = Math.max(tracked.nextRetryTick, gameTime + INITIAL_RETRY_TICK_INTERVAL);
                 }
@@ -195,6 +200,47 @@ public final class BigMegaphoneClientManager {
         // 日志记录
         NetMusic.LOGGER.warn("Failed to open big megaphone stream for {}. Retry in {} ticks (attempt {}).",
                 tracked.url, delay, tracked.failureCount, error);
+    }
+
+    private static boolean isTrackedSoundActive(BigMegaphoneSound sound, List<?> tickingSounds) {
+        if (sound == null || sound.isStopped()) {
+            return false;
+        }
+        if (tickingSounds.contains(sound)) {
+            return true;
+        }
+        Object delegate = getRuntimeDelegate(sound);
+        return delegate != null && tickingSounds.contains(delegate);
+    }
+
+    private static Object getRuntimeDelegate(BigMegaphoneSound sound) {
+        Class<?> soundClass = sound.getClass();
+        Method cachedMethod = DELEGATE_METHOD_CACHE.get(soundClass);
+        if (cachedMethod != null) {
+            return invokeDelegate(cachedMethod, sound);
+        }
+        if (MISSING_DELEGATE_METHOD_CACHE.contains(soundClass)) {
+            return null;
+        }
+
+        try {
+            Method getDelegate = soundClass.getMethod("getDelegate");
+            DELEGATE_METHOD_CACHE.put(soundClass, getDelegate);
+            return invokeDelegate(getDelegate, sound);
+        } catch (NoSuchMethodException e) {
+            MISSING_DELEGATE_METHOD_CACHE.add(soundClass);
+            return null;
+        } catch (SecurityException e) {
+            return null;
+        }
+    }
+
+    private static Object invokeDelegate(Method getDelegate, BigMegaphoneSound sound) {
+        try {
+            return getDelegate.invoke(sound);
+        } catch (ReflectiveOperationException | SecurityException ignore) {
+            return null;
+        }
     }
 
     private static double distanceToSqr(TrackedBroadcast tracked) {
