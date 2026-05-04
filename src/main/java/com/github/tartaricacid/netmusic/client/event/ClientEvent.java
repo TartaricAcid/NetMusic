@@ -3,6 +3,7 @@ package com.github.tartaricacid.netmusic.client.event;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.api.AudioStreamHandlerManager;
 import com.github.tartaricacid.netmusic.client.gui.BigMegaphonePresetManager;
+import com.github.tartaricacid.netmusic.compat.sable.SableCompat;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,6 +21,8 @@ public class ClientEvent {
             try {
                 MusicListManage.loadConfigSongs();
                 BigMegaphonePresetManager.loadBundledStations();
+
+                SableCompat.init();
             } catch (IOException e) {
                 NetMusic.LOGGER.error("Failed to load client bundled resources", e);
             }
