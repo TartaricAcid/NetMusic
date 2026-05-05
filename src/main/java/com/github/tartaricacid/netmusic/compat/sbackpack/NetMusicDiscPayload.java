@@ -65,7 +65,7 @@ public record NetMusicDiscPayload(
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(NetMusicDiscPayload payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
-        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(payload.rawUrl());
+        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);
         if (finalUrlOpt.isEmpty()) {
             return;
         }
