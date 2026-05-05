@@ -82,7 +82,7 @@ public record PlayNetMusicDiscMessage(
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(PlayNetMusicDiscMessage payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
-        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(payload.rawUrl());
+        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);
         if (finalUrlOpt.isEmpty()) {
             return;
         }

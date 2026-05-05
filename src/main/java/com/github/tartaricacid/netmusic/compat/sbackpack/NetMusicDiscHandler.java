@@ -34,7 +34,7 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
 
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
-                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, songInfo, resolved.songUrl, position);
+                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, resolved, songInfo.songUrl, position);
                 PacketHandler.INSTANCE.sendToAllNear(serverLevel.dimension(), pos, 128, message);
             }, serverLevel.getServer());
         });
@@ -48,7 +48,7 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
 
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
-                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, songInfo, resolved.songUrl, entityId);
+                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, resolved, songInfo.songUrl, entityId);
                 PacketHandler.INSTANCE.sendToAllNear(serverLevel.dimension(), position, 128, message);
             }, serverLevel.getServer());
         });
