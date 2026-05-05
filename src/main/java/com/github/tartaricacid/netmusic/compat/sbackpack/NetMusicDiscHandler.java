@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.compat.sbackpack;
 
+import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import com.github.tartaricacid.netmusic.init.InitItems;
@@ -28,20 +29,28 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
     public void playDisc(ServerLevel serverLevel, BlockPos position, UUID storageUuid, ItemStack discItemStack, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
             Vec3 pos = Vec3.atCenterOf(position);
-            NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, songInfo, position);
-            PacketDistributor.sendToPlayersNear(serverLevel, null, pos.x, pos.y, pos.z, 128, payload);
             long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
             ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, pos, finishTime);
+
+            ItemMusicCD.SongInfo copy = songInfo.clone();
+            MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
+                NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, resolved, songInfo.songUrl, position);
+                PacketDistributor.sendToPlayersNear(serverLevel, null, pos.x, pos.y, pos.z, 128, payload);
+            }, serverLevel.getServer());
         });
     }
 
     @Override
     public void playDisc(ServerLevel serverLevel, Vec3 position, UUID storageUuid, ItemStack discItemStack, int entityId, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
-            NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, songInfo, entityId);
-            PacketDistributor.sendToPlayersNear(serverLevel, null, position.x, position.y, position.z, 128, payload);
             long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
             ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, position, finishTime);
+
+            ItemMusicCD.SongInfo copy = songInfo.clone();
+            MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
+                NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, resolved, songInfo.songUrl, entityId);
+                PacketDistributor.sendToPlayersNear(serverLevel, null, position.x, position.y, position.z, 128, payload);
+            }, serverLevel.getServer());
         });
     }
 

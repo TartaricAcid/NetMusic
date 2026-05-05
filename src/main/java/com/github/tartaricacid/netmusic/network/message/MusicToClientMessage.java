@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.concurrent.CompletableFuture;
 
-public record MusicToClientMessage(BlockPos pos, String url, int timeSecond,
+public record MusicToClientMessage(BlockPos pos, String url, String rawUrl, int timeSecond,
                                    String songName) implements CustomPacketPayload {
     public static final Type<MusicToClientMessage> TYPE = new Type<>(
             Identifier.fromNamespaceAndPath(NetMusic.MOD_ID, "music_to_client"));
@@ -21,6 +21,7 @@ public record MusicToClientMessage(BlockPos pos, String url, int timeSecond,
     public static final StreamCodec<ByteBuf, MusicToClientMessage> STREAM_CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, MusicToClientMessage::pos,
             ByteBufCodecs.STRING_UTF8, MusicToClientMessage::url,
+            ByteBufCodecs.STRING_UTF8, MusicToClientMessage::rawUrl,
             ByteBufCodecs.VAR_INT, MusicToClientMessage::timeSecond,
             ByteBufCodecs.STRING_UTF8, MusicToClientMessage::songName,
             MusicToClientMessage::new);
