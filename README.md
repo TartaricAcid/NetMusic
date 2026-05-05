@@ -113,7 +113,4 @@ Thanks to IMG for helping to make the Fabric update
 
 ## 开发者文档
 
-已拆分为独立文档：
-
-- [MusicPlayResolverManager](MusicPlayResolverManager.md)
-- [AudioStreamHandlerManager](AudioStreamHandlerManager.md)
+<https://github.com/TartaricAcid/NetMusic/wiki>
