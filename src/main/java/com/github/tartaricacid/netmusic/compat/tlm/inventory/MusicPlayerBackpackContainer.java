@@ -1,20 +1,18 @@
 package com.github.tartaricacid.netmusic.compat.tlm.inventory;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
 import com.github.tartaricacid.netmusic.compat.tlm.backpack.data.MusicPlayerBackpackData;
-import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidMusicToClientMessage;
 import com.github.tartaricacid.netmusic.compat.tlm.message.MaidStopMusicMessage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.inventory.container.MaidMainContainer;
 import com.mojang.datafixers.util.Pair;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
@@ -120,10 +118,19 @@ public class MusicPlayerBackpackContainer extends MaidMainContainer {
                 if (info == null) {
                     return false;
                 }
-                this.setSoundTicks(info.songTime * 20 + 64);
-                MaidMusicToClientMessage msg = new MaidMusicToClientMessage(this.maid.getId(), info.songUrl, info.songTime, info.songName);
-                MaidMusicToClientMessage.showLyric(this.maid, info.songUrl, info.songName, info.songTime);
-                NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), msg);
+                if (this.maid.level() instanceof ServerLevel serverLevel) {
+                    MinecraftServer server = serverLevel.getServer();
+                    ItemMusicCD.SongInfo clone = info.clone();
+                    MusicPlayResolverManager.resolve(clone).thenAcceptAsync(resolved -> {
+                        this.setSoundTicks(resolved.songTime * 20 + 64);
+                        MaidMusicToClientMessage msg = new MaidMusicToClientMessage(
+                                this.maid.getId(), resolved.songUrl, info.songUrl,
+                                resolved.songTime, resolved.songName
+                        );
+                        MaidMusicToClientMessage.showLyric(this.maid, info.songUrl, resolved.songName, resolved.songTime);
+                        NetworkHandler.sendToNearby(this.maid.level(), this.maid.blockPosition(), msg);
+                    }, server);
+                }
                 return true;
             }
         }

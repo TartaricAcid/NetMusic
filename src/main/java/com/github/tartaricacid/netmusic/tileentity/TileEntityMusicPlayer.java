@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
+import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
 import com.github.tartaricacid.netmusic.block.BlockMusicPlayer;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
@@ -13,6 +14,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -27,7 +30,10 @@ import javax.annotation.Nullable;
 import static com.github.tartaricacid.netmusic.block.BlockMusicPlayer.CYCLE_DISABLE;
 
 public class TileEntityMusicPlayer extends BlockEntity {
-    public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder.of(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER.get()).build(null);
+    public static final BlockEntityType<TileEntityMusicPlayer> TYPE = BlockEntityType.Builder
+            .of(TileEntityMusicPlayer::new, InitBlocks.MUSIC_PLAYER.get())
+            .build(null);
+
     private static final String CD_ITEM_TAG = "ItemStackCD";
     private static final String IS_PLAY_TAG = "IsPlay";
     private static final String CURRENT_TIME_TAG = "CurrentTime";
@@ -96,11 +102,22 @@ public class TileEntityMusicPlayer extends BlockEntity {
     }
 
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
-        this.setCurrentTime(info.songTime * 20 + 64);
-        this.isPlay = true;
-        if (level != null && !level.isClientSide) {
-            MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName);
-            NetworkHandler.sendToNearby(level, worldPosition, msg);
+        if (level instanceof ServerLevel serverLevel) {
+            MinecraftServer server = serverLevel.getServer();
+            ItemMusicCD.SongInfo clone = info.clone();
+            MusicPlayResolverManager.resolve(clone).thenAcceptAsync(resolved -> {
+                this.setCurrentTime(resolved.songTime * 20 + 64);
+                this.isPlay = true;
+                this.markDirty();
+
+                String rawUrl = info.songUrl;
+                String url = resolved.songUrl;
+                MusicToClientMessage msg = new MusicToClientMessage(
+                        worldPosition, url, rawUrl,
+                        resolved.songTime, resolved.songName
+                );
+                NetworkHandler.sendToNearby(level, worldPosition, msg);
+            }, server);
         }
     }
 

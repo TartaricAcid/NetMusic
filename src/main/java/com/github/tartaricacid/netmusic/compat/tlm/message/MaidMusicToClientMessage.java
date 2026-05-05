@@ -17,6 +17,7 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
@@ -25,10 +26,13 @@ import java.util.regex.Pattern;
 import static com.github.tartaricacid.netmusic.client.audio.MusicPlayManager.MUSIC_163_URL;
 
 public class MaidMusicToClientMessage implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<MaidMusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "maid_music_to_client"));
+    public static final CustomPacketPayload.Type<MaidMusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "maid_music_to_client"));
+
     public static final StreamCodec<ByteBuf, MaidMusicToClientMessage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getEntityId,
             ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getUrl,
+            ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getRawUrl,
             ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getTimeSecond,
             ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getSongName,
             MaidMusicToClientMessage::new);
@@ -37,12 +41,14 @@ public class MaidMusicToClientMessage implements CustomPacketPayload {
 
     private final int entityId;
     private final String url;
+    private final String rawUrl;
     private final int timeSecond;
     private final String songName;
 
-    public MaidMusicToClientMessage(int entityId, String url, int timeSecond, String songName) {
+    public MaidMusicToClientMessage(int entityId, String url, String rawUrl, int timeSecond, String songName) {
         this.entityId = entityId;
         this.url = url;
+        this.rawUrl = StringUtils.defaultIfBlank(rawUrl, url);
         this.timeSecond = timeSecond;
         this.songName = songName;
     }
@@ -85,6 +91,10 @@ public class MaidMusicToClientMessage implements CustomPacketPayload {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getRawUrl() {
+        return rawUrl;
     }
 
     public int getTimeSecond() {

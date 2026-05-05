@@ -31,7 +31,6 @@ public class ClientEvent {
 
     @SubscribeEvent
     public static void onClientLoadCompleteEvent(FMLLoadCompleteEvent event) {
-        // 预加载一些资源，避免第一次使用时卡顿
         event.enqueueWork(AudioStreamHandlerManager::init);
     }
 }

@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class NetworkHandler {
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "1.5.1";
 
     public static void registerPacket(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar registrar = event.registrar(VERSION).optional();

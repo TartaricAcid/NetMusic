@@ -29,28 +29,26 @@ import java.util.concurrent.CompletableFuture;
 public record NetMusicDiscPayload(
         boolean blockStorage, UUID storgeUuid,
         ItemMusicCD.SongInfo songInfo,
+        String rawUrl,
         int entityId, BlockPos pos
 ) implements CustomPacketPayload {
     public static final Type<NetMusicDiscPayload> TYPE = new Type<>(SophisticatedCore.getRL("play_netmusic_disc"));
+
     public static final StreamCodec<RegistryFriendlyByteBuf, NetMusicDiscPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.BOOL,
-            NetMusicDiscPayload::blockStorage,
-            UUIDUtil.STREAM_CODEC,
-            NetMusicDiscPayload::storgeUuid,
-            ItemMusicCD.SongInfo.STREAM_CODEC,
-            NetMusicDiscPayload::songInfo,
-            ByteBufCodecs.INT,
-            NetMusicDiscPayload::entityId,
-            BlockPos.STREAM_CODEC,
-            NetMusicDiscPayload::pos,
+            ByteBufCodecs.BOOL, NetMusicDiscPayload::blockStorage,
+            UUIDUtil.STREAM_CODEC, NetMusicDiscPayload::storgeUuid,
+            ItemMusicCD.SongInfo.STREAM_CODEC, NetMusicDiscPayload::songInfo,
+            ByteBufCodecs.STRING_UTF8, NetMusicDiscPayload::rawUrl,
+            ByteBufCodecs.INT, NetMusicDiscPayload::entityId,
+            BlockPos.STREAM_CODEC, NetMusicDiscPayload::pos,
             NetMusicDiscPayload::new);
 
-    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, BlockPos pos) {
-        this(true, storgeUuid, songInfo, 0, pos);
+    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, BlockPos pos) {
+        this(true, storgeUuid, songInfo, rawUrl, 0, pos);
     }
 
-    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, int entityId) {
-        this(false, storgeUuid, songInfo, entityId, BlockPos.ZERO);
+    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, int entityId) {
+        this(false, storgeUuid, songInfo, rawUrl, entityId, BlockPos.ZERO);
     }
 
     @Override
@@ -67,7 +65,7 @@ public record NetMusicDiscPayload(
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(NetMusicDiscPayload payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
-        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);
+        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(payload.rawUrl());
         if (finalUrlOpt.isEmpty()) {
             return;
         }
