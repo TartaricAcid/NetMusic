@@ -65,8 +65,8 @@ public class MusicToClientMessage {
         LyricRecord[] record = new LyricRecord[1];
 
         // 如果是网易云的音乐，那么尝试添加歌词
-        if (GeneralConfig.ENABLE_PLAYER_LYRICS.get() && message.url.startsWith(MUSIC_163_URL)) {
-            Matcher matcher = PATTERN.matcher(message.url);
+        if (GeneralConfig.ENABLE_PLAYER_LYRICS.get() && message.rawUrl.startsWith(MUSIC_163_URL)) {
+            Matcher matcher = PATTERN.matcher(message.rawUrl);
             if (matcher.find()) {
                 long musicId = Long.parseLong(matcher.group(1));
                 try {
