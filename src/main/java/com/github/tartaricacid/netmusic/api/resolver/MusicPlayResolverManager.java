@@ -19,6 +19,8 @@ public final class MusicPlayResolverManager {
         SongUrlResolverEvent event = new SongUrlResolverEvent(manager);
         MinecraftForge.EVENT_BUS.post(event);
 
+        // RESOLVERS.add(new DefaultVipResolver());
+
         RESOLVERS.sort((h1, h2) -> Integer.compare(h2.getPriority(), h1.getPriority()));
         RESOLVERS = ImmutableList.copyOf(RESOLVERS);
     }

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -25,12 +26,14 @@ public class MaidMusicToClientMessage {
 
     private final int entityId;
     private final String url;
+    private final String rawUrl;
     private final int timeSecond;
     private final String songName;
 
-    public MaidMusicToClientMessage(int entityId, String url, int timeSecond, String songName) {
+    public MaidMusicToClientMessage(int entityId, String url, String rawUrl, int timeSecond, String songName) {
         this.entityId = entityId;
         this.url = url;
+        this.rawUrl = StringUtils.defaultIfBlank(rawUrl, url);
         this.timeSecond = timeSecond;
         this.songName = songName;
     }
@@ -50,12 +53,13 @@ public class MaidMusicToClientMessage {
     }
 
     public static MaidMusicToClientMessage decode(FriendlyByteBuf buf) {
-        return new MaidMusicToClientMessage(buf.readInt(), buf.readUtf(), buf.readInt(), buf.readUtf());
+        return new MaidMusicToClientMessage(buf.readInt(), buf.readUtf(), buf.readUtf(), buf.readInt(), buf.readUtf());
     }
 
     public static void encode(MaidMusicToClientMessage message, FriendlyByteBuf buf) {
         buf.writeInt(message.entityId);
         buf.writeUtf(message.url);
+        buf.writeUtf(message.rawUrl);
         buf.writeInt(message.timeSecond);
         buf.writeUtf(message.songName);
     }

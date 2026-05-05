@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.StorageSoundHandler;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -25,29 +26,35 @@ import java.util.function.Supplier;
 public record PlayNetMusicDiscMessage(
         boolean blockStorage, UUID storgeUuid,
         ItemMusicCD.SongInfo songInfo,
+        String rawUrl,
         int entityId, BlockPos pos
 ) {
-    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, BlockPos pos) {
-        this(true, storgeUuid, songInfo, 0, pos);
+    public PlayNetMusicDiscMessage {
+        rawUrl = StringUtils.defaultIfBlank(rawUrl, songInfo.songUrl);
     }
 
-    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, int entityId) {
-        this(false, storgeUuid, songInfo, entityId, BlockPos.ZERO);
+    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, BlockPos pos) {
+        this(true, storgeUuid, songInfo, rawUrl, 0, pos);
+    }
+
+    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, int entityId) {
+        this(false, storgeUuid, songInfo, rawUrl, entityId, BlockPos.ZERO);
     }
 
     public static PlayNetMusicDiscMessage decode(FriendlyByteBuf buf) {
         boolean blockStorage = buf.readBoolean();
         UUID storgeUuid = buf.readUUID();
         String songUrl = buf.readUtf();
+        String rawUrl = buf.readUtf();
         int songTime = buf.readInt();
         var info = new ItemMusicCD.SongInfo(songUrl, null, songTime, false);
 
         if (blockStorage) {
             BlockPos pos = buf.readBlockPos();
-            return new PlayNetMusicDiscMessage(storgeUuid, info, pos);
+            return new PlayNetMusicDiscMessage(storgeUuid, info, rawUrl, pos);
         } else {
             int entityId = buf.readInt();
-            return new PlayNetMusicDiscMessage(storgeUuid, info, entityId);
+            return new PlayNetMusicDiscMessage(storgeUuid, info, rawUrl, entityId);
         }
     }
 
@@ -55,6 +62,7 @@ public record PlayNetMusicDiscMessage(
         buf.writeBoolean(message.blockStorage);
         buf.writeUUID(message.storgeUuid);
         buf.writeUtf(message.songInfo.songUrl);
+        buf.writeUtf(message.rawUrl);
         buf.writeInt(message.songInfo.songTime);
         if (message.blockStorage) {
             buf.writeBlockPos(message.pos);
@@ -74,7 +82,7 @@ public record PlayNetMusicDiscMessage(
     @OnlyIn(Dist.CLIENT)
     private static void onHandle(PlayNetMusicDiscMessage payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
-        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);
+        Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(payload.rawUrl());
         if (finalUrlOpt.isEmpty()) {
             return;
         }

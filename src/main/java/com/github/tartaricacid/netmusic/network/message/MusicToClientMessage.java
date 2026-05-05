@@ -78,6 +78,6 @@ public class MusicToClientMessage {
             }
         }
 
-        MusicPlayManager.play(message.rawUrl, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
+        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
     }
 }

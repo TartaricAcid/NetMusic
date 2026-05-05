@@ -129,12 +129,14 @@ public class TileEntityMusicPlayer extends BlockEntity {
     }
 
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
-        this.setCurrentTime(info.songTime * 20 + 64);
-        this.isPlay = true;
         if (level instanceof ServerLevel serverLevel) {
             MinecraftServer server = serverLevel.getServer();
             ItemMusicCD.SongInfo clone = info.clone();
-            MusicPlayResolverManager.resolve(clone).thenAccept(resolved -> server.submit(() -> {
+            MusicPlayResolverManager.resolve(clone).thenAcceptAsync(resolved -> {
+                this.setCurrentTime(resolved.songTime * 20 + 64);
+                this.isPlay = true;
+                this.markDirty();
+
                 String rawUrl = info.songUrl;
                 String url = resolved.songUrl;
                 MusicToClientMessage msg = new MusicToClientMessage(
@@ -142,7 +144,7 @@ public class TileEntityMusicPlayer extends BlockEntity {
                         resolved.songTime, resolved.songName
                 );
                 NetworkHandler.sendToNearby(level, worldPosition, msg);
-            }));
+            }, server);
         }
     }
 
