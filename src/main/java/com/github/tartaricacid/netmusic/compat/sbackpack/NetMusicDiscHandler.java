@@ -28,13 +28,14 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
     @Override
     public void playDisc(ServerLevel serverLevel, BlockPos position, UUID storageUuid, ItemStack discItemStack, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
+            Vec3 pos = Vec3.atCenterOf(position);
+            long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
+            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, pos, finishTime);
+
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
-                Vec3 pos = Vec3.atCenterOf(position);
                 PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, songInfo, resolved.songUrl, position);
                 PacketHandler.INSTANCE.sendToAllNear(serverLevel.dimension(), pos, 128, message);
-                long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(resolved);
-                ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, pos, finishTime);
             }, serverLevel.getServer());
         });
     }
@@ -42,12 +43,13 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
     @Override
     public void playDisc(ServerLevel serverLevel, Vec3 position, UUID storageUuid, ItemStack discItemStack, int entityId, Runnable onFinished) {
         getSongInfo(discItemStack, serverLevel).ifPresent(songInfo -> {
+            long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(songInfo);
+            ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, position, finishTime);
+
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
                 PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, songInfo, resolved.songUrl, entityId);
                 PacketHandler.INSTANCE.sendToAllNear(serverLevel.dimension(), position, 128, message);
-                long finishTime = serverLevel.getGameTime() + getMusicLengthInTicks(resolved);
-                ServerStorageSoundHandler.putSoundInfo(serverLevel, storageUuid, onFinished, position, finishTime);
             }, serverLevel.getServer());
         });
     }
