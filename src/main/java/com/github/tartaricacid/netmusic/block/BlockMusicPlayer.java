@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.block;
 
+import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.ChatFormatting;
@@ -136,7 +137,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
         if (info == null) {
             return InteractionResult.PASS;
         }
-        if (info.vip) {
+        if (info.vip && !MusicPlayResolverManager.canResolve(info)) {
             if (worldIn.isClientSide) {
                 playerIn.sendSystemMessage(Component.translatable("message.netmusic.music_player.need_vip").withStyle(ChatFormatting.RED));
             }

@@ -12,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.network.NetworkEvent;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -26,23 +27,26 @@ public class MusicToClientMessage {
 
     private final BlockPos pos;
     private final String url;
+    private final String rawUrl;
     private final int timeSecond;
     private final String songName;
 
-    public MusicToClientMessage(BlockPos pos, String url, int timeSecond, String songName) {
+    public MusicToClientMessage(BlockPos pos, String url, String rawUrl, int timeSecond, String songName) {
         this.pos = pos;
         this.url = url;
+        this.rawUrl = StringUtils.defaultIfBlank(rawUrl, url);
         this.timeSecond = timeSecond;
         this.songName = songName;
     }
 
     public static MusicToClientMessage decode(FriendlyByteBuf buf) {
-        return new MusicToClientMessage(BlockPos.of(buf.readLong()), buf.readUtf(), buf.readInt(), buf.readUtf());
+        return new MusicToClientMessage(BlockPos.of(buf.readLong()), buf.readUtf(), buf.readUtf(), buf.readInt(), buf.readUtf());
     }
 
     public static void encode(MusicToClientMessage message, FriendlyByteBuf buf) {
         buf.writeLong(message.pos.asLong());
         buf.writeUtf(message.url);
+        buf.writeUtf(message.rawUrl);
         buf.writeInt(message.timeSecond);
         buf.writeUtf(message.songName);
     }
@@ -74,6 +78,6 @@ public class MusicToClientMessage {
             }
         }
 
-        MusicPlayManager.play(message.url, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
+        MusicPlayManager.play(message.rawUrl, message.songName, url -> new NetMusicSound(message.pos, url, message.timeSecond, record[0]));
     }
 }

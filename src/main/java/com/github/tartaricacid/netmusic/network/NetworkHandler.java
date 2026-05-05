@@ -17,7 +17,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.Optional;
 
 public class NetworkHandler {
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "1.5.1";
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(NetMusic.MOD_ID, "network"),
             () -> VERSION, it -> it.equals(VERSION), it -> it.equals(VERSION));
