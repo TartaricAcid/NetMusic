@@ -1,9 +1,10 @@
 package com.github.tartaricacid.netmusic.client.api;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.api.implement.*;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import net.neoforged.neoforge.common.NeoForge;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -15,25 +16,25 @@ public final class AudioStreamHandlerManager {
     private static List<IAudioStreamHandler> HANDLERS = Lists.newArrayList();
 
     public static void init() {
-        AudioStreamHandlerManager manager = new AudioStreamHandlerManager();
-        HANDLERS = Lists.newArrayList();
-
-        AudioStreamHandlerEvent event = new AudioStreamHandlerEvent(manager);
-        NeoForge.EVENT_BUS.post(event);
-
         // 注册自己的 handler
-        manager.registerHandler(new CnrM3u8Handler());
-        manager.registerHandler(new M3u8Handler());
-        manager.registerHandler(new NetEaseHttpHandler());
-        manager.registerHandler(new LocalFileHandler());
-        manager.registerHandler(new DirectHttpHandler());
+        registerHandler(new CnrM3u8Handler());
+        registerHandler(new M3u8Handler());
+        registerHandler(new NetEaseHttpHandler());
+        registerHandler(new LocalFileHandler());
+        registerHandler(new DirectHttpHandler());
 
         // 按优先级排序
         HANDLERS.sort((h1, h2) -> Integer.compare(h2.getPriority(), h1.getPriority()));
         HANDLERS = ImmutableList.copyOf(HANDLERS);
     }
 
-    void registerHandler(IAudioStreamHandler handler) {
+    public static void registerHandler(IAudioStreamHandler handler) {
+        if (HANDLERS instanceof ImmutableCollection<?>) {
+            NetMusic.LOGGER.error("Failed to register audio stream handler {}, " +
+                                  "you should register it before the load complete event",
+                    handler.getClass().getName());
+            return;
+        }
         HANDLERS.add(handler);
     }
 
