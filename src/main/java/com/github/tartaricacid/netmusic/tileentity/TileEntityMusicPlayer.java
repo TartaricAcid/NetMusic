@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.tileentity;
 
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
+import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
@@ -13,6 +14,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -97,11 +100,22 @@ public class TileEntityMusicPlayer extends BlockEntity implements MusicPlayerInv
     }
 
     public void setPlayToClient(ItemMusicCD.SongInfo info) {
-        this.setCurrentTime(info.songTime * 20 + 64);
-        this.isPlay = true;
-        if (level != null && !level.isClientSide()) {
-            MusicToClientMessage msg = new MusicToClientMessage(worldPosition, info.songUrl, info.songTime, info.songName);
-            NetworkHandler.sendToNearBy(level, worldPosition, msg);
+        if (level instanceof ServerLevel serverLevel) {
+            MinecraftServer server = serverLevel.getServer();
+            ItemMusicCD.SongInfo clone = info.clone();
+            MusicPlayResolverManager.resolve(clone).thenAcceptAsync(resolved -> {
+                this.setCurrentTime(resolved.songTime * 20 + 64);
+                this.isPlay = true;
+                this.setChanged();
+
+                String rawUrl = info.songUrl;
+                String url = resolved.songUrl;
+                MusicToClientMessage msg = new MusicToClientMessage(
+                        worldPosition, url, rawUrl,
+                        resolved.songTime, resolved.songName
+                );
+                NetworkHandler.sendToNearBy(level, worldPosition, msg);
+            }, server);
         }
     }
 
