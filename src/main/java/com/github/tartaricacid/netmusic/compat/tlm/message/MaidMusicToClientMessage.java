@@ -9,6 +9,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +21,7 @@ public class MaidMusicToClientMessage implements CustomPacketPayload {
     public static final StreamCodec<ByteBuf, MaidMusicToClientMessage> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getEntityId,
             ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getUrl,
+            ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getRawUrl,
             ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getTimeSecond,
             ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getSongName,
             MaidMusicToClientMessage::new);
@@ -28,12 +30,14 @@ public class MaidMusicToClientMessage implements CustomPacketPayload {
 
     private final int entityId;
     private final String url;
+    public final String rawUrl;
     private final int timeSecond;
     private final String songName;
 
-    public MaidMusicToClientMessage(int entityId, String url, int timeSecond, String songName) {
+    public MaidMusicToClientMessage(int entityId, String url, String rawUrl, int timeSecond, String songName) {
         this.entityId = entityId;
         this.url = url;
+        this.rawUrl = StringUtils.defaultIfBlank(rawUrl, url);
         this.timeSecond = timeSecond;
         this.songName = songName;
     }
@@ -58,6 +62,10 @@ public class MaidMusicToClientMessage implements CustomPacketPayload {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getRawUrl() {
+        return rawUrl;
     }
 
     public int getTimeSecond() {
