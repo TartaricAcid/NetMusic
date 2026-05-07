@@ -34,6 +34,7 @@ public class NetMusic implements ModInitializer {
         InitDataComponent.init();
         InitSounds.init();
         InitContainer.init();
+        InitEvents.init();
         CommandRegistry.registryCommand();
         NetworkHandler.init();
         ServerReceiverRegistry.register();

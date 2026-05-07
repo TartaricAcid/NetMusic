@@ -26,6 +26,9 @@
     "client": [
       "com.github.tartaricacid.netmusic.client.NetMusicClient"
     ],
+    "server": [
+        "com.github.tartaricacid.netmusic.NetMusicServer"
+    ],
     "modmenu": [
       "com.github.tartaricacid.netmusic.compat.modmenu.ModMenuApiImpl"
     ]
