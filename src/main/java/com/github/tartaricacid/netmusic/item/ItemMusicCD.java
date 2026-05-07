@@ -1,5 +1,6 @@
 package com.github.tartaricacid.netmusic.item;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicList;
 import com.github.tartaricacid.netmusic.api.pojo.NetEaseMusicSong;
 import com.github.tartaricacid.netmusic.init.InitItems;
@@ -103,7 +104,7 @@ public class ItemMusicCD extends Item {
         }
     }
 
-    public static class SongInfo {
+    public static class SongInfo implements Cloneable {
         @SerializedName("url")
         public String songUrl;
         @SerializedName("name")
@@ -196,6 +197,24 @@ public class ItemMusicCD extends Item {
                 ListTag nbt = new ListTag();
                 info.artists.forEach(name -> nbt.add(StringTag.valueOf(name)));
                 tag.put("artists", nbt);
+            }
+        }
+
+        @Override
+        public SongInfo clone() {
+            try {
+                SongInfo copy = (SongInfo) super.clone();
+                copy.songUrl = this.songUrl;
+                copy.songName = this.songName;
+                copy.songTime = this.songTime;
+                copy.transName = this.transName;
+                copy.vip = this.vip;
+                copy.readOnly = this.readOnly;
+                copy.artists = this.artists == null ? Lists.newArrayList() : Lists.newArrayList(this.artists);
+                return copy;
+            } catch (CloneNotSupportedException e) {
+                NetMusic.LOGGER.error("This should never happen", e);
+                return new SongInfo();
             }
         }
     }

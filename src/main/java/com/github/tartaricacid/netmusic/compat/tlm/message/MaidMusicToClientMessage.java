@@ -8,6 +8,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,12 +21,14 @@ public class MaidMusicToClientMessage implements Message {
 
     public final int entityId;
     public final String url;
+    public final String rawUrl;
     public final int timeSecond;
     public final String songName;
 
-    public MaidMusicToClientMessage(int entityId, String url, int timeSecond, String songName) {
+    public MaidMusicToClientMessage(int entityId, String url, String rawUrl, int timeSecond, String songName) {
         this.entityId = entityId;
         this.url = url;
+        this.rawUrl = StringUtils.defaultIfBlank(rawUrl, url);
         this.timeSecond = timeSecond;
         this.songName = songName;
     }
@@ -45,7 +48,7 @@ public class MaidMusicToClientMessage implements Message {
     }
 
     public static MaidMusicToClientMessage decode(FriendlyByteBuf buf) {
-        return new MaidMusicToClientMessage(buf.readInt(), buf.readUtf(), buf.readInt(), buf.readUtf());
+        return new MaidMusicToClientMessage(buf.readInt(), buf.readUtf(), buf.readUtf(), buf.readInt(), buf.readUtf());
     }
 
     @Override
@@ -53,6 +56,7 @@ public class MaidMusicToClientMessage implements Message {
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeInt(entityId);
         buf.writeUtf(url);
+        buf.writeUtf(rawUrl);
         buf.writeInt(timeSecond);
         buf.writeUtf(songName);
         return buf;
