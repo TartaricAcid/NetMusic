@@ -123,8 +123,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             return InteractionResult.PASS;
         }
 
-        ItemStack stack = musicPlayer.getItem(0);
-        if (!stack.isEmpty()) {
+        ItemStack musicPlayerStack = musicPlayer.getItem(0);
+        if (!musicPlayerStack.isEmpty()) {
             if (musicPlayer.isPlay()) {
                 musicPlayer.setPlay(false);
                 musicPlayer.setCurrentTime(0);
@@ -134,8 +134,8 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             return InteractionResult.SUCCESS;
         }
 
-        ItemStack heldStack = playerIn.getMainHandItem();
-        ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(heldStack);
+        ItemStack stack = playerIn.getMainHandItem();
+        ItemMusicCD.SongInfo info = ItemMusicCD.getSongInfo(stack);
         if (info == null) {
             return InteractionResult.PASS;
         }
@@ -146,7 +146,7 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
             return InteractionResult.FAIL;
         }
 
-        musicPlayer.setItem(0, heldStack.copyWithCount(1));
+        musicPlayer.setItem(0, stack.copyWithCount(1));
         if (!playerIn.isCreative()) {
             stack.shrink(1);
         }
