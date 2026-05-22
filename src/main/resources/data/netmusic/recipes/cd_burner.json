@@ -13,7 +13,7 @@
       "item": "minecraft:lightning_rod"
     },
     "I": {
-      "tag": "minecraft:iron_nugget"
+      "item": "minecraft:iron_nugget"
     },
     "R": {
       "tag": "c:dusts/redstone"
