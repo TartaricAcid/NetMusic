@@ -82,7 +82,6 @@ public final class MusicPlayManager {
             sound.tick();
             return false;
         });
-        NetMusicBackpackSound.cleanupStopped();
     }
 
     public static void clearAll() {
