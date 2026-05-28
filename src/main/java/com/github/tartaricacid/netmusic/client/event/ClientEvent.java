@@ -3,7 +3,8 @@ package com.github.tartaricacid.netmusic.client.event;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.api.AudioStreamHandlerManager;
 import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlEngine;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlEngine;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.RayTraceManager;
 import com.github.tartaricacid.netmusic.client.gui.BigMegaphonePresetManager;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraft.client.Minecraft;
@@ -39,5 +40,6 @@ public class ClientEvent {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         MusicPlayManager.clientTick();
+        RayTraceManager.tick();
     }
 }

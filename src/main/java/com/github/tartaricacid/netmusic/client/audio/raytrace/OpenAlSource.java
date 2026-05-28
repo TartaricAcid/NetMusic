@@ -1,4 +1,4 @@
-package com.github.tartaricacid.netmusic.client.audio.openal;
+package com.github.tartaricacid.netmusic.client.audio.raytrace;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.openal.AL10.*;
-import static org.lwjgl.openal.AL11.*;
+import static org.lwjgl.openal.EXTEfx.*;
 
 public class OpenAlSource {
     private static final int TARGET_QUEUED_BUFFERS = 4;
@@ -18,6 +18,10 @@ public class OpenAlSource {
     private final int alFormat;
     private final int sampleRate;
     private final int streamingBufferSize;
+    private final int alDirectFilter;
+    private final int alReverbFilter;
+    private volatile float posX, posY, posZ;
+    private boolean relativeToListener = false;
     private volatile boolean closed = false;
 
     public OpenAlSource(NetMusicAudioStream stream, float x, float y, float z, float gain, float maxDistance) {
@@ -27,6 +31,10 @@ public class OpenAlSource {
         this.alFormat = format.getChannels() == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
         this.streamingBufferSize = (int) (format.getSampleRate() * format.getFrameSize());
 
+        this.posX = x;
+        this.posY = y;
+        this.posZ = z;
+
         this.alSource = alGenSources();
         alSourcef(alSource, AL_PITCH, 1.0f);
         alSourcei(alSource, AL_LOOPING, AL_FALSE);
@@ -35,6 +43,16 @@ public class OpenAlSource {
         alSourcef(alSource, AL_ROLLOFF_FACTOR, 1.0f);
         alSourcef(alSource, AL_GAIN, gain);
         alSource3f(alSource, AL_POSITION, x, y, z);
+
+        if (RayTraceManager.RAYTRACE) {
+            this.alDirectFilter = alGenFilters();
+            alFilteri(alDirectFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
+            this.alReverbFilter = alGenFilters();
+            alFilteri(alReverbFilter, AL_FILTER_TYPE, AL_FILTER_LOWPASS);
+        } else {
+            this.alDirectFilter = 0;
+            this.alReverbFilter = 0;
+        }
     }
 
     public void tick() {
@@ -71,7 +89,12 @@ public class OpenAlSource {
 
     public void setPosition(float x, float y, float z) {
         if (!closed) {
-            alSource3f(alSource, AL_POSITION, x, y, z);
+            this.posX = x;
+            this.posY = y;
+            this.posZ = z;
+            if (!RayTraceManager.RAYTRACE) {
+                alSource3f(alSource, AL_POSITION, x, y, z);
+            }
         }
     }
 
@@ -83,6 +106,7 @@ public class OpenAlSource {
 
     public void setRelativeToListener(boolean relative) {
         if (!closed) {
+            this.relativeToListener = relative;
             alSourcei(alSource, AL_SOURCE_RELATIVE, relative ? AL_TRUE : AL_FALSE);
             if (relative) {
                 alSource3f(alSource, AL_POSITION, 0, 0, 0);
@@ -92,6 +116,30 @@ public class OpenAlSource {
 
     public int getSourceId() {
         return alSource;
+    }
+
+    public float getPosX() {
+        return posX;
+    }
+
+    public float getPosY() {
+        return posY;
+    }
+
+    public float getPosZ() {
+        return posZ;
+    }
+
+    public boolean isRelativeToListener() {
+        return relativeToListener;
+    }
+
+    public int getDirectFilter() {
+        return alDirectFilter;
+    }
+
+    public int getReverbFilter() {
+        return alReverbFilter;
     }
 
     public boolean isClosed() {
@@ -107,6 +155,12 @@ public class OpenAlSource {
         int queued = alGetSourcei(alSource, AL_BUFFERS_QUEUED);
         while (queued-- > 0) {
             alDeleteBuffers(alSourceUnqueueBuffers(alSource));
+        }
+        if (alDirectFilter != 0) {
+            alDeleteFilters(alDirectFilter);
+        }
+        if (alReverbFilter != 0) {
+            alDeleteFilters(alReverbFilter);
         }
         alDeleteSources(alSource);
         try {

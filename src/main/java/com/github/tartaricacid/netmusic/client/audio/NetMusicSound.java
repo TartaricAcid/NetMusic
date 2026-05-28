@@ -2,7 +2,7 @@ package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlSource;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlSource;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

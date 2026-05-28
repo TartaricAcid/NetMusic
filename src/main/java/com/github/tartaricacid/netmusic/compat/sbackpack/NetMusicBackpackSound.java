@@ -2,8 +2,8 @@ package com.github.tartaricacid.netmusic.compat.sbackpack;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlEngine;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlSource;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlEngine;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlSource;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;

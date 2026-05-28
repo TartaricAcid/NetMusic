@@ -1,8 +1,8 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlEngine;
-import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlSource;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlEngine;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;

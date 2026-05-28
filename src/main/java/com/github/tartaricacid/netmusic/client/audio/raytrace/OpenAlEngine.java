@@ -1,4 +1,4 @@
-package com.github.tartaricacid.netmusic.client.audio.openal;
+package com.github.tartaricacid.netmusic.client.audio.raytrace;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import net.minecraft.client.Minecraft;
@@ -65,6 +65,9 @@ public final class OpenAlEngine {
                     return true;
                 }
                 source.tick();
+                if (RayTraceManager.RAYTRACE) {
+                    RayTraceManager.applySourceAudioData(source);
+                }
                 return false;
             });
         } catch (Throwable e) {
@@ -74,6 +77,10 @@ public final class OpenAlEngine {
 
     public static void play(OpenAlSource source) {
         SOURCES.put(source.getSourceId(), source);
+    }
+
+    public static void executeOnAlThread(Runnable task) {
+        EXECUTOR.execute(task);
     }
 
     public static void reset() {
@@ -87,6 +94,7 @@ public final class OpenAlEngine {
             source.cleanup();
         }
         SOURCES.clear();
+        RayTraceManager.reset();
         initialized = false;
     }
 }
