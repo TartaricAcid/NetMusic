@@ -2,6 +2,8 @@ package com.github.tartaricacid.netmusic.client.event;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.api.AudioStreamHandlerManager;
+import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
+import com.github.tartaricacid.netmusic.client.audio.openal.OpenAlEngine;
 import com.github.tartaricacid.netmusic.client.gui.BigMegaphonePresetManager;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import net.minecraft.client.Minecraft;
@@ -10,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 
 import java.io.IOException;
 
@@ -30,5 +33,11 @@ public class ClientEvent {
     @SubscribeEvent
     public static void onClientLoadCompleteEvent(FMLLoadCompleteEvent event) {
         event.enqueueWork(AudioStreamHandlerManager::init);
+        event.enqueueWork(OpenAlEngine::init);
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Post event) {
+        MusicPlayManager.clientTick();
     }
 }

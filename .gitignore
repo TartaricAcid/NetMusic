@@ -30,3 +30,5 @@ src/test
 forge*changelog.txt
 .sisyphus
 .ref
+/.claude/
+/CLAUDE.md
