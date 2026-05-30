@@ -168,6 +168,10 @@ shadowJar {
     // 这个版权许可都已经手动添加进 licenses 里了
     exclude 'META-INF/LICENSE'
 
+    // shadow 认为来自不同音频库的同名 service 文件是重复的
+    // duplicatesStrategy 的默认值 EXCLUDE 会排除掉重复的 service 文件, 只保留第一个
+    // INCLUDE 则能保证 service 文件能被正常合并
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
 }
 
