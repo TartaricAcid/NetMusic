@@ -4,7 +4,6 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricParser;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
-import com.github.tartaricacid.netmusic.client.audio.NetMusicSound;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
 
@@ -35,7 +34,6 @@ public class MusicToClientMessageClient {
             }
         }
 
-        MusicPlayManager.play(message.url(), message.songName(), url ->
-                new NetMusicSound(message.pos(), url, message.timeSecond(), record[0]));
+        MusicPlayManager.play(message.url(), message.songName(), message.pos(), message.timeSecond(), record[0]);
     }
 }

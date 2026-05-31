@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.block;
 
 import com.github.tartaricacid.netmusic.api.resolver.MusicPlayResolverManager;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.RayTraceHelper;
 import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.inventory.MusicPlayerInv;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
@@ -33,6 +34,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
@@ -217,7 +219,18 @@ public class BlockMusicPlayer extends HorizontalDirectionalBlock implements Enti
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter worldIn, BlockPos pos, CollisionContext context) {
+        if (RayTraceHelper.shooting) {
+            return Shapes.empty();
+        }
         return BLOCK_AABB;
+    }
+
+    @Override
+    protected VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (RayTraceHelper.shooting) {
+            return Shapes.empty();
+        }
+        return super.getVisualShape(state, level, pos, context);
     }
 
     @Override

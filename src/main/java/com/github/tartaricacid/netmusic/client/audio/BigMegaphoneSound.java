@@ -1,52 +1,76 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
-import com.github.tartaricacid.netmusic.init.InitSounds;
+import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlEngine;
+import com.github.tartaricacid.netmusic.client.audio.raytrace.OpenAlSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
-import net.minecraft.client.resources.sounds.Sound;
-import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.client.sounds.AudioStream;
-import net.minecraft.client.sounds.JOrbisAudioStream;
-import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.Util;
 
-import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 
-public class BigMegaphoneSound extends AbstractTickableSoundInstance {
+public class BigMegaphoneSound {
     private final URL streamUrl;
     private final BlockPos pos;
     private final long sessionId;
+    private final float volume;
+    private OpenAlSource source;
+    private boolean stopped = false;
 
     public BigMegaphoneSound(BlockPos pos, long sessionId, URL streamUrl, float volume) {
-        super(InitSounds.NET_MUSIC.get(), SoundSource.RECORDS, SoundInstance.createUnseededRandom());
         this.streamUrl = streamUrl;
         this.pos = pos;
         this.sessionId = sessionId;
-        this.x = pos.getX() + 0.5f;
-        this.y = pos.getY() + 0.5f;
-        this.z = pos.getZ() + 0.5f;
-        // 当 volume 大于 1 时，此时控制的就是播放范围，距离为 16 * volume
         this.volume = volume;
     }
 
-    @Override
+    public void play() {
+        Thread.startVirtualThread(() -> {
+            try {
+                NetMusicAudioStream audioStream = new NetMusicAudioStream(this.streamUrl);
+                Minecraft.getInstance().execute(() -> {
+                    if (stopped) {
+                        try {
+                            audioStream.close();
+                        } catch (Exception ignored) {
+                        }
+                        return;
+                    }
+                    float x = pos.getX() + 0.5f;
+                    float y = pos.getY() + 0.5f;
+                    float z = pos.getZ() + 0.5f;
+                    float maxDistance = 16.0f * Math.max(volume, 1);
+                    this.source = new OpenAlSource(audioStream, x, y, z, 1.0f, maxDistance);
+                    OpenAlEngine.play(this.source);
+                    BigMegaphoneClientManager.handleStreamOpenSuccess(pos, sessionId, this);
+                });
+            } catch (Exception e) {
+                NetMusic.LOGGER.error("Failed to open big megaphone stream: {}", streamUrl, e);
+                Minecraft.getInstance().execute(() -> {
+                    Minecraft.getInstance().gui.setOverlayMessage(
+                            Component.translatable("message.netmusic.big_megaphone.play_error"), false);
+                    BigMegaphoneClientManager.handleStreamOpenFailure(pos, sessionId, this, e);
+                });
+            }
+        });
+    }
+
     public void tick() {
+        if (stopped) {
+            return;
+        }
+
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || level.getBlockEntity(this.pos) == null) {
-            this.stop();
+            forceStop();
         } else {
             if (level.getGameTime() % 8 == 0) {
+                float x = pos.getX() + 0.5f;
+                float y = pos.getY() + 0.5f;
+                float z = pos.getZ() + 0.5f;
                 RandomSource random = level.getRandom();
                 for (int i = 0; i < 2; i++) {
                     level.addParticle(ParticleTypes.NOTE,
@@ -60,29 +84,16 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
     }
 
     public void forceStop() {
-        this.stop();
+        if (!stopped) {
+            stopped = true;
+            if (source != null) {
+                source.close();
+                source = null;
+            }
+        }
     }
 
-    @Override
-    public CompletableFuture<AudioStream> getStream(SoundBufferLibrary soundBuffers, Sound sound, boolean looping) {
-        return CompletableFuture.supplyAsync(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            try {
-                AudioStream stream = new NetMusicAudioStream(this.streamUrl);
-                mc.submit(() -> BigMegaphoneClientManager.handleStreamOpenSuccess(this.pos, this.sessionId, this));
-                return stream;
-            } catch (IOException | UnsupportedAudioFileException e) {
-                mc.submit(() -> {
-                    mc.gui.setOverlayMessage(Component.translatable("message.netmusic.big_megaphone.play_error"), false);
-                    BigMegaphoneClientManager.handleStreamOpenFailure(this.pos, this.sessionId, this, e);
-                });
-            }
-            try {
-                InputStream inputstream = mc.getResourceManager().open(NetMusicSound.ERROR_SOUND);
-                return new JOrbisAudioStream(inputstream);
-            } catch (IOException ioexception) {
-                throw new CompletionException(ioexception);
-            }
-        }, Util.backgroundExecutor());
+    public boolean isStopped() {
+        return stopped;
     }
 }
