@@ -1,16 +1,13 @@
 package com.github.tartaricacid.netmusic.network;
 
-import com.github.tartaricacid.netmusic.network.message.GetMusicListMessage;
-import com.github.tartaricacid.netmusic.network.message.MusicToClientMessage;
-import com.github.tartaricacid.netmusic.network.message.SetMusicIDMessage;
 import com.github.tartaricacid.netmusic.network.message.*;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 
 public class NetworkHandler {
@@ -26,8 +23,7 @@ public class NetworkHandler {
 
     public static void sendToNearBy(Level world, BlockPos pos, CustomPacketPayload message) {
         if (world instanceof ServerLevel serverWorld) {
-            serverWorld.getChunkSource().chunkMap.getPlayers(new ChunkPos(pos.getX(), pos.getZ()), false).stream()
-                    .filter(p -> p.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) < 96 * 96)
+            PlayerLookup.around(serverWorld, pos, 96)
                     .forEach(p -> ServerPlayNetworking.send(p, message));
         }
     }
