@@ -170,8 +170,8 @@ dependencies {
     // runtimeOnly("maven.modrinth:sound-physics-remastered:neoforge-1.21.1-1.5.1")
 
     // Sophisticated Backpacks
-    implementation "maven.modrinth:sophisticated-core:26.1.2-1.4.27.1692"
-    implementation "maven.modrinth:sophisticated-backpacks:26.1-3.25.47.1680"
+    implementation "maven.modrinth:sophisticated-core:26.1.2-1.4.56.1983"
+    implementation "maven.modrinth:sophisticated-backpacks:26.1.2-3.25.66.1859"
 }
 
 // 用于 neoforge.mods 里替换那一堆 ${xxxx}
