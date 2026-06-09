@@ -12,23 +12,24 @@ import static com.github.tartaricacid.netmusic.network.message.GetMusicListMessa
 
 public class GetMusicListMessageClient {
     public static void addMusicList(GetMusicListMessage message) {
-        LocalPlayer player = Minecraft.getInstance().player;
+        Minecraft minecraft = Minecraft.getInstance();
+        LocalPlayer player = minecraft.player;
         try {
             if (message.musicListId() == RELOAD_MESSAGE) {
-                MusicListManage.loadConfigSongs(Minecraft.getInstance().getResourceManager());
+                MusicListManage.loadConfigSongs(minecraft.getResourceManager());
                 if (player != null) {
-                    player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success"));
+                    minecraft.submitAsync(() -> player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.reload.success")));
                 }
             } else {
                 MusicListManage.add163List(message.musicListId());
                 if (player != null) {
-                    player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.success"));
+                    minecraft.submitAsync(() -> player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.success")));
                 }
             }
         } catch (Exception e) {
             if (player != null) {
-                player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.fail")
-                        .withStyle(ChatFormatting.RED));
+                minecraft.submitAsync(() -> player.sendSystemMessage(Component.translatable("command.netmusic.music_cd.add163.fail")
+                        .withStyle(ChatFormatting.RED)));
             }
             NetMusic.LOGGER.error("Failed to get music list from NetEase Cloud Music", e);
         }

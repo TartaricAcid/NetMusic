@@ -26,9 +26,11 @@ public final class MusicPlayManager {
         if (finalUrl.isPresent()) {
             playMusic(finalUrl.get(), songName, sound);
         } else {
-            LocalPlayer player = Minecraft.getInstance().player;
+            Minecraft minecraft = Minecraft.getInstance();
+            LocalPlayer player = minecraft.player;
             if (player != null) {
-                player.sendSystemMessage(Component.translatable("message.netmusic.music_player.404", url).withStyle(ChatFormatting.RED));
+                minecraft.submitAsync(() -> player.sendSystemMessage(Component.translatable("message.netmusic.music_player.404", url)
+                        .withStyle(ChatFormatting.RED)));
             }
             NetMusic.LOGGER.info("Music not found: {}", url);
         }
