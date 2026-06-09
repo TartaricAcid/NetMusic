@@ -8,23 +8,23 @@ import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.client.event.ClientResourceLoadFinishedEvent;
 
 import java.io.IOException;
 
 @EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT)
 public class ClientEvent {
     @SubscribeEvent
-    public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> {
+    public static void onClientSetup(ClientResourceLoadFinishedEvent event) {
+        if (event.isInitial()) {
             try {
                 MusicListManage.loadConfigSongs(Minecraft.getInstance().getResourceManager());
                 BigMegaphonePresetManager.loadBundledStations(Minecraft.getInstance().getResourceManager());
             } catch (IOException e) {
                 NetMusic.LOGGER.error("Failed to load client bundled resources", e);
             }
-        });
+        }
     }
 
     @SubscribeEvent
