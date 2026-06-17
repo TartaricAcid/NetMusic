@@ -1,6 +1,7 @@
 package com.github.tartaricacid.netmusic.network;
 
 import com.github.tartaricacid.netmusic.NetMusic;
+import com.github.tartaricacid.netmusic.compat.sbackpack.SBackpackCompat;
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.*;
 import net.minecraft.core.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
@@ -36,6 +38,7 @@ public class NetworkHandler {
         CHANNEL.registerMessage(5, BigMegaphoneControlMessage.class, BigMegaphoneControlMessage::encode, BigMegaphoneControlMessage::decode, BigMegaphoneControlMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CompatRegistry.initNetwork(CHANNEL);
+        SBackpackCompat.initNetwork(CHANNEL);
     }
 
     public static void sendToNearby(Level world, BlockPos pos, Object toSend) {
@@ -50,5 +53,12 @@ public class NetworkHandler {
 
     public static void sendToClientPlayer(Object message, ServerPlayer player) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), message);
+    }
+
+    public static void sendToNearby(Level world, Vec3 pos, int range, Object toSend) {
+        if (world instanceof ServerLevel) {
+            NetworkHandler.CHANNEL.send(PacketDistributor.NEAR.with(() ->
+                    new PacketDistributor.TargetPoint(pos.x, pos.y, pos.z, range, world.dimension())), toSend);
+        }
     }
 }
