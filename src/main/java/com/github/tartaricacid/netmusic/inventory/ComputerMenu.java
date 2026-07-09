@@ -2,20 +2,21 @@ package com.github.tartaricacid.netmusic.inventory;
 
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
+import com.github.tartaricacid.netmusic.item.PlaylistData;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
+import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 public class ComputerMenu extends AbstractContainerMenu {
-    public static final MenuType<ComputerMenu> TYPE = IForgeMenuType.create((windowId, inv, data) -> new ComputerMenu(windowId, inv));
+    public static final MenuType<ComputerMenu> TYPE = IMenuTypeExtension.create((windowId, inv, data) -> new ComputerMenu(windowId, inv));
     private final ItemStackHandler input = new ItemStackHandler() {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -96,6 +97,23 @@ public class ComputerMenu extends AbstractContainerMenu {
             ItemMusicCD.SongInfo rawSongInfo = ItemMusicCD.getSongInfo(itemStack);
             if (rawSongInfo == null || !rawSongInfo.readOnly) {
                 ItemMusicCD.setSongInfo(this.songInfo, itemStack);
+            }
+            this.output.setStackInSlot(0, itemStack);
+        }
+    }
+
+    /**
+     * 将播放列表数据写入唱片
+     */
+    public void setPlaylistData(PlaylistData playlistData) {
+        if (!this.input.getStackInSlot(0).isEmpty() && this.output.getStackInSlot(0).isEmpty()) {
+            ItemStack itemStack = this.input.extractItem(0, 1, false);
+            ItemMusicCD.SongInfo rawSongInfo = ItemMusicCD.getSongInfo(itemStack);
+            PlaylistData rawPlaylistData = ItemMusicCD.getPlaylistData(itemStack);
+            boolean isReadOnly = (rawSongInfo != null && rawSongInfo.readOnly)
+                    || (rawPlaylistData != null && !rawPlaylistData.isEmpty() && rawPlaylistData.isReadOnly());
+            if (!isReadOnly) {
+                ItemMusicCD.setPlaylistData(playlistData, itemStack);
             }
             this.output.setStackInSlot(0, itemStack);
         }

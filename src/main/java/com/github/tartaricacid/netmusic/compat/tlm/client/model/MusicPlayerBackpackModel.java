@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
 public class MusicPlayerBackpackModel<T extends Entity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(new ResourceLocation(NetMusic.MOD_ID, "main"), "music_player_backpack");
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "music_player_backpack");
     private final ModelPart main;
 
     public MusicPlayerBackpackModel(ModelPart root) {
@@ -75,7 +75,7 @@ public class MusicPlayerBackpackModel<T extends Entity> extends EntityModel<T> {
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        main.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
+        main.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
     }
 }

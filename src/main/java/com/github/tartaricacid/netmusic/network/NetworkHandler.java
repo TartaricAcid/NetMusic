@@ -1,64 +1,52 @@
 package com.github.tartaricacid.netmusic.network;
 
-import com.github.tartaricacid.netmusic.NetMusic;
-import com.github.tartaricacid.netmusic.compat.sbackpack.SBackpackCompat;
+import com.github.tartaricacid.netmusic.compat.create.CreateCompat;
 import com.github.tartaricacid.netmusic.compat.tlm.init.CompatRegistry;
 import com.github.tartaricacid.netmusic.network.message.*;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.network.simple.SimpleChannel;
-
-import java.util.Optional;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public class NetworkHandler {
     private static final String VERSION = "1.5.1";
 
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(new ResourceLocation(NetMusic.MOD_ID, "network"),
-            () -> VERSION, it -> it.equals(VERSION), it -> it.equals(VERSION));
+    public static void registerPacket(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar(VERSION).optional();
 
-    public static void init() {
-        CHANNEL.registerMessage(0, MusicToClientMessage.class, MusicToClientMessage::encode, MusicToClientMessage::decode, MusicToClientMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(1, GetMusicListMessage.class, GetMusicListMessage::encode, GetMusicListMessage::decode, GetMusicListMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(2, SetMusicIDMessage.class, SetMusicIDMessage::encode, SetMusicIDMessage::decode, SetMusicIDMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CHANNEL.registerMessage(3, BigMegaphoneStartMessage.class, BigMegaphoneStartMessage::encode, BigMegaphoneStartMessage::decode, BigMegaphoneStartMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(4, BigMegaphoneStopMessage.class, BigMegaphoneStopMessage::encode, BigMegaphoneStopMessage::decode, BigMegaphoneStopMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(5, BigMegaphoneControlMessage.class, BigMegaphoneControlMessage::encode, BigMegaphoneControlMessage::decode, BigMegaphoneControlMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CompatRegistry.initNetwork(CHANNEL);
-        SBackpackCompat.initNetwork(CHANNEL);
+        registrar.playToClient(MusicToClientMessage.TYPE, MusicToClientMessage.STREAM_CODEC, MusicToClientMessage::handle);
+        registrar.playToClient(GetMusicListMessage.TYPE, GetMusicListMessage.STREAM_CODEC, GetMusicListMessage::handle);
+        registrar.playToServer(SetMusicIDMessage.TYPE, SetMusicIDMessage.STREAM_CODEC, SetMusicIDMessage::handle);
+        registrar.playToServer(SetPlaylistMessage.TYPE, SetPlaylistMessage.STREAM_CODEC, SetPlaylistMessage::handle);
+        registrar.playToClient(BigMegaphoneStartMessage.TYPE, BigMegaphoneStartMessage.STREAM_CODEC, BigMegaphoneStartMessage::handle);
+        registrar.playToClient(BigMegaphoneStopMessage.TYPE, BigMegaphoneStopMessage.STREAM_CODEC, BigMegaphoneStopMessage::handle);
+        registrar.playToServer(BigMegaphoneControlMessage.TYPE, BigMegaphoneControlMessage.STREAM_CODEC, BigMegaphoneControlMessage::handle);
+        registrar.playToClient(OpenConfigScreenMessage.TYPE, OpenConfigScreenMessage.STREAM_CODEC, OpenConfigScreenMessage::handle);
+        registrar.playToClient(MusicStopMessage.TYPE, MusicStopMessage.STREAM_CODEC, MusicStopMessage::handle);
+        registrar.playToClient(MegaphoneMusicMessage.TYPE, MegaphoneMusicMessage.STREAM_CODEC, MegaphoneMusicMessage::handle);
+        registrar.playToServer(MegaphoneLinkMessage.TYPE, MegaphoneLinkMessage.STREAM_CODEC, MegaphoneLinkMessage::handle);
+
+        CompatRegistry.initNetwork(registrar);
+
+        // 注册Create模组兼容网络消息
+        CreateCompat.registerNetwork(registrar);
     }
 
-    public static void sendToNearby(Level world, BlockPos pos, Object toSend) {
-        if (world instanceof ServerLevel) {
-            ServerLevel ws = (ServerLevel) world;
-
-            ws.getChunkSource().chunkMap.getPlayers(new ChunkPos(pos), false).stream()
-                    .filter(p -> p.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) < 96 * 96)
-                    .forEach(p -> CHANNEL.send(PacketDistributor.PLAYER.with(() -> p), toSend));
+    public static void sendToNearby(Level world, BlockPos pos, CustomPacketPayload toSend) {
+        if (world instanceof ServerLevel serverLevel) {
+            PacketDistributor.sendToPlayersNear(serverLevel, null, pos.getX(), pos.getY(), pos.getZ(), 96, toSend);
         }
     }
 
-    public static void sendToClientPlayer(Object message, ServerPlayer player) {
-        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), message);
+    public static void sendToServer(CustomPacketPayload message) {
+        PacketDistributor.sendToServer(message);
     }
 
-    public static void sendToNearby(Level world, Vec3 pos, int range, Object toSend) {
-        if (world instanceof ServerLevel) {
-            NetworkHandler.CHANNEL.send(PacketDistributor.NEAR.with(() ->
-                    new PacketDistributor.TargetPoint(pos.x, pos.y, pos.z, range, world.dimension())), toSend);
-        }
+    public static void sendToClientPlayer(CustomPacketPayload message, ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, message);
     }
 }

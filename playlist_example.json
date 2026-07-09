@@ -1,0 +1,33 @@
+{
+  "playlist_name": "我的播放列表",
+  "songs": [
+    {
+      "url": "https://music.163.com/song/media/outer/url?id=12345678.mp3",
+      "name": "示例歌曲1",
+      "time_second": 240,
+      "trans_name": "Example Song 1",
+      "vip": false,
+      "read_only": false,
+      "artists": ["歌手A", "歌手B"]
+    },
+    {
+      "url": "https://music.163.com/song/media/outer/url?id=87654321.mp3",
+      "name": "示例歌曲2",
+      "time_second": 180,
+      "trans_name": "",
+      "vip": true,
+      "read_only": false,
+      "artists": ["歌手C"]
+    },
+    {
+      "url": "https://example.com/music/song.mp3",
+      "name": "自定义URL歌曲",
+      "time_second": 300,
+      "trans_name": "",
+      "vip": false,
+      "read_only": false,
+      "artists": []
+    }
+  ],
+  "play_mode": "sequential"
+}

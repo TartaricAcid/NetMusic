@@ -1,10 +1,12 @@
 package com.github.tartaricacid.netmusic.compat.tlm.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.netmusic.compat.tlm.client.audio.MaidNetMusicSound;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleDataCollection;
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.client.Minecraft;
@@ -12,14 +14,22 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.ChannelAccess;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
-public class MaidStopMusicMessage {
+public class MaidStopMusicMessage implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<MaidStopMusicMessage> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "maid_stop_music"));
+    public static final StreamCodec<ByteBuf, MaidStopMusicMessage> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, MaidStopMusicMessage::getEntityId,
+            MaidStopMusicMessage::new);
+
     private final int entityId;
 
     private MaidStopMusicMessage(int entityId) {
@@ -57,12 +67,10 @@ public class MaidStopMusicMessage {
         buf.writeInt(message.entityId);
     }
 
-    public static void handle(MaidStopMusicMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
+    public static void handle(MaidStopMusicMessage message, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
             context.enqueueWork(() -> onHandle(message));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -80,5 +88,14 @@ public class MaidStopMusicMessage {
                 sound.setStop();
             }
         }
+    }
+
+    public int getEntityId() {
+        return entityId;
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

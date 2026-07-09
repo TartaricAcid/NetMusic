@@ -1,51 +1,41 @@
 package com.github.tartaricacid.netmusic.network.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.inventory.CDBurnerMenu;
 import com.github.tartaricacid.netmusic.inventory.ComputerMenu;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record SetMusicIDMessage(ItemMusicCD.SongInfo song) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SetMusicIDMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "set_music_id"));
+    public static final StreamCodec<ByteBuf, SetMusicIDMessage> STREAM_CODEC = StreamCodec.composite(
+            ItemMusicCD.SongInfo.STREAM_CODEC, SetMusicIDMessage::song, SetMusicIDMessage::new);
 
-public class SetMusicIDMessage {
-    private final ItemMusicCD.SongInfo song;
-
-    public SetMusicIDMessage(ItemMusicCD.SongInfo song) {
-        this.song = song;
-    }
-
-    public static SetMusicIDMessage decode(FriendlyByteBuf buf) {
-        CompoundTag tag = buf.readNbt();
-        ItemMusicCD.SongInfo songData = ItemMusicCD.SongInfo.deserializeNBT(tag);
-        return new SetMusicIDMessage(songData);
-    }
-
-    public static void encode(SetMusicIDMessage message, FriendlyByteBuf buf) {
-        CompoundTag tag = new CompoundTag();
-        ItemMusicCD.SongInfo.serializeNBT(message.song, tag);
-        buf.writeNbt(tag);
-    }
-
-    public static void handle(SetMusicIDMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isServer()) {
+    public static void handle(SetMusicIDMessage message, IPayloadContext context) {
+        if (context.flow().isServerbound()) {
             context.enqueueWork(() -> {
-                ServerPlayer sender = context.getSender();
-                if (sender == null) {
+                if (!(context.player() instanceof ServerPlayer sender)) {
                     return;
                 }
                 if (sender.containerMenu instanceof CDBurnerMenu menu) {
-                    menu.setSongInfo(message.song);
+                    menu.setSongInfo(message.song());
                     return;
                 }
                 if (sender.containerMenu instanceof ComputerMenu menu) {
-                    menu.setSongInfo(message.song);
+                    menu.setSongInfo(message.song());
                 }
             });
         }
-        context.setPacketHandled(true);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

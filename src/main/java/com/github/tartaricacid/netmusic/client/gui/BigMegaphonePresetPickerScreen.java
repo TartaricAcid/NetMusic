@@ -2,6 +2,7 @@ package com.github.tartaricacid.netmusic.client.gui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -97,11 +98,13 @@ public class BigMegaphonePresetPickerScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTicks);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.topPos + 6, 0xFFFFFF);
         String pageText = "%d / %d".formatted(this.page + 1, this.getMaxPage() + 1);
         graphics.drawCenteredString(this.font, pageText, this.width / 2, this.topPos + 138, 0xAAAAAA);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        for (Renderable renderable : this.renderables) {
+            renderable.render(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 
     @Override

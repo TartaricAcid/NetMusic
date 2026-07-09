@@ -1,32 +1,41 @@
 package com.github.tartaricacid.netmusic.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.net.Proxy;
 
 public class GeneralConfig {
-    public static ForgeConfigSpec.BooleanValue ENABLE_STEREO;
-    public static ForgeConfigSpec.EnumValue<Proxy.Type> PROXY_TYPE;
-    public static ForgeConfigSpec.ConfigValue<String> PROXY_ADDRESS;
+    public static ModConfigSpec.BooleanValue ENABLE_STEREO;
+    public static ModConfigSpec.EnumValue<Proxy.Type> PROXY_TYPE;
+    public static ModConfigSpec.ConfigValue<String> PROXY_ADDRESS;
 
-    public static ForgeConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
-    public static ForgeConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
+    public static ModConfigSpec.BooleanValue ENABLE_PLAYER_LYRICS;
+    public static ModConfigSpec.BooleanValue ENABLE_MAID_LYRICS;
 
-    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_PLAYER_LYRICS_COLOR;
-    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_PLAYER_LYRICS_COLOR;
+    public static ModConfigSpec.ConfigValue<String> ORIGINAL_PLAYER_LYRICS_COLOR;
+    public static ModConfigSpec.ConfigValue<String> TRANSLATED_PLAYER_LYRICS_COLOR;
 
-    public static ForgeConfigSpec.ConfigValue<String> ORIGINAL_MAID_LYRICS_COLOR;
-    public static ForgeConfigSpec.ConfigValue<String> TRANSLATED_MAID_LYRICS_COLOR;
+    public static ModConfigSpec.ConfigValue<String> ORIGINAL_MAID_LYRICS_COLOR;
+    public static ModConfigSpec.ConfigValue<String> TRANSLATED_MAID_LYRICS_COLOR;
 
-    public static ForgeConfigSpec.IntValue BIG_MEGAPHONE_MAX_RANGE;
-    public static ForgeConfigSpec.IntValue BIG_MEGAPHONE_SCAN_INTERVAL;
-    public static ForgeConfigSpec.IntValue BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT;
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_MAX_RANGE;
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_SCAN_INTERVAL;
+    public static ModConfigSpec.IntValue BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT;
 
-    public static ForgeConfigSpec.BooleanValue ENABLE_NETMUSIC_CD_GENERATION;
-    public static ForgeConfigSpec.BooleanValue ENABLE_VIP_NETMUSIC_CD_GENERATION;
+    public static ModConfigSpec.BooleanValue ENABLE_NETMUSIC_CD_GENERATION;
+    public static ModConfigSpec.BooleanValue ENABLE_VIP_NETMUSIC_CD_GENERATION;
 
-    public static ForgeConfigSpec init() {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+    public static ModConfigSpec.ConfigValue<String> MUSIC_U;
+    public static ModConfigSpec.IntValue MUSIC_QUALITY;
+
+    /** 音质等级常量 */
+    public static final int QUALITY_STANDARD = 128000;
+    public static final int QUALITY_HIGHER = 192000;
+    public static final int QUALITY_EXTREME = 320000;
+    public static final int QUALITY_LOSSLESS = 999000;
+
+    public static ModConfigSpec init() {
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         builder.push("general");
 
         builder.comment("Whether stereo playback is enabled");
@@ -64,6 +73,15 @@ public class GeneralConfig {
 
         builder.comment("Maximum number of simultaneous big megaphone broadcasts a client will actively play");
         BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT = builder.defineInRange("BigMegaphoneClientActiveLimit", 3, 1, 16);
+
+        builder.pop();
+        builder.push("netease_api");
+
+        builder.comment("MUSIC_U cookie from NetEase Cloud Music, used for VIP songs and higher quality audio. Leave empty if not logged in.");
+        MUSIC_U = builder.define("MusicU", "");
+
+        builder.comment("Music quality: 128000=Standard, 192000=Higher, 320000=Extreme, 999000=Lossless");
+        MUSIC_QUALITY = builder.defineInRange("MusicQuality", 320000, 128000, 999000);
 
         builder.pop();
         builder.push("sophisticated_backpacks");

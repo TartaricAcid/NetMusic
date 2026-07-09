@@ -2,14 +2,14 @@ package com.github.tartaricacid.netmusic.event;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import java.io.IOException;
 
-@Mod.EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.DEDICATED_SERVER, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.DEDICATED_SERVER, bus = EventBusSubscriber.Bus.GAME)
 public class ServerEvent {
     @SubscribeEvent
     public static void onServerStarting(ServerStartingEvent event) {

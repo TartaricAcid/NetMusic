@@ -7,13 +7,17 @@ import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.p3pp3rf1y.sophisticatedcore.SophisticatedCore;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.StorageSoundHandler;
-import org.apache.commons.lang3.StringUtils;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -21,66 +25,45 @@ import java.net.URL;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
-public record PlayNetMusicDiscMessage(
+public record NetMusicDiscPayload(
         boolean blockStorage, UUID storgeUuid,
         ItemMusicCD.SongInfo songInfo,
         String rawUrl,
         int entityId, BlockPos pos
-) {
-    public PlayNetMusicDiscMessage {
-        rawUrl = StringUtils.defaultIfBlank(rawUrl, songInfo.songUrl);
-    }
+) implements CustomPacketPayload {
+    public static final Type<NetMusicDiscPayload> TYPE = new Type<>(SophisticatedCore.getRL("play_netmusic_disc"));
 
-    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, BlockPos pos) {
+    public static final StreamCodec<RegistryFriendlyByteBuf, NetMusicDiscPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.BOOL, NetMusicDiscPayload::blockStorage,
+            UUIDUtil.STREAM_CODEC, NetMusicDiscPayload::storgeUuid,
+            ItemMusicCD.SongInfo.STREAM_CODEC, NetMusicDiscPayload::songInfo,
+            ByteBufCodecs.STRING_UTF8, NetMusicDiscPayload::rawUrl,
+            ByteBufCodecs.INT, NetMusicDiscPayload::entityId,
+            BlockPos.STREAM_CODEC, NetMusicDiscPayload::pos,
+            NetMusicDiscPayload::new);
+
+    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, BlockPos pos) {
         this(true, storgeUuid, songInfo, rawUrl, 0, pos);
     }
 
-    public PlayNetMusicDiscMessage(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, int entityId) {
+    public NetMusicDiscPayload(UUID storgeUuid, ItemMusicCD.SongInfo songInfo, String rawUrl, int entityId) {
         this(false, storgeUuid, songInfo, rawUrl, entityId, BlockPos.ZERO);
     }
 
-    public static PlayNetMusicDiscMessage decode(FriendlyByteBuf buf) {
-        boolean blockStorage = buf.readBoolean();
-        UUID storgeUuid = buf.readUUID();
-        String songUrl = buf.readUtf();
-        String rawUrl = buf.readUtf();
-        int songTime = buf.readInt();
-        var info = new ItemMusicCD.SongInfo(songUrl, null, songTime, false);
-
-        if (blockStorage) {
-            BlockPos pos = buf.readBlockPos();
-            return new PlayNetMusicDiscMessage(storgeUuid, info, rawUrl, pos);
-        } else {
-            int entityId = buf.readInt();
-            return new PlayNetMusicDiscMessage(storgeUuid, info, rawUrl, entityId);
-        }
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static void encode(PlayNetMusicDiscMessage message, FriendlyByteBuf buf) {
-        buf.writeBoolean(message.blockStorage);
-        buf.writeUUID(message.storgeUuid);
-        buf.writeUtf(message.songInfo.songUrl);
-        buf.writeUtf(message.rawUrl);
-        buf.writeInt(message.songInfo.songTime);
-        if (message.blockStorage) {
-            buf.writeBlockPos(message.pos);
-        } else {
-            buf.writeInt(message.entityId);
-        }
-    }
-
-    public static void handle(PlayNetMusicDiscMessage payload, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
+    public static void handlePayload(NetMusicDiscPayload payload, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
             context.enqueueWork(() -> CompletableFuture.runAsync(() -> onHandle(payload), Util.backgroundExecutor()));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
-    private static void onHandle(PlayNetMusicDiscMessage payload) {
+    private static void onHandle(NetMusicDiscPayload payload) {
         ItemMusicCD.SongInfo songInfo = payload.songInfo();
         Optional<String> finalUrlOpt = MusicPlayManager.getFinalUrl(songInfo.songUrl);
         if (finalUrlOpt.isEmpty()) {

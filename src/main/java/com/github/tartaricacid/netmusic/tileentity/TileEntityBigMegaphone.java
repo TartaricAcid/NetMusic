@@ -5,9 +5,11 @@ import com.github.tartaricacid.netmusic.init.InitBlocks;
 import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import com.github.tartaricacid.netmusic.network.message.BigMegaphoneStartMessage;
 import com.github.tartaricacid.netmusic.network.message.BigMegaphoneStopMessage;
+import com.github.tartaricacid.netmusic.network.message.MegaphoneMusicMessage;
 import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import com.google.common.collect.Sets;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -29,16 +31,26 @@ public class TileEntityBigMegaphone extends BlockEntity {
     public static final BlockEntityType<TileEntityBigMegaphone> TYPE = BlockEntityType.Builder.of(
             TileEntityBigMegaphone::new, InitBlocks.BIG_MEGAPHONE.get()).build(null);
 
+    /** 广播模式：流媒体或唱片机源 */
+    public enum BroadcastMode { STREAM, PLAYER_SOURCE; public static BroadcastMode byIndex(int index) { if (index < 0 || index >= values().length) return STREAM; return values()[index]; } }
+
     private static final String URL_TAG = "StreamUrl";
     private static final String NAME_TAG = "DisplayName";
     private static final String RANGE_TAG = "MaxRange";
     private static final String BROADCASTING_TAG = "Broadcasting";
+    private static final String BROADCAST_MODE_TAG = "BroadcastMode";
+    private static final String SOURCE_PLAYER_ID_TAG = "SourcePlayerId";
 
     private String streamUrl = "";
     private String displayName = "";
     private int maxRange = GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get();
     private boolean broadcasting = false;
     private boolean lastRedstoneSignal = false;
+    private BroadcastMode broadcastMode = BroadcastMode.STREAM;
+    /** 唱片机源模式下，链接的唱片机UUID */
+    private UUID sourcePlayerId = null;
+    /** 上次已知的唱片机歌曲URL，用于检测切歌 */
+    private String lastKnownSongUrl = "";
 
     private long sessionId = 0;
     private final Set<UUID> listeners = Sets.newHashSet();
@@ -48,21 +60,33 @@ public class TileEntityBigMegaphone extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putString(URL_TAG, this.streamUrl);
         tag.putString(NAME_TAG, this.displayName);
         tag.putInt(RANGE_TAG, this.maxRange);
         tag.putBoolean(BROADCASTING_TAG, this.broadcasting);
-        super.saveAdditional(tag);
+        tag.putInt(BROADCAST_MODE_TAG, this.broadcastMode.ordinal());
+        if (this.sourcePlayerId != null) {
+            tag.putUUID(SOURCE_PLAYER_ID_TAG, this.sourcePlayerId);
+        }
+        super.saveAdditional(tag, registries);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         this.streamUrl = tag.getString(URL_TAG);
         this.displayName = tag.getString(NAME_TAG);
         this.maxRange = BigMegaphoneUtil.clampRange(tag.getInt(RANGE_TAG), GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get());
         this.broadcasting = tag.getBoolean(BROADCASTING_TAG);
+        int modeIndex = tag.getInt(BROADCAST_MODE_TAG);
+        this.broadcastMode = modeIndex >= 0 && modeIndex < BroadcastMode.values().length
+                ? BroadcastMode.values()[modeIndex] : BroadcastMode.STREAM;
+        if (tag.hasUUID(SOURCE_PLAYER_ID_TAG)) {
+            this.sourcePlayerId = tag.getUUID(SOURCE_PLAYER_ID_TAG);
+        } else {
+            this.sourcePlayerId = null;
+        }
     }
 
     @Override
@@ -74,8 +98,8 @@ public class TileEntityBigMegaphone extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Nullable
@@ -98,6 +122,22 @@ public class TileEntityBigMegaphone extends BlockEntity {
 
     public boolean isBroadcasting() {
         return broadcasting;
+    }
+
+    public BroadcastMode getBroadcastMode() {
+        return broadcastMode;
+    }
+
+    public void setBroadcastMode(BroadcastMode broadcastMode) {
+        this.broadcastMode = broadcastMode;
+    }
+
+    public UUID getSourcePlayerId() {
+        return sourcePlayerId;
+    }
+
+    public void setSourcePlayerId(UUID sourcePlayerId) {
+        this.sourcePlayerId = sourcePlayerId;
     }
 
     public boolean applyConfig(String streamUrl, String displayName, int maxRange) {
@@ -130,17 +170,32 @@ public class TileEntityBigMegaphone extends BlockEntity {
     }
 
     public void startBroadcast() {
-        // 二次检测，以防万一
-        if (!(this.level instanceof ServerLevel)
-            || !BigMegaphoneUtil.isValidStreamUrl(this.streamUrl)
-            || this.displayName.isBlank()) {
+        if (!(this.level instanceof ServerLevel)) {
             return;
         }
-        this.stopAllListeners();
-        this.broadcasting = true;
-        this.sessionId++;
-        this.markDirty();
-        this.refreshAudience();
+        if (broadcastMode == BroadcastMode.PLAYER_SOURCE) {
+            // 唱片机源模式：检查链接的唱片机是否存在
+            TileEntityMusicPlayer sourcePlayer = findSourcePlayer();
+            if (sourcePlayer == null) {
+                return;
+            }
+            this.stopAllListeners();
+            this.broadcasting = true;
+            this.sessionId++;
+            this.lastKnownSongUrl = sourcePlayer.getResolvedUrl() != null ? sourcePlayer.getResolvedUrl() : "";
+            this.markDirty();
+            this.refreshAudience();
+        } else {
+            // 流媒体模式：检查URL有效性
+            if (!BigMegaphoneUtil.isValidStreamUrl(this.streamUrl) || this.displayName.isBlank()) {
+                return;
+            }
+            this.stopAllListeners();
+            this.broadcasting = true;
+            this.sessionId++;
+            this.markDirty();
+            this.refreshAudience();
+        }
     }
 
     public void stopBroadcast() {
@@ -150,11 +205,33 @@ public class TileEntityBigMegaphone extends BlockEntity {
             this.listeners.clear();
         }
         this.broadcasting = false;
+        this.lastKnownSongUrl = "";
         this.markDirty();
     }
 
     public void onBlockRemoved() {
         this.stopBroadcast();
+    }
+
+    /** 缓存找到的唱片机位置（用于Contraption等场景的快速验证） */
+    private BlockPos cachedSourcePos = null;
+
+    /**
+     * 查找链接的唱片机TileEntity（通过UUID匹配）
+     * 不受距离限制，通过全局注册表直接查找
+     */
+    @Nullable
+    public TileEntityMusicPlayer findSourcePlayer() {
+        if (this.sourcePlayerId == null) {
+            return null;
+        }
+        TileEntityMusicPlayer player = TileEntityMusicPlayer.findByUUID(this.sourcePlayerId);
+        if (player != null && player.getLevel() == this.level) {
+            // 更新缓存位置
+            this.cachedSourcePos = player.getBlockPos().immutable();
+            return player;
+        }
+        return null;
     }
 
     private void stopAllListeners() {
@@ -176,6 +253,34 @@ public class TileEntityBigMegaphone extends BlockEntity {
             return;
         }
 
+        // 唱片机源模式：检查唱片机是否仍在播放
+        if (broadcastMode == BroadcastMode.PLAYER_SOURCE) {
+            TileEntityMusicPlayer sourcePlayer = findSourcePlayer();
+            if (sourcePlayer == null || !sourcePlayer.isPlay()) {
+                // 唱片机不存在或未在播放，停止广播
+                stopBroadcast();
+                return;
+            }
+            // resolvedUrl为空说明异步解析尚未完成，跳过本次刷新但不停止广播
+            if (sourcePlayer.getResolvedUrl().isEmpty()) {
+                return;
+            }
+            // 检测切歌：如果唱片机的歌曲URL发生变化，重新发送给所有听众
+            String currentSongUrl = sourcePlayer.getResolvedUrl();
+            if (!currentSongUrl.equals(this.lastKnownSongUrl)) {
+                this.lastKnownSongUrl = currentSongUrl;
+                this.sessionId++;
+                // 向所有现有听众重新发送新歌曲消息
+                for (UUID uuid : this.listeners) {
+                    ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(uuid);
+                    if (player != null && player.level() == serverLevel) {
+                        sendStartMessage(player);
+                    }
+                }
+                this.markDirty();
+            }
+        }
+
         int startRange = BigMegaphoneUtil.getStartRange(this.maxRange);
         double startRangeSqr = startRange * startRange;
         double stopRangeSqr = (double) this.maxRange * this.maxRange;
@@ -189,7 +294,6 @@ public class TileEntityBigMegaphone extends BlockEntity {
 
             if (this.listeners.contains(uuid)) {
                 if (distanceSqr > stopRangeSqr) {
-                    // 不同于客户端，这里发包后，客户端会对此播放进行注销处理
                     NetworkHandler.sendToClientPlayer(new BigMegaphoneStopMessage(this.worldPosition, this.sessionId), player);
                     this.listeners.remove(uuid);
                 }
@@ -197,15 +301,33 @@ public class TileEntityBigMegaphone extends BlockEntity {
             }
 
             if (distanceSqr <= startRangeSqr) {
-                NetworkHandler.sendToClientPlayer(new BigMegaphoneStartMessage(
-                        this.worldPosition, this.sessionId, this.streamUrl,
-                        this.displayName, this.maxRange), player);
+                sendStartMessage(player);
                 this.listeners.add(uuid);
             }
         }
 
         // 移除已经不存在的玩家
         this.listeners.removeIf(uuid -> !currentPlayers.contains(uuid));
+    }
+
+    /**
+     * 根据广播模式发送对应的启动消息给玩家
+     */
+    private void sendStartMessage(ServerPlayer player) {
+        if (broadcastMode == BroadcastMode.PLAYER_SOURCE) {
+            TileEntityMusicPlayer sourcePlayer = findSourcePlayer();
+            if (sourcePlayer != null && sourcePlayer.isPlay() && !sourcePlayer.getResolvedUrl().isEmpty()) {
+                NetworkHandler.sendToClientPlayer(new MegaphoneMusicMessage(
+                        this.worldPosition, this.sessionId,
+                        sourcePlayer.getResolvedUrl(), sourcePlayer.getRawUrl(),
+                        sourcePlayer.getCurrentSongTime(), sourcePlayer.getCurrentSongName(),
+                        this.maxRange, sourcePlayer.getElapsedTicks()), player);
+            }
+        } else {
+            NetworkHandler.sendToClientPlayer(new BigMegaphoneStartMessage(
+                    this.worldPosition, this.sessionId, this.streamUrl,
+                    this.displayName, this.maxRange), player);
+        }
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, TileEntityBigMegaphone megaphone) {

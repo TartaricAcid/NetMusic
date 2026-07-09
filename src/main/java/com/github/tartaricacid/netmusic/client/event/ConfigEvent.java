@@ -2,13 +2,13 @@ package com.github.tartaricacid.netmusic.client.event;
 
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.commons.lang3.math.NumberUtils;
 
-@Mod.EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = NetMusic.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class ConfigEvent {
     private static final String CONFIG_NAME = NetMusic.MOD_ID + "-common.toml";
 

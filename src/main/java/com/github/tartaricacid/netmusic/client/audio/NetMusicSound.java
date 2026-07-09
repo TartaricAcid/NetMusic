@@ -4,13 +4,13 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
-import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
+import net.minecraft.client.sounds.JOrbisAudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -28,11 +28,16 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NetMusicSound extends AbstractTickableSoundInstance {
-    public static final ResourceLocation ERROR_SOUND = new ResourceLocation(NetMusic.MOD_ID, "sounds/error.ogg");
+    public static final ResourceLocation ERROR_SOUND = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "sounds/error.ogg");
+
+    /** 跟踪每个方块位置当前播放的声音，用于切歌时停止旧声音 */
+    private static final ConcurrentHashMap<BlockPos, NetMusicSound> ACTIVE_SOUNDS = new ConcurrentHashMap<>();
 
     private final URL songUrl;
+    private final String songUrlStr;
     private final int tickTimes;
     private final BlockPos pos;
     private final @Nullable LyricRecord lyricRecord;
@@ -41,6 +46,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
     public NetMusicSound(BlockPos pos, URL songUrl, int timeSecond, @Nullable LyricRecord lyricRecord) {
         super(InitSounds.NET_MUSIC.get(), SoundSource.RECORDS, SoundInstance.createUnseededRandom());
         this.songUrl = songUrl;
+        this.songUrlStr = songUrl.toString();
         this.x = pos.getX() + 0.5f;
         this.y = pos.getY() + 0.5f;
         this.z = pos.getZ() + 0.5f;
@@ -49,6 +55,29 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         this.tick = 0;
         this.pos = pos;
         this.lyricRecord = lyricRecord;
+        // 停止同一位置的旧声音
+        stopPreviousSound(pos);
+        ACTIVE_SOUNDS.put(pos, this);
+    }
+
+    /**
+     * 停止指定位置正在播放的声音（切歌时调用）
+     */
+    public static void stopPreviousSound(BlockPos pos) {
+        NetMusicSound previous = ACTIVE_SOUNDS.remove(pos);
+        if (previous != null) {
+            previous.stop();
+        }
+    }
+
+    /**
+     * 检查指定位置是否正在播放相同URL的歌曲
+     * 用于避免sync消息重复重启声音
+     */
+    public static boolean isPlayingSameSong(BlockPos pos, String url) {
+        NetMusicSound active = ACTIVE_SOUNDS.get(pos);
+        if (active == null) return false;
+        return active.songUrlStr != null && active.songUrlStr.equals(url);
     }
 
     @Override
@@ -59,6 +88,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         }
         tick++;
         if (tick > tickTimes + 50) {
+            ACTIVE_SOUNDS.remove(pos, this);
             BlockEntity te = world.getBlockEntity(pos);
             if (te instanceof TileEntityMusicPlayer musicPlay) {
                 musicPlay.lyricRecord = null;
@@ -81,17 +111,19 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             lyricRecord.updateCurrentLine(tick);
         }
 
+        // 仅在TE明确停止播放时（如手动取出唱片）才停止声音
+        // 传送后TE可能暂时不可用，不应因此停止声音
         BlockEntity te = world.getBlockEntity(pos);
         if (te instanceof TileEntityMusicPlayer musicPlay) {
             if (!musicPlay.isPlay()) {
+                ACTIVE_SOUNDS.remove(pos, this);
                 musicPlay.lyricRecord = null;
                 this.stop();
             } else {
                 musicPlay.lyricRecord = lyricRecord;
             }
-        } else {
-            this.stop();
         }
+        // TE不存在时（区块未加载/传送后），声音继续播放直到自然结束
     }
 
     private void errorStop() {
@@ -114,7 +146,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
             // 播放失败返回一个默认音频，避免 tick 里的音频实例不能够删除
             try {
                 InputStream inputstream = Minecraft.getInstance().getResourceManager().open(ERROR_SOUND);
-                return new OggAudioStream(inputstream);
+                return new JOrbisAudioStream(inputstream);
             } catch (IOException ioexception) {
                 throw new CompletionException(ioexception);
             }

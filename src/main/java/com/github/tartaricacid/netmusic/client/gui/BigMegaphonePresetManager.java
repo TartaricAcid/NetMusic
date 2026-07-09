@@ -5,13 +5,13 @@ import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class BigMegaphonePresetManager {
-    private static final ResourceLocation PRESET_FILE = new ResourceLocation(NetMusic.MOD_ID, "broadcasting_presets.json");
+    private static final ResourceLocation PRESET_FILE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "broadcasting_presets.json");
     private static final Gson GSON = new Gson();
 
     private static List<PresetStation> STATIONS = Lists.newArrayList();
@@ -51,7 +51,7 @@ public final class BigMegaphonePresetManager {
                     }
                     String name = station.name().trim();
                     String url = station.url().trim();
-                    if (Util.isBlank(name) || !BigMegaphoneUtil.isValidStreamUrl(url)) {
+                    if (StringUtils.isBlank(name) || !BigMegaphoneUtil.isValidStreamUrl(url)) {
                         continue;
                     }
                     sanitized.add(new PresetStation(name, url));

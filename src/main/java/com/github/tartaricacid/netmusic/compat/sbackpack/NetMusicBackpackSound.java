@@ -3,13 +3,13 @@ package com.github.tartaricacid.netmusic.compat.sbackpack;
 import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.NetMusicAudioStream;
 import com.github.tartaricacid.netmusic.init.InitSounds;
-import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
+import net.minecraft.client.sounds.JOrbisAudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -99,7 +99,7 @@ public class NetMusicBackpackSound extends AbstractTickableSoundInstance {
             // 播放失败返回一个默认音频，避免 tick 里的音频实例不能够删除
             try {
                 InputStream inputstream = Minecraft.getInstance().getResourceManager().open(ERROR_SOUND);
-                return new OggAudioStream(inputstream);
+                return new JOrbisAudioStream(inputstream);
             } catch (IOException ioexception) {
                 throw new CompletionException(ioexception);
             }

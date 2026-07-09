@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 
 
 public class ModelMusicPlayer extends Model {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(new ResourceLocation(NetMusic.MOD_ID, "main"), "music_player");
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "music_player");
     private final ModelPart root;
     private final ModelPart disc;
 
@@ -386,9 +386,9 @@ public class ModelMusicPlayer extends Model {
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        root.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
-        disc.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
+        root.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
+        disc.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
     }
 
     public ModelPart getDiscBone() {

@@ -1,20 +1,32 @@
 package com.github.tartaricacid.netmusic.compat.sbackpack;
 
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.simple.SimpleChannel;
+import com.github.tartaricacid.netmusic.NetMusic;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.p3pp3rf1y.sophisticatedcore.SophisticatedCore;
+import net.p3pp3rf1y.sophisticatedcore.compat.CompatInfo;
+import net.p3pp3rf1y.sophisticatedcore.compat.CompatRegistry;
+import net.p3pp3rf1y.sophisticatedcore.compat.ICompat;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.DiscHandlerRegistry;
 
-import java.util.Optional;
-
-public class SBackpackCompatInner {
-    static void register() {
-        // 注册唱片处理器
+public class SBackpackCompatInner implements ICompat {
+    @Override
+    public void init(IEventBus modBus) {
+        modBus.addListener(this::registerPayloads);
         DiscHandlerRegistry.registerHandler(new NetMusicDiscHandler());
     }
 
-    static void initNetwork(SimpleChannel channel) {
-        // 注册网络包
-        channel.registerMessage(101, PlayNetMusicDiscMessage.class, PlayNetMusicDiscMessage::encode, PlayNetMusicDiscMessage::decode, PlayNetMusicDiscMessage::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+    @Override
+    public void setup() {
+    }
+
+    private void registerPayloads(final RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(SophisticatedCore.MOD_ID).versioned("1.0");
+        registrar.playToClient(NetMusicDiscPayload.TYPE, NetMusicDiscPayload.STREAM_CODEC, NetMusicDiscPayload::handlePayload);
+    }
+
+    static void register() {
+        CompatRegistry.registerCompat(new CompatInfo(NetMusic.MOD_ID), () -> modBus -> new SBackpackCompatInner());
     }
 }
