@@ -16,8 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 public class BigMegaphoneRenderer implements BlockEntityRenderer<TileEntityBigMegaphone> {
-    public static final ResourceLocation TEXTURE_OFF = new ResourceLocation(NetMusic.MOD_ID, "textures/block/big_megaphone_off.png");
-    public static final ResourceLocation TEXTURE_ON = new ResourceLocation(NetMusic.MOD_ID, "textures/block/big_megaphone_on.png");
+    public static final ResourceLocation TEXTURE_OFF = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/big_megaphone_off.png");
+    public static final ResourceLocation TEXTURE_ON = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/big_megaphone_on.png");
 
     public static ModelBigMegaphone MODEL;
     public static BigMegaphoneRenderer INSTANCE;
@@ -43,7 +43,7 @@ public class BigMegaphoneRenderer implements BlockEntityRenderer<TileEntityBigMe
         poseStack.mulPose(Axis.YP.rotationDegrees(facing.get2DDataValue() * 90));
         poseStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(texture));
-        MODEL.renderToBuffer(poseStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        MODEL.renderToBuffer(poseStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, -1);
         poseStack.popPose();
     }
 }

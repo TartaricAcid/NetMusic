@@ -6,17 +6,16 @@ import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
 import java.net.Proxy;
 
 
 public class MenuIntegration {
-    public static void registerModsPage() {
-        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->
-                new ConfigScreenHandler.ConfigScreenFactory((client, parent) ->
-                        getConfigBuilder().setParentScreen(parent).build()));
+    public static void registerModsPage(ModContainer modContainer) {
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, (container, parent) ->
+                getConfigBuilder().setParentScreen(parent).build());
     }
 
     public static ConfigBuilder getConfigBuilder() {
@@ -36,101 +35,129 @@ public class MenuIntegration {
         general.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.general.enable_stereo"), GeneralConfig.ENABLE_STEREO.get())
                 .setTooltip(Component.translatable("config.netmusic.general.enable_stereo.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_STEREO.getDefault())
-                .setSaveConsumer(GeneralConfig.ENABLE_STEREO::set)
-                .build());
+                .setSaveConsumer(b -> {
+                    GeneralConfig.ENABLE_STEREO.set(b);
+                    GeneralConfig.ENABLE_STEREO.save();
+                }).build());
 
         general.addEntry(entryBuilder.startEnumSelector(Component.translatable("config.netmusic.general.proxy_type"), Proxy.Type.class, GeneralConfig.PROXY_TYPE.get())
                 .setTooltip(Component.translatable("config.netmusic.general.proxy_type.tooltip"))
                 .setDefaultValue(GeneralConfig.PROXY_TYPE.getDefault())
-                .setSaveConsumer(GeneralConfig.PROXY_TYPE::set)
-                .build());
+                .setSaveConsumer(t -> {
+                    GeneralConfig.PROXY_TYPE.set(t);
+                    GeneralConfig.PROXY_TYPE.save();
+                }).build());
 
         general.addEntry(entryBuilder.startTextField(Component.translatable("config.netmusic.general.proxy_address"), GeneralConfig.PROXY_ADDRESS.get())
                 .setTooltip(Component.translatable("config.netmusic.general.proxy_address.tooltip"))
                 .setDefaultValue(GeneralConfig.PROXY_ADDRESS.getDefault())
-                .setSaveConsumer(GeneralConfig.PROXY_ADDRESS::set)
-                .build());
+                .setSaveConsumer(s -> {
+                    GeneralConfig.PROXY_ADDRESS.set(s);
+                    GeneralConfig.PROXY_ADDRESS.save();
+                }).build());
 
         general.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.general.enable_player_lyrics"), GeneralConfig.ENABLE_PLAYER_LYRICS.get())
                 .setTooltip(Component.translatable("config.netmusic.general.enable_player_lyrics.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_PLAYER_LYRICS.getDefault())
-                .setSaveConsumer(GeneralConfig.ENABLE_PLAYER_LYRICS::set)
-                .build());
+                .setSaveConsumer(b -> {
+                    GeneralConfig.ENABLE_PLAYER_LYRICS.set(b);
+                    GeneralConfig.ENABLE_PLAYER_LYRICS.save();
+                }).build());
 
         general.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.general.enable_maid_lyrics"), GeneralConfig.ENABLE_MAID_LYRICS.get())
                 .setTooltip(Component.translatable("config.netmusic.general.enable_maid_lyrics.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_MAID_LYRICS.getDefault())
-                .setSaveConsumer(GeneralConfig.ENABLE_MAID_LYRICS::set)
-                .build());
+                .setSaveConsumer(b -> {
+                    GeneralConfig.ENABLE_MAID_LYRICS.set(b);
+                    GeneralConfig.ENABLE_MAID_LYRICS.save();
+                }).build());
 
         general.addEntry(entryBuilder.startAlphaColorField(
                         Component.translatable("config.netmusic.general.original_player_lyrics_color"),
                         ConfigEvent.parseColor(GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.get()))
                 .setTooltip(Component.translatable("config.netmusic.general.original_player_lyrics_color.tooltip"))
                 .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.getDefault()))
-                .setSaveConsumer(color -> GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color)))
-                .build());
+                .setSaveConsumer(color -> {
+                    GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color));
+                    GeneralConfig.ORIGINAL_PLAYER_LYRICS_COLOR.save();
+                }).build());
 
         general.addEntry(entryBuilder.startAlphaColorField(
                         Component.translatable("config.netmusic.general.translated_player_lyrics_color"),
                         ConfigEvent.parseColor(GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.get()))
                 .setTooltip(Component.translatable("config.netmusic.general.translated_player_lyrics_color.tooltip"))
                 .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.getDefault()))
-                .setSaveConsumer(color -> GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color)))
-                .build());
+                .setSaveConsumer(color -> {
+                    GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.set(String.format("#%08X", color));
+                    GeneralConfig.TRANSLATED_PLAYER_LYRICS_COLOR.save();
+                }).build());
 
         general.addEntry(entryBuilder.startAlphaColorField(
                         Component.translatable("config.netmusic.general.original_maid_lyrics_color"),
                         ConfigEvent.parseColor(GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.get()))
                 .setTooltip(Component.translatable("config.netmusic.general.original_maid_lyrics_color.tooltip"))
                 .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.getDefault()))
-                .setSaveConsumer(color -> GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.set(String.format("#%08X", color)))
-                .build());
+                .setSaveConsumer(color -> {
+                    GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.set(String.format("#%08X", color));
+                    GeneralConfig.ORIGINAL_MAID_LYRICS_COLOR.save();
+                }).build());
 
         general.addEntry(entryBuilder.startAlphaColorField(
                         Component.translatable("config.netmusic.general.translated_maid_lyrics_color"),
                         ConfigEvent.parseColor(GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.get()))
                 .setTooltip(Component.translatable("config.netmusic.general.translated_maid_lyrics_color.tooltip"))
                 .setDefaultValue(ConfigEvent.parseColor(GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.getDefault()))
-                .setSaveConsumer(color -> GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.set(String.format("#%08X", color)))
-                .build());
+                .setSaveConsumer(color -> {
+                    GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.set(String.format("#%08X", color));
+                    GeneralConfig.TRANSLATED_MAID_LYRICS_COLOR.save();
+                }).build());
 
         general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_max_range"), GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.get())
                 .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_max_range.tooltip"))
                 .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.getDefault())
                 .setMin(1)
                 .setMax(256)
-                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_MAX_RANGE::set)
-                .build());
+                .setSaveConsumer(i -> {
+                    GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.set(i);
+                    GeneralConfig.BIG_MEGAPHONE_MAX_RANGE.save();
+                }).build());
 
         general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_scan_interval"), GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.get())
                 .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_scan_interval.tooltip"))
                 .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.getDefault())
                 .setMin(1)
                 .setMax(1200)
-                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL::set)
-                .build());
+                .setSaveConsumer(i -> {
+                    GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.set(i);
+                    GeneralConfig.BIG_MEGAPHONE_SCAN_INTERVAL.save();
+                }).build());
 
         general.addEntry(entryBuilder.startIntField(Component.translatable("config.netmusic.general.big_megaphone_client_active_limit"), GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.get())
                 .setTooltip(Component.translatable("config.netmusic.general.big_megaphone_client_active_limit.tooltip"))
                 .setDefaultValue(GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.getDefault())
                 .setMin(1)
                 .setMax(16)
-                .setSaveConsumer(GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT::set)
-                .build());
+                .setSaveConsumer(i -> {
+                    GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.set(i);
+                    GeneralConfig.BIG_MEGAPHONE_CLIENT_ACTIVE_LIMIT.save();
+                }).build());
 
         ConfigCategory sBackpack = root.getOrCreateCategory(Component.translatable("config.netmusic.sophisticatedbackpacks"));
 
         sBackpack.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_netmusic_cd_generation"), GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.get())
                 .setTooltip(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_netmusic_cd_generation.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.getDefault())
-                .setSaveConsumer(GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION::set)
-                .build());
+                .setSaveConsumer(b -> {
+                    GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.set(b);
+                    GeneralConfig.ENABLE_NETMUSIC_CD_GENERATION.save();
+                }).build());
 
         sBackpack.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_vip_netmusic_cd_generation"), GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.get())
                 .setTooltip(Component.translatable("config.netmusic.sophisticatedbackpacks.enable_vip_netmusic_cd_generation.tooltip"))
                 .setDefaultValue(GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.getDefault())
-                .setSaveConsumer(GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION::set)
-                .build());
+                .setSaveConsumer(b -> {
+                    GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.set(b);
+                    GeneralConfig.ENABLE_VIP_NETMUSIC_CD_GENERATION.save();
+                }).build());
     }
 }

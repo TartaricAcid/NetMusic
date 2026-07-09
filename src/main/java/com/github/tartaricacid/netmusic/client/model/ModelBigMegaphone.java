@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 
 public class ModelBigMegaphone extends Model {
-    public static final ModelLayerLocation LAYER = new ModelLayerLocation(new ResourceLocation(NetMusic.MOD_ID, "main"), "big_megaphone");
+    public static final ModelLayerLocation LAYER = new ModelLayerLocation(ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "main"), "big_megaphone");
 
     private final ModelPart root;
 
@@ -101,7 +101,7 @@ public class ModelBigMegaphone extends Model {
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        root.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, int color) {
+        root.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
     }
 }

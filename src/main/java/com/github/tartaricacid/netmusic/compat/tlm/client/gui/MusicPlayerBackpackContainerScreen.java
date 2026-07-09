@@ -26,7 +26,7 @@ import org.anti_ad.mc.ipn.api.IPNPlayerSideOnly;
 @IPNGuiHint(button = IPNButton.SHOW_EDITOR, horizontalOffset = -5)
 @IPNGuiHint(button = IPNButton.SETTINGS, horizontalOffset = -5)
 public class MusicPlayerBackpackContainerScreen extends AbstractMaidContainerGui<MusicPlayerBackpackContainer> implements IBackpackContainerScreen {
-    private static final ResourceLocation BACKPACK = new ResourceLocation(NetMusic.MOD_ID, "textures/gui/maid_music_player.png");
+    private static final ResourceLocation BACKPACK = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/gui/maid_music_player.png");
     private final EntityMaid maid;
 
     public MusicPlayerBackpackContainerScreen(MusicPlayerBackpackContainer container, Inventory inv, Component titleIn) {

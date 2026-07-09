@@ -15,8 +15,8 @@ public class DefaultVipResolver implements IAsyncSongUrlResolver {
 
     @Override
     public CompletableFuture<ItemMusicCD.SongInfo> resolve(ItemMusicCD.SongInfo songInfo) {
-        songInfo.songUrl = "https://music.163.com/song/media/outer/url?id=4932606.mp3";
-        songInfo.songTime = 5;
+        songInfo.songUrl = "https://music.163.com/song/media/outer/url?id=2056136174.mp3";
+        songInfo.songTime = 192;
         return CompletableFuture.completedFuture(songInfo);
     }
 

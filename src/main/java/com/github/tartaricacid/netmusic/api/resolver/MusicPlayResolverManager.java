@@ -13,6 +13,7 @@ public final class MusicPlayResolverManager {
     private static List<IAsyncSongUrlResolver> RESOLVERS = Lists.newArrayList();
 
     public static void init() {
+        RESOLVERS.add(new NetEaseSongUrlResolver());
         // RESOLVERS.add(new DefaultVipResolver());
 
         RESOLVERS.sort((h1, h2) -> Integer.compare(h2.getPriority(), h1.getPriority()));

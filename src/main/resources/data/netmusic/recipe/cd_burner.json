@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "result": {
-    "item": "netmusic:cd_burner"
+    "id": "netmusic:cd_burner"
   },
   "pattern": [
     " L ",
@@ -13,13 +13,13 @@
       "item": "minecraft:lightning_rod"
     },
     "I": {
-      "tag": "forge:nuggets/iron"
+      "tag": "c:nuggets/iron"
     },
     "R": {
-      "tag": "forge:dusts/redstone"
+      "item": "minecraft:redstone"
     },
     "C": {
-      "tag": "forge:ingots/copper"
+      "tag": "c:ingots/copper"
     }
   }
 }

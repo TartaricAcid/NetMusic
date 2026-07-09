@@ -22,13 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author SQwatermark
  */
 public class NetMusicAudioStream implements AudioStream {
-    private static final ExecutorService AUDIO_STREAM_EXECUTOR = Executors.newFixedThreadPool(
-            4,
-            r -> {
-                Thread t = new Thread(r, "NetMusic-AudioStream-Downloader");
-                t.setDaemon(true);
-                return t;
-            }
+    private static final ExecutorService AUDIO_STREAM_EXECUTOR = Executors.newThreadPerTaskExecutor(
+            Thread.ofVirtual().name("NetMusic-AudioStream-Downloader-", 0).factory()
     );
 
     private final AudioInputStream stream;

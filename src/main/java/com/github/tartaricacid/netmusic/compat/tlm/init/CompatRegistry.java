@@ -3,17 +3,17 @@ package com.github.tartaricacid.netmusic.compat.tlm.init;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.network.simple.SimpleChannel;
-import net.minecraftforge.registries.RegisterEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.registries.RegisterEvent;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class CompatRegistry {
     public static final String TLM = "touhou_little_maid";
 
@@ -29,7 +29,7 @@ public class CompatRegistry {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void initContainerScreen(FMLClientSetupEvent event) {
+    public static void initContainerScreen(RegisterMenuScreensEvent event) {
         checkModLoad(TLM, () -> ContainerScreenInit.init(event));
     }
 
@@ -37,8 +37,8 @@ public class CompatRegistry {
         checkModLoad(TLM, () -> output.accept(new ItemStack(InitItems.MUSIC_PLAYER_BACKPACK.get())));
     }
 
-    public static void initNetwork(SimpleChannel channel) {
-        checkModLoad(TLM, () -> NetworkInit.init(channel));
+    public static void initNetwork(PayloadRegistrar registrar) {
+        checkModLoad(TLM, () -> NetworkInit.init(registrar));
     }
 
     private static void checkModLoad(String modId, Runnable runnable) {

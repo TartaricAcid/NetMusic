@@ -1,14 +1,14 @@
 {
   "type": "minecraft:crafting_shapeless",
   "result": {
-    "item": "netmusic:music_cd"
+    "id": "netmusic:music_cd"
   },
   "ingredients": [
     {
-      "tag": "forge:dyes/gray"
+      "item": "minecraft:gray_dye"
     },
     {
-      "tag": "forge:dyes/brown"
+      "item": "minecraft:brown_dye"
     },
     {
       "item": "minecraft:clay_ball"

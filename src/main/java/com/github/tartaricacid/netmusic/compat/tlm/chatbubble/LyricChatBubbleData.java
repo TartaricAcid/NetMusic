@@ -6,11 +6,11 @@ import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.chatbubbl
 import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.IChatBubbleData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public class LyricChatBubbleData implements IChatBubbleData {
-    public static final ResourceLocation ID = new ResourceLocation(NetMusic.MOD_ID, "lyric");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "lyric");
     private static final int PRIORITY = 10;
 
     private final long songId;

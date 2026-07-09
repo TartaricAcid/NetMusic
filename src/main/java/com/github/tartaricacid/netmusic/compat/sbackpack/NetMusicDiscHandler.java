@@ -5,13 +5,13 @@ import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.config.MusicListManage;
 import com.github.tartaricacid.netmusic.init.InitItems;
 import com.github.tartaricacid.netmusic.item.ItemMusicCD;
-import com.github.tartaricacid.netmusic.network.NetworkHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.p3pp3rf1y.sophisticatedcore.api.IDiscHandler;
 import net.p3pp3rf1y.sophisticatedcore.upgrades.jukebox.ServerStorageSoundHandler;
 
@@ -34,8 +34,8 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
 
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
-                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, resolved, songInfo.songUrl, position);
-                NetworkHandler.sendToNearby(serverLevel, pos, 128, message);
+                NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, resolved, songInfo.songUrl, position);
+                PacketDistributor.sendToPlayersNear(serverLevel, null, pos.x, pos.y, pos.z, 128, payload);
             }, serverLevel.getServer());
         });
     }
@@ -48,8 +48,8 @@ public class NetMusicDiscHandler implements IDiscHandler<ItemMusicCD.SongInfo> {
 
             ItemMusicCD.SongInfo copy = songInfo.clone();
             MusicPlayResolverManager.resolve(copy).thenAcceptAsync(resolved -> {
-                PlayNetMusicDiscMessage message = new PlayNetMusicDiscMessage(storageUuid, resolved, songInfo.songUrl, entityId);
-                NetworkHandler.sendToNearby(serverLevel, position, 128, message);
+                NetMusicDiscPayload payload = new NetMusicDiscPayload(storageUuid, resolved, songInfo.songUrl, entityId);
+                PacketDistributor.sendToPlayersNear(serverLevel, null, position.x, position.y, position.z, 128, payload);
             }, serverLevel.getServer());
         });
     }

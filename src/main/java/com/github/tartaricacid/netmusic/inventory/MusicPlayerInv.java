@@ -1,10 +1,9 @@
 package com.github.tartaricacid.netmusic.inventory;
 
 import com.github.tartaricacid.netmusic.init.InitItems;
-import com.github.tartaricacid.netmusic.item.ItemMusicCD;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
+import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;

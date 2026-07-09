@@ -1,44 +1,42 @@
 package com.github.tartaricacid.netmusic.network.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.BigMegaphoneClientManager;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record BigMegaphoneStartMessage(BlockPos pos, long sessionId, String url, String name,
+                                       int range) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<BigMegaphoneStartMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "big_megaphone_start"));
+    public static final StreamCodec<ByteBuf, BigMegaphoneStartMessage> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            BigMegaphoneStartMessage::pos,
+            ByteBufCodecs.VAR_LONG,
+            BigMegaphoneStartMessage::sessionId,
+            ByteBufCodecs.STRING_UTF8,
+            BigMegaphoneStartMessage::url,
+            ByteBufCodecs.STRING_UTF8,
+            BigMegaphoneStartMessage::name,
+            ByteBufCodecs.VAR_INT,
+            BigMegaphoneStartMessage::range,
+            BigMegaphoneStartMessage::new
+    );
 
-public class BigMegaphoneStartMessage {
-    private final BlockPos pos;
-    private final long sessionId;
-    private final String url;
-    private final String name;
-    private final int range;
-
-    public BigMegaphoneStartMessage(BlockPos pos, long sessionId, String url, String name, int range) {
-        this.pos = pos;
-        this.sessionId = sessionId;
-        this.url = url;
-        this.name = name;
-        this.range = range;
-    }
-
-    public static BigMegaphoneStartMessage decode(FriendlyByteBuf buf) {
-        return new BigMegaphoneStartMessage(buf.readBlockPos(), buf.readVarLong(), buf.readUtf(), buf.readUtf(), buf.readVarInt());
-    }
-
-    public static void encode(BigMegaphoneStartMessage message, FriendlyByteBuf buf) {
-        buf.writeBlockPos(message.pos);
-        buf.writeVarLong(message.sessionId);
-        buf.writeUtf(message.url);
-        buf.writeUtf(message.name);
-        buf.writeVarInt(message.range);
-    }
-
-    public static void handle(BigMegaphoneStartMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
-            context.enqueueWork(() -> BigMegaphoneClientManager.handleStart(message.pos, message.sessionId, message.url, message.name, message.range));
+    public static void handle(BigMegaphoneStartMessage message, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() -> BigMegaphoneClientManager.handleStart(message.pos(), message.sessionId(),
+                    message.url(), message.name(), message.range()));
         }
-        context.setPacketHandled(true);
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

@@ -1,7 +1,6 @@
 package com.github.tartaricacid.netmusic.client.audio;
 
 import com.github.tartaricacid.netmusic.init.InitSounds;
-import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -9,6 +8,7 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.AudioStream;
+import net.minecraft.client.sounds.JOrbisAudioStream;
 import net.minecraft.client.sounds.SoundBufferLibrary;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -77,7 +77,7 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
             }
             try {
                 InputStream inputstream = mc.getResourceManager().open(NetMusicSound.ERROR_SOUND);
-                return new OggAudioStream(inputstream);
+                return new JOrbisAudioStream(inputstream);
             } catch (IOException ioexception) {
                 throw new CompletionException(ioexception);
             }

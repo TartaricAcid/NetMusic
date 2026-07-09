@@ -1,7 +1,7 @@
 {
   "type": "minecraft:crafting_shaped",
   "result": {
-    "item": "netmusic:music_player"
+    "id": "netmusic:music_player"
   },
   "pattern": [
     "  C",
@@ -10,7 +10,7 @@
   ],
   "key": {
     "C": {
-      "tag": "forge:ingots/copper"
+      "tag": "c:ingots/copper"
     },
     "L": {
       "item": "minecraft:lightning_rod"

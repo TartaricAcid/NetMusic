@@ -62,7 +62,11 @@ public class NetEaseMusicSong {
                 return Collections.emptyList();
             }
             List<String> artistNames = Lists.newArrayList();
-            artists.forEach(artist -> artistNames.add(artist.name));
+            artists.forEach(artist -> {
+                if (artist != null && artist.name != null) {
+                    artistNames.add(artist.name);
+                }
+            });
             return artistNames;
         }
     }

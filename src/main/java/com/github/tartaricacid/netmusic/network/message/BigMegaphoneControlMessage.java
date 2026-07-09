@@ -1,81 +1,87 @@
 package com.github.tartaricacid.netmusic.network.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityBigMegaphone;
 import com.github.tartaricacid.netmusic.util.BigMegaphoneUtil;
-import net.minecraft.Util;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.function.Supplier;
+public record BigMegaphoneControlMessage(BlockPos pos, String url, String name, int range,
+                                         TileEntityBigMegaphone.BroadcastMode broadcastMode, Action action) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<BigMegaphoneControlMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "big_megaphone_control"));
+    public static final StreamCodec<ByteBuf, BigMegaphoneControlMessage> STREAM_CODEC = StreamCodec.composite(
+            BlockPos.STREAM_CODEC,
+            BigMegaphoneControlMessage::pos,
+            ByteBufCodecs.STRING_UTF8,
+            BigMegaphoneControlMessage::url,
+            ByteBufCodecs.STRING_UTF8,
+            BigMegaphoneControlMessage::name,
+            ByteBufCodecs.VAR_INT,
+            BigMegaphoneControlMessage::range,
+            ByteBufCodecs.VAR_INT.map(TileEntityBigMegaphone.BroadcastMode::byIndex, TileEntityBigMegaphone.BroadcastMode::ordinal),
+            BigMegaphoneControlMessage::broadcastMode,
+            ByteBufCodecs.VAR_INT.map(Action::byIndex, Action::ordinal),
+            BigMegaphoneControlMessage::action,
+            BigMegaphoneControlMessage::new
+    );
 
-public class BigMegaphoneControlMessage {
-    private final BlockPos pos;
-    private final String url;
-    private final String name;
-    private final int range;
-    private final Action action;
-
-    public BigMegaphoneControlMessage(BlockPos pos, String url, String name, int range, Action action) {
-        this.pos = pos;
-        this.url = url;
-        this.name = name;
-        this.range = range;
-        this.action = action;
-    }
-
-    public static BigMegaphoneControlMessage decode(FriendlyByteBuf buf) {
-        BlockPos pos = buf.readBlockPos();
-        String url = buf.readUtf();
-        String name = buf.readUtf();
-        int range = buf.readVarInt();
-        int actionIndex = buf.readVarInt();
-        Action action = Action.byIndex(actionIndex);
-        return new BigMegaphoneControlMessage(pos, url, name, range, action);
-    }
-
-    public static void encode(BigMegaphoneControlMessage message, FriendlyByteBuf buf) {
-        buf.writeBlockPos(message.pos);
-        buf.writeUtf(message.url);
-        buf.writeUtf(message.name);
-        buf.writeVarInt(message.range);
-        buf.writeVarInt(message.action.ordinal());
-    }
-
-    public static void handle(BigMegaphoneControlMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isServer()) {
+    public static void handle(BigMegaphoneControlMessage message, IPayloadContext context) {
+        if (context.flow().isServerbound()) {
             context.enqueueWork(() -> onHandle(message, context));
         }
-        context.setPacketHandled(true);
     }
 
-    private static void onHandle(BigMegaphoneControlMessage message, NetworkEvent.Context context) {
-        ServerPlayer sender = context.getSender();
-        if (sender == null || sender.distanceToSqr(Vec3.atCenterOf(message.pos)) > 64) {
+    private static void onHandle(BigMegaphoneControlMessage message, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer sender)) {
             return;
         }
-        if (!(sender.level().getBlockEntity(message.pos) instanceof TileEntityBigMegaphone megaphone)) {
+        if (sender.distanceToSqr(Vec3.atCenterOf(message.pos())) > 64) {
+            return;
+        }
+        if (!(sender.level().getBlockEntity(message.pos()) instanceof TileEntityBigMegaphone megaphone)) {
             return;
         }
 
-        if (message.action == Action.STOP) {
+        if (message.action() == Action.STOP) {
             megaphone.stopBroadcast();
             return;
         }
 
-        if (!BigMegaphoneUtil.isValidStreamUrl(message.url) || Util.isBlank(message.name)) {
-            return;
-        }
+        // 设置广播模式
+        megaphone.setBroadcastMode(message.broadcastMode());
 
-        boolean changed = megaphone.applyConfig(message.url, message.name, message.range);
-        if (message.action == Action.START) {
-            megaphone.startBroadcast();
-        } else if (changed && megaphone.isBroadcasting()) {
-            megaphone.startBroadcast();
+        if (message.broadcastMode() == TileEntityBigMegaphone.BroadcastMode.STREAM) {
+            // 流媒体模式：验证URL和名称
+            if (!BigMegaphoneUtil.isValidStreamUrl(message.url()) || StringUtils.isBlank(message.name())) {
+                return;
+            }
+            boolean changed = megaphone.applyConfig(message.url(), message.name(), message.range());
+            if (message.action() == Action.START) {
+                megaphone.startBroadcast();
+            } else if (changed && megaphone.isBroadcasting()) {
+                megaphone.startBroadcast();
+            }
+        } else {
+            // 唱片机源模式：只更新范围
+            megaphone.applyConfig("", "", message.range());
+            if (message.action() == Action.START) {
+                megaphone.startBroadcast();
+            }
         }
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
     public enum Action {

@@ -4,6 +4,7 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.client.event.ConfigEvent;
 import com.github.tartaricacid.netmusic.client.model.ModelMusicPlayer;
+import com.github.tartaricacid.netmusic.compat.sable.SableCompat;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -20,17 +21,20 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentContents;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.StringUtils;
 
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
-    public static final ResourceLocation TEXTURE = new ResourceLocation(NetMusic.MOD_ID, "textures/block/music_player.png");
+    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/block/music_player.png");
 
     public static ModelMusicPlayer MODEL;
     public static MusicPlayerRenderer INSTANCE;
@@ -45,8 +49,12 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         this.dispatcher = context.getBlockEntityRenderDispatcher();
     }
 
+    public static AABB getAABB(BlockPos pStart, BlockPos pEnd) {
+        return new AABB(pStart.getX(), pStart.getY(), pStart.getZ(), pEnd.getX(), pEnd.getY(), pEnd.getZ());
+    }
+
     @Override
-    public void render(TileEntityMusicPlayer te, float pPartialTicks, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+    public void render(TileEntityMusicPlayer te, float partialTicks, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         Direction facing = te.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         ItemStack cd = te.getPlayerInv().getStackInSlot(0);
         ModelPart disc = MODEL.getDiscBone();
@@ -55,7 +63,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
             disc.yRot = (float) ((2 * Math.PI / 40) * (((double) System.currentTimeMillis() / 50) % 40));
         }
         renderMusicPlayer(matrixStack, buffer, combinedLight, facing);
-        renderLyric(te, matrixStack, buffer, combinedLight);
+        renderLyric(te, matrixStack, buffer, combinedLight, partialTicks);
     }
 
     public void renderMusicPlayer(PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, Direction facing) {
@@ -65,11 +73,11 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         matrixStack.mulPose(Axis.YP.rotationDegrees(180 - facing.get2DDataValue() * 90));
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
-        MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 0xffffffff);
         matrixStack.popPose();
     }
 
-    private void renderLyric(TileEntityMusicPlayer te, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn) {
+    private void renderLyric(TileEntityMusicPlayer te, PoseStack poseStack, MultiBufferSource bufferIn, int combinedLightIn, float partialTicks) {
         if (!GeneralConfig.ENABLE_PLAYER_LYRICS.get()) {
             return;
         }
@@ -115,13 +123,25 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
 
         poseStack.pushPose();
         poseStack.translate(0.5, 1.625, 0.5);
-        poseStack.mulPose(camera.rotation());
+
+        Vec3 lookVector = SableCompat.getLookVector(te.getBlockPos(), camera, partialTicks);
+        if (lookVector != null) {
+            double length = Math.sqrt(lookVector.x * lookVector.x + lookVector.z * lookVector.z);
+            float yRot = (float) Math.toDegrees(Math.atan2(-lookVector.x, lookVector.z));
+            float xRot = (float) -Math.toDegrees(Math.atan2(lookVector.y, length));
+            poseStack.mulPose(Axis.YN.rotationDegrees(yRot));
+            poseStack.mulPose(Axis.XN.rotationDegrees(-xRot));
+        } else {
+            poseStack.mulPose(Axis.YN.rotationDegrees(camera.getYRot()));
+            poseStack.mulPose(Axis.XN.rotationDegrees(-camera.getXRot()));
+        }
+
         poseStack.scale(-0.025F, -0.025F, 0.025F);
 
         float opacity = Minecraft.getInstance().options.getBackgroundOpacity(0.25F);
         int bgColor = (int) (opacity * 255.0F) << 24;
 
-        if (!currentLine.getContents().equals(ComponentContents.EMPTY)) {
+        if (!currentLine.getContents().equals(PlainTextContents.EMPTY)) {
             float currentLineWidth = (float) (-this.font.width(currentLine) / 2);
             this.font.drawInBatch(currentLine, currentLineWidth, -y, currentLyricColor, false,
                     poseStack.last().pose(), bufferIn, Font.DisplayMode.NORMAL,
@@ -141,5 +161,11 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
     @Override
     public boolean shouldRenderOffScreen(TileEntityMusicPlayer musicPlayer) {
         return true;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(TileEntityMusicPlayer blockEntity) {
+        BlockPos worldPosition = blockEntity.getBlockPos();
+        return getAABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(1, 2, 1));
     }
 }

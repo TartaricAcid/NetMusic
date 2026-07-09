@@ -1,27 +1,42 @@
 package com.github.tartaricacid.netmusic.compat.tlm.message;
 
+import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.client.audio.MusicPlayManager;
 import com.github.tartaricacid.netmusic.compat.tlm.chatbubble.LyricChatBubbleData;
 import com.github.tartaricacid.netmusic.compat.tlm.client.audio.MaidNetMusicSound;
 import com.github.tartaricacid.netmusic.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.tartaricacid.netmusic.client.audio.MusicPlayManager.MUSIC_163_URL;
 
-public class MaidMusicToClientMessage {
+public class MaidMusicToClientMessage implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<MaidMusicToClientMessage> TYPE = new CustomPacketPayload.Type<>(
+            ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "maid_music_to_client"));
+
+    public static final StreamCodec<ByteBuf, MaidMusicToClientMessage> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getEntityId,
+            ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getUrl,
+            ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getRawUrl,
+            ByteBufCodecs.VAR_INT, MaidMusicToClientMessage::getTimeSecond,
+            ByteBufCodecs.STRING_UTF8, MaidMusicToClientMessage::getSongName,
+            MaidMusicToClientMessage::new);
+
     private static final Pattern PATTERN = Pattern.compile("^.*?\\?id=(\\d+)\\.mp3$");
 
     private final int entityId;
@@ -52,24 +67,10 @@ public class MaidMusicToClientMessage {
         }
     }
 
-    public static MaidMusicToClientMessage decode(FriendlyByteBuf buf) {
-        return new MaidMusicToClientMessage(buf.readInt(), buf.readUtf(), buf.readUtf(), buf.readInt(), buf.readUtf());
-    }
-
-    public static void encode(MaidMusicToClientMessage message, FriendlyByteBuf buf) {
-        buf.writeInt(message.entityId);
-        buf.writeUtf(message.url);
-        buf.writeUtf(message.rawUrl);
-        buf.writeInt(message.timeSecond);
-        buf.writeUtf(message.songName);
-    }
-
-    public static void handle(MaidMusicToClientMessage message, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        if (context.getDirection().getReceptionSide().isClient()) {
+    public static void handle(MaidMusicToClientMessage message, IPayloadContext context) {
+        if (context.flow().isClientbound()) {
             context.enqueueWork(() -> CompletableFuture.runAsync(() -> onHandle(message), Util.backgroundExecutor()));
         }
-        context.setPacketHandled(true);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -81,6 +82,35 @@ public class MaidMusicToClientMessage {
         if (!(entity instanceof EntityMaid maid)) {
             return;
         }
-        MusicPlayManager.play(message.url, message.songName, url -> new MaidNetMusicSound(maid, url, message.timeSecond));
+        // 如果该女仆已在播放相同歌曲，跳过（避免sync消息导致从头重启）
+        if (MaidNetMusicSound.isPlayingSameSong(maid.getId(), message.url)) {
+            return;
+        }
+        MusicPlayManager.play(message.url, message.songName, url -> new MaidNetMusicSound(maid, url, message.timeSecond, message.url));
+    }
+
+    public int getEntityId() {
+        return entityId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getRawUrl() {
+        return rawUrl;
+    }
+
+    public int getTimeSecond() {
+        return timeSecond;
+    }
+
+    public String getSongName() {
+        return songName;
+    }
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

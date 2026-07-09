@@ -20,13 +20,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 public class MusicPlayerBackpack extends IMaidBackpack {
-    public static final ResourceLocation ID = new ResourceLocation(NetMusic.MOD_ID, "music_player_backpack");
-    public static final ResourceLocation TEXTURE = new ResourceLocation(NetMusic.MOD_ID, "textures/entity/music_player_backpack.png");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "music_player_backpack");
+    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(NetMusic.MOD_ID, "textures/entity/music_player_backpack.png");
     private static final int MAX_AVAILABLE = 30;
 
     @Override
@@ -63,6 +63,11 @@ public class MusicPlayerBackpack extends IMaidBackpack {
             @Override
             public AbstractMaidContainer createMenu(int index, Inventory playerInventory, Player player) {
                 return new MusicPlayerBackpackContainer(index, playerInventory, entityId);
+            }
+
+            @Override
+            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+                return false;
             }
         };
     }

@@ -21,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +58,10 @@ public class NetMusicCommand {
         try {
             long songId = LongArgumentType.getLong(context, SONG_ID);
             ItemMusicCD.SongInfo songInfo = MusicListManage.get163Song(songId);
+            if (StringUtils.isBlank(songInfo.songUrl) || StringUtils.isBlank(songInfo.songName)) {
+                context.getSource().sendSuccess(() -> Component.translatable("gui.netmusic.cd_burner.get_info_error"), false);
+                return Command.SINGLE_SUCCESS;
+            }
             ItemStack musicDisc = ItemMusicCD.setSongInfo(songInfo, InitItems.MUSIC_CD.get().getDefaultInstance());
             ServerPlayer serverPlayer = context.getSource().getPlayerOrException();
             boolean canPlaceIn = serverPlayer.getInventory().add(musicDisc);
@@ -72,7 +77,7 @@ public class NetMusicCommand {
                 ItemEntity dropItem = serverPlayer.drop(musicDisc, false);
                 if (dropItem != null) {
                     dropItem.setNoPickUpDelay();
-                    dropItem.setThrower(serverPlayer.getUUID());
+                    dropItem.setThrower(serverPlayer);
                 }
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.add163cd.success"), false);
@@ -149,7 +154,7 @@ public class NetMusicCommand {
                 ItemEntity dropItem = serverPlayer.drop(musicDisc, false);
                 if (dropItem != null) {
                     dropItem.setNoPickUpDelay();
-                    dropItem.setThrower(serverPlayer.getUUID());
+                    dropItem.setThrower(serverPlayer);
                 }
             }
             context.getSource().sendSuccess(() -> Component.translatable("command.netmusic.music_cd.addDJcd.success"), false);

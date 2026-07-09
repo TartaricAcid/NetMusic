@@ -6,6 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Base64;
 import java.util.Random;
 
@@ -13,6 +14,9 @@ import java.util.Random;
  * @author 内个球
  */
 public class EncryptUtils {
+    private static final String EAPI_KEY = "e82ckenh8dichen8";
+    private static final String EAPI_DIGEST_SEP = "36cd479b6b5";
+
     public static String encryptedParam(String text) throws Exception {
         if (text == null) {
             return "params=null&encSecKey=null";
@@ -63,5 +67,65 @@ public class EncryptUtils {
             stringBuffer.append(Integer.toHexString(r.nextInt(16)));
         }
         return stringBuffer.toString();
+    }
+
+    /**
+     * eapi 加密（PC/移动端API加密）
+     * <p>
+     * 流程:
+     * 1. 拼接签名消息: nobody{url}use{json}md5forencrypt
+     * 2. MD5 签名
+     * 3. 拼接: {url}-{EAPI_DIGEST_SEP}-{json}-{EAPI_DIGEST_SEP}-{md5}
+     * 4. AES-ECB 加密 → 十六进制大写
+     *
+     * @param url  API路径，如 /api/song/enhance/player/url
+     * @param json 请求体的JSON字符串
+     * @return 加密后的请求参数，格式为 params={hex}
+     */
+    public static String eapiEncrypt(String url, String json) throws Exception {
+        // 1. 拼接签名消息并计算MD5
+        String message = "nobody" + url + "use" + json + "md5forencrypt";
+        String digest = md5Hex(message);
+
+        // 2. 拼接payload
+        String payload = url + "-" + EAPI_DIGEST_SEP + "-" + json + "-" + EAPI_DIGEST_SEP + "-" + digest;
+
+        // 3. AES-ECB加密
+        byte[] encrypted = aesEcbEncrypt(payload.getBytes(StandardCharsets.UTF_8), EAPI_KEY.getBytes(StandardCharsets.UTF_8));
+
+        // 4. 转为十六进制大写
+        String params = bytesToHex(encrypted).toUpperCase();
+
+        return "params=" + URLEncoder.encode(params, "UTF-8");
+    }
+
+    /**
+     * AES-ECB 加密（PKCS5Padding）
+     */
+    private static byte[] aesEcbEncrypt(byte[] data, byte[] key) throws Exception {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+        return cipher.doFinal(data);
+    }
+
+    /**
+     * MD5 哈希，返回32位小写十六进制字符串
+     */
+    private static String md5Hex(String text) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(text.getBytes(StandardCharsets.UTF_8));
+        return bytesToHex(digest);
+    }
+
+    /**
+     * 字节数组转十六进制字符串（小写）
+     */
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }
