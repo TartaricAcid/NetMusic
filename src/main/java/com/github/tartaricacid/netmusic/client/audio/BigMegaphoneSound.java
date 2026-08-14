@@ -74,7 +74,7 @@ public class BigMegaphoneSound extends AbstractTickableSoundInstance {
                 return stream;
             } catch (IOException | UnsupportedAudioFileException e) {
                 mc.submit(() -> {
-                    mc.gui.setOverlayMessage(Component.translatable("message.netmusic.big_megaphone.play_error"), false);
+                    mc.gui.hud.setOverlayMessage(Component.translatable("message.netmusic.big_megaphone.play_error"), false);
                     BigMegaphoneClientManager.handleStreamOpenFailure(this.pos, this.sessionId, this, e);
                 });
             }

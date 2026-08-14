@@ -1,5 +1,5 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.16-SNAPSHOT'
+    id 'net.fabricmc.fabric-loom' version '1.17-SNAPSHOT'
     id 'com.gradleup.shadow' version '9.4.1'
 }
 
@@ -138,8 +138,8 @@ dependencies {
     // implementation("maven.modrinth:libipn:${project.libipn_version}")
     // implementation("maven.modrinth:inventory-profiles-next:${project.inventory_profiles_next_version}")
 
-    // Forge Config API Port
-    implementation("maven.modrinth:forge-config-api-port:${project.forge_config_api_port_version}")
+    // Forge Config API Port (Fabric build, from local libs)
+    implementation(files("libs/ForgeConfigAPIPort-v26.2.1-mc26.2.x-Fabric.jar"))
     implementation("com.electronwill.night-config:core:3.8.0")
     implementation("com.electronwill.night-config:toml:3.8.0")
 

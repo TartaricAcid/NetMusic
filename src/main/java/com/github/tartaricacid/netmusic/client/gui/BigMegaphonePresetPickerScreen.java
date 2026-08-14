@@ -83,13 +83,13 @@ public class BigMegaphonePresetPickerScreen extends Screen {
 
     private void selectStation(BigMegaphonePresetManager.PresetStation station) {
         this.parent.applyPresetStation(station.name(), station.url());
-        this.minecraft.setScreen(this.parent);
+        this.minecraft.setScreenAndShow(this.parent);
 
     }
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.parent);
+        this.minecraft.setScreenAndShow(this.parent);
     }
 
     @Override

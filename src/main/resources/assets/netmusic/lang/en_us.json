@@ -19,7 +19,7 @@
   "block.netmusic.computer.local_file.desc": "You can also use the local file path, but then only you can hear the music",
   "message.netmusic.music_player.need_vip": "This song is a VIP song and cannot be played",
   "message.netmusic.music_player.404": "Unable to find song: %s",
-  "message.netmusic.music_player.play_error": "Playing Music Failed",
+  "message.netmusic.music_player.play_error": "Playing Music Failed: %s",
   "message.netmusic.big_megaphone.play_error": "Big Megaphone playback failed",
   "subtitle.netmusic.block.music_player": "Music Player Sound",
   "command.netmusic.music_cd.reload.success": "All CD is reloaded!",

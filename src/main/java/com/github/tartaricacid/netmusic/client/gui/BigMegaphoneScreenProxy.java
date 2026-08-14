@@ -11,7 +11,7 @@ public class BigMegaphoneScreenProxy {
     public static void open(BlockPos blockPos) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level != null && minecraft.level.getBlockEntity(blockPos) instanceof TileEntityBigMegaphone) {
-            minecraft.setScreen(new BigMegaphoneScreen(blockPos));
+            minecraft.setScreenAndShow(new BigMegaphoneScreen(blockPos));
         }
     }
 }

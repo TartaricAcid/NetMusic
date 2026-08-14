@@ -176,7 +176,6 @@ public class ComputerMenuScreen extends AbstractContainerScreen<@NotNull Compute
         super.extractBackground(graphics, mouseX, mouseY, a);
         graphics.blit(RenderPipelines.GUI_TEXTURED, BG, leftPos, topPos, 0, 0,
                 imageWidth, imageHeight, 256, 256);
-        this.minecraft.gui.extractDeferredSubtitles();
     }
 
     @Override

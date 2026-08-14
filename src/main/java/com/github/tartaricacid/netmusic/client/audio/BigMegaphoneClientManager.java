@@ -124,7 +124,7 @@ public final class BigMegaphoneClientManager {
                 tracked.sound = createSound(tracked);
                 if (tracked.sound != null) {
                     minecraft.getSoundManager().play(tracked.sound);
-                    minecraft.gui.setOverlayMessage(Component.translatable("gui.netmusic.big_megaphone.playing", tracked.name), false);
+                    minecraft.gui.hud.setOverlayMessage(Component.translatable("gui.netmusic.big_megaphone.playing", tracked.name), false);
                 }
             }
         }

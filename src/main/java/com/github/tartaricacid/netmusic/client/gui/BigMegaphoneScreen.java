@@ -101,7 +101,7 @@ public class BigMegaphoneScreen extends Screen {
     }
 
     private void openPresetPicker() {
-        this.minecraft.setScreen(new BigMegaphonePresetPickerScreen(this));
+        this.minecraft.setScreenAndShow(new BigMegaphonePresetPickerScreen(this));
     }
 
     @Override

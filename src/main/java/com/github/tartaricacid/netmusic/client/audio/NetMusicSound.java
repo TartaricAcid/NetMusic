@@ -4,6 +4,7 @@ import com.github.tartaricacid.netmusic.NetMusic;
 import com.github.tartaricacid.netmusic.api.lyric.LyricRecord;
 import com.github.tartaricacid.netmusic.init.InitSounds;
 import com.github.tartaricacid.netmusic.tileentity.TileEntityMusicPlayer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -95,11 +96,20 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
         }
     }
 
-    private void errorStop() {
+    private void errorStop(String reason) {
         // 直接把 tick 设置为结束的时间点，这样就能在下一次 tick 时正常结束
         this.tick = tickTimes;
-        MutableComponent error = Component.translatable("message.netmusic.music_player.play_error");
-        Minecraft.getInstance().gui.setOverlayMessage(error, false);
+        MutableComponent error = Component.translatable("message.netmusic.music_player.play_error", reason)
+                .withStyle(ChatFormatting.RED);
+        Minecraft.getInstance().gui.hud.setOverlayMessage(error, false);
+    }
+
+    private static String reasonOf(Throwable e) {
+        if (e == null) {
+            return "Unknown";
+        }
+        String msg = e.getMessage();
+        return msg == null || msg.isBlank() ? e.getClass().getSimpleName() : msg;
     }
 
     @Override
@@ -109,7 +119,7 @@ public class NetMusicSound extends AbstractTickableSoundInstance {
                 return new NetMusicAudioStream(this.songUrl);
             } catch (IOException | UnsupportedAudioFileException e) {
                 NetMusic.LOGGER.error("Failed to create audio stream for URL: {}", songUrl, e);
-                Minecraft.getInstance().submit(this::errorStop);
+                Minecraft.getInstance().submit(() -> errorStop(reasonOf(e)));
             }
 
             // 播放失败返回一个默认音频，避免 tick 里的音频实例不能够删除

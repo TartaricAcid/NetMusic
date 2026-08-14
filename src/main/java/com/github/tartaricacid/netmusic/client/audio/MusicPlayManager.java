@@ -43,7 +43,7 @@ public final class MusicPlayManager {
             Minecraft.getInstance().submit(() -> {
                 SoundInstance instance = sound.apply(urlFinal);
                 Minecraft.getInstance().getSoundManager().play(instance);
-                Minecraft.getInstance().gui.setNowPlaying(Component.literal(songName));
+                Minecraft.getInstance().gui.hud.setNowPlaying(Component.literal(songName));
             });
         } catch (MalformedURLException | URISyntaxException e) {
             NetMusic.LOGGER.error("Malformed URL: {}", url, e);
