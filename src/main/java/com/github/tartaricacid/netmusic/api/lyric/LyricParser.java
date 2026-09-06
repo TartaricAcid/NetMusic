@@ -68,10 +68,9 @@ public class LyricParser {
             Matcher matcher = LRC_PATTERN.matcher(line.trim());
             if (matcher.find()) {
                 int minutes = Integer.parseInt(matcher.group(1));
-                int seconds = Integer.parseInt(matcher.group(2));
-                int milliseconds = Integer.parseInt(matcher.group(3));
+                double seconds = Double.parseDouble(matcher.group(2) + "." + matcher.group(3));
                 String text = matcher.group(4).trim();
-                int totalTick = ((minutes * 60 + seconds) * 1000 + milliseconds) / 50;
+                int totalTick = (int) ((minutes * 60 + seconds) * 1000) / 50;
                 lyrics.put(totalTick, text);
             }
         }
