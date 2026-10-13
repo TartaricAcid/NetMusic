@@ -19,12 +19,14 @@ public class BigMegaphoneRenderer implements BlockEntityRenderer<TileEntityBigMe
     public static final ResourceLocation TEXTURE_OFF = new ResourceLocation(NetMusic.MOD_ID, "textures/block/big_megaphone_off.png");
     public static final ResourceLocation TEXTURE_ON = new ResourceLocation(NetMusic.MOD_ID, "textures/block/big_megaphone_on.png");
 
-    public static ModelBigMegaphone MODEL;
-    public static BigMegaphoneRenderer INSTANCE;
+    private final ModelBigMegaphone model;
 
     public BigMegaphoneRenderer(BlockEntityRendererProvider.Context context) {
-        MODEL = new ModelBigMegaphone(context.bakeLayer(ModelBigMegaphone.LAYER));
-        INSTANCE = this;
+        this(new ModelBigMegaphone(context.bakeLayer(ModelBigMegaphone.LAYER)));
+    }
+
+    public BigMegaphoneRenderer(ModelBigMegaphone model) {
+        this.model = model;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class BigMegaphoneRenderer implements BlockEntityRenderer<TileEntityBigMe
         poseStack.mulPose(Axis.YP.rotationDegrees(facing.get2DDataValue() * 90));
         poseStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(texture));
-        MODEL.renderToBuffer(poseStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        model.renderToBuffer(poseStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         poseStack.popPose();
     }
 }
