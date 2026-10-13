@@ -32,24 +32,26 @@ import org.apache.commons.lang3.StringUtils;
 public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicPlayer> {
     public static final ResourceLocation TEXTURE = new ResourceLocation(NetMusic.MOD_ID, "textures/block/music_player.png");
 
-    public static ModelMusicPlayer MODEL;
-    public static MusicPlayerRenderer INSTANCE;
-
+    private final ModelMusicPlayer model;
     private final Font font;
     private final BlockEntityRenderDispatcher dispatcher;
 
     public MusicPlayerRenderer(BlockEntityRendererProvider.Context context) {
-        MODEL = new ModelMusicPlayer(context.bakeLayer(ModelMusicPlayer.LAYER));
-        INSTANCE = this;
-        this.font = context.getFont();
-        this.dispatcher = context.getBlockEntityRenderDispatcher();
+        this(new ModelMusicPlayer(context.bakeLayer(ModelMusicPlayer.LAYER)),
+                context.getFont(), context.getBlockEntityRenderDispatcher());
+    }
+
+    public MusicPlayerRenderer(ModelMusicPlayer model, Font font, BlockEntityRenderDispatcher dispatcher) {
+        this.model = model;
+        this.font = font;
+        this.dispatcher = dispatcher;
     }
 
     @Override
     public void render(TileEntityMusicPlayer te, float pPartialTicks, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         Direction facing = te.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         ItemStack cd = te.getPlayerInv().getStackInSlot(0);
-        ModelPart disc = MODEL.getDiscBone();
+        ModelPart disc = model.getDiscBone();
         disc.visible = !cd.isEmpty();
         if (!cd.isEmpty() && te.isPlay()) {
             disc.yRot = (float) ((2 * Math.PI / 40) * (((double) System.currentTimeMillis() / 50) % 40));
@@ -65,7 +67,7 @@ public class MusicPlayerRenderer implements BlockEntityRenderer<TileEntityMusicP
         matrixStack.mulPose(Axis.YP.rotationDegrees(180 - facing.get2DDataValue() * 90));
         matrixStack.mulPose(Axis.ZP.rotationDegrees(180));
         VertexConsumer vertexBuilder = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
-        MODEL.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+        model.renderToBuffer(matrixStack, vertexBuilder, combinedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
         matrixStack.popPose();
     }
 
